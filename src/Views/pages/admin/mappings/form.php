@@ -1,5 +1,5 @@
 <?php use App\Services\RegistrationVerification; ?>
-<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.min.css" rel="stylesheet">
+<link href="<?= \App\Config\App::basePath() ?>/public/assets/css/tom-select.min.css" rel="stylesheet">
 
 <div class="space-y-4">
     <div class="flex items-center gap-4">
@@ -93,7 +93,7 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script src="<?= \App\Config\App::basePath() ?>/public/assets/js/tom-select.complete.min.js"></script>
 <script>
 new TomSelect('#user_id', { placeholder: 'Search for a user...', allowEmptyOption: true, maxOptions: 200 });
 new TomSelect('#stall_id', { placeholder: 'Search for a stall...', allowEmptyOption: true, maxOptions: 200 });

@@ -11,10 +11,8 @@ $appName = \App\Config\App::name();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars('Something Went Wrong - ' . $appName, ENT_QUOTES, 'UTF-8') ?></title>
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>html { font-family: 'Inter', sans-serif; }</style>
+    <link href="<?= \App\Config\App::basePath() ?>/public/assets/css/output.css" rel="stylesheet" type="text/css" />
+    <style>html { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }</style>
     <script>
         const LIGHT_THEME = 'corporate';
         const DARK_THEME = 'dark';

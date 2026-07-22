@@ -4,11 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars((isset($title) ? $title : 'Admin Dashboard') . ' - ' . \App\Config\App::name(), ENT_QUOTES, 'UTF-8') ?></title>
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="<?= \App\Config\App::basePath() ?>/public/assets/css/output.css" rel="stylesheet" type="text/css" />
     <style>
-        html { font-family: 'Inter', sans-serif; }
+        html { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         /* Custom scrollbar */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -111,8 +109,8 @@
     </div>
 
     <!-- Scripts -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="<?= \App\Config\App::basePath() ?>/public/assets/js/lucide.min.js"></script>
+    <script src="<?= \App\Config\App::basePath() ?>/public/assets/js/chart.min.js"></script>
     <script>
         lucide.createIcons();
     </script>

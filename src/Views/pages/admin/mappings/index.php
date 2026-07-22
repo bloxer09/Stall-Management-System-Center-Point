@@ -1,5 +1,5 @@
 <?php use App\Services\RegistrationVerification; ?>
-<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.min.css" rel="stylesheet">
+<link href="<?= \App\Config\App::basePath() ?>/public/assets/css/tom-select.min.css" rel="stylesheet">
 
 <div class="space-y-4">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -174,7 +174,7 @@
     <form method="dialog" class="modal-backdrop"><button>close</button></form>
 </dialog>
 
-<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script src="<?= \App\Config\App::basePath() ?>/public/assets/js/tom-select.complete.min.js"></script>
 <script>
 const basePath = '<?= \App\Config\App::basePath() ?>';
 let tsUser = null;

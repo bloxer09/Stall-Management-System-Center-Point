@@ -1,5 +1,5 @@
 <?php $appName = \App\Config\App::name(); ?>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="<?= \App\Config\App::basePath() ?>/public/assets/js/chart.min.js"></script>
 
 <div class="space-y-6">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
