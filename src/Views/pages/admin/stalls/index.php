@@ -126,11 +126,11 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="form-control">
                     <label class="label"><span class="label-text font-medium">Stall Number <span class="text-error">*</span></span></label>
-                    <input type="text" name="stall_number" id="m_stall_number" required class="input input-bordered" />
+                    <input type="text" name="stall_number" id="m_stall_number" required class="input input-bordered w-full" />
                 </div>
                 <div class="form-control">
                     <label class="label"><span class="label-text font-medium">Price (Monthly) <span class="text-error">*</span></span></label>
-                    <label class="input input-bordered flex items-center gap-2">
+                    <label class="input input-bordered flex items-center gap-2 w-full">
                         <span class="opacity-50">PHP</span>
                         <input type="number" step="0.01" name="price" id="m_price" required class="grow" />
                     </label>

@@ -41,5 +41,11 @@
   .card-custom {
     @apply bg-white shadow overflow-hidden sm:rounded-lg dark:bg-dark-800 dark:border-dark-700;
   }
+
+  .input, label.input, .select {
+    height: 3rem;
+    min-height: 3rem;
+    box-sizing: border-box;
+  }
 }
 

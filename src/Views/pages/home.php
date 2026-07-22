@@ -233,7 +233,7 @@
                 <input type="hidden" name="csrf_token" value="<?= \App\Core\Session::csrfToken() ?>">
                 <div class="form-control">
                     <label class="label"><span class="label-text font-medium">Email address</span></label>
-                    <label class="input input-bordered flex items-center gap-2">
+                    <label class="input input-bordered flex items-center gap-2 w-full">
                         <i data-lucide="mail" class="w-4 h-4 opacity-50"></i>
                         <input id="modal-login-email" name="email" type="email" autocomplete="email" required placeholder="you@example.com"
                             class="grow" />
@@ -241,7 +241,7 @@
                 </div>
                 <div class="form-control">
                     <label class="label"><span class="label-text font-medium" id="modal-login-password-label">Password</span></label>
-                    <label class="input input-bordered flex items-center gap-2">
+                    <label class="input input-bordered flex items-center gap-2 w-full">
                         <i data-lucide="lock" class="w-4 h-4 opacity-50"></i>
                         <input name="password" type="password" autocomplete="current-password" required
                             placeholder="Enter your password" class="grow" />
@@ -299,14 +299,14 @@
                 <input type="hidden" name="registration_action" value="start">
                 <div class="form-control">
                     <label class="label"><span class="label-text font-medium">Full Name</span></label>
-                    <label class="input input-bordered flex items-center gap-2">
+                    <label class="input input-bordered flex items-center gap-2 w-full">
                         <i data-lucide="user" class="w-4 h-4 opacity-50"></i>
                         <input name="name" type="text" autocomplete="name" required placeholder="John Doe" class="grow" />
                     </label>
                 </div>
                 <div class="form-control">
                     <label class="label"><span class="label-text font-medium">Email address</span></label>
-                    <label class="input input-bordered flex items-center gap-2">
+                    <label class="input input-bordered flex items-center gap-2 w-full">
                         <i data-lucide="mail" class="w-4 h-4 opacity-50"></i>
                         <input name="email" type="email" autocomplete="email" required placeholder="you@example.com"
                             class="grow" />
@@ -314,7 +314,7 @@
                 </div>
                 <div class="form-control">
                     <label class="label"><span class="label-text font-medium">Phone number</span></label>
-                    <label class="input input-bordered flex items-center gap-2">
+                    <label class="input input-bordered flex items-center gap-2 w-full">
                         <i data-lucide="smartphone" class="w-4 h-4 opacity-50"></i>
                         <input name="phone" type="tel" autocomplete="tel" required placeholder="+63 917 123 4567"
                             class="grow" />
@@ -322,8 +322,11 @@
                 </div>
                 <div class="form-control">
                     <label class="label"><span class="label-text font-medium">Password</span></label>
-                    <input id="regPassword" name="password" type="password" required placeholder="At least 8 characters"
-                        class="input input-bordered w-full" />
+                    <label class="input input-bordered flex items-center gap-2 w-full">
+                        <i data-lucide="lock" class="w-4 h-4 opacity-50"></i>
+                        <input id="regPassword" name="password" type="password" required placeholder="At least 8 characters"
+                            class="grow" />
+                    </label>
                     <div class="mt-2">
                         <progress id="regStrengthMeter" class="progress progress-error w-full" value="0"
                             max="100"></progress>
@@ -332,8 +335,11 @@
                 </div>
                 <div class="form-control">
                     <label class="label"><span class="label-text font-medium">Confirm Password</span></label>
-                    <input id="regConfirmPassword" name="password_confirmation" type="password" required
-                        placeholder="Confirm your password" class="input input-bordered w-full" />
+                    <label class="input input-bordered flex items-center gap-2 w-full">
+                        <i data-lucide="lock" class="w-4 h-4 opacity-50"></i>
+                        <input id="regConfirmPassword" name="password_confirmation" type="password" required
+                            placeholder="Confirm your password" class="grow" />
+                    </label>
                     <p id="regMatchHint" class="text-xs mt-1 opacity-60">Re-enter the same password.</p>
                 </div>
                 <div class="form-control">

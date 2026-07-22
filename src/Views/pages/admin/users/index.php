@@ -158,28 +158,28 @@
             <div class="form-control">
                 <label class="label"><span class="label-text font-medium">Full Name <span
                             class="text-error">*</span></span></label>
-                <input type="text" name="name" id="mu_name" required class="input input-bordered" />
+                <input type="text" name="name" id="mu_name" required class="input input-bordered w-full" />
             </div>
             <div class="form-control">
                 <label class="label"><span class="label-text font-medium">Email Address <span
                             class="text-error">*</span></span></label>
-                <input type="email" name="email" id="mu_email" required class="input input-bordered" />
+                <input type="email" name="email" id="mu_email" required class="input input-bordered w-full" />
             </div>
             <div class="form-control">
                 <label class="label"><span class="label-text font-medium">Phone Number <span
                             class="text-error">*</span></span></label>
                 <input type="tel" name="phone" id="mu_phone" required placeholder="+63 917 123 4567"
-                    class="input input-bordered" />
+                    class="input input-bordered w-full" />
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="form-control">
                     <label class="label"><span class="label-text font-medium" id="mu_password_label">Password <span
                                 class="text-error">*</span></span></label>
-                    <input type="password" name="password" id="mu_password" class="input input-bordered" />
+                    <input type="password" name="password" id="mu_password" class="input input-bordered w-full" />
                 </div>
                 <div class="form-control">
                     <label class="label"><span class="label-text font-medium">Role</span></label>
-                    <select id="mu_role" name="role" class="select select-bordered">
+                    <select id="mu_role" name="role" class="select select-bordered w-full">
                         <option value="user">User</option>
                         <option value="staff">Staff</option>
                         <option value="admin">Admin</option>
