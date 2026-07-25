@@ -15,7 +15,18 @@ class LeaseMappingManager extends Component
     use WithPagination, WithFileUploads;
 
     public $search = '';
+    public $statusFilter = '';
     public $showModal = false;
+
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingStatusFilter()
+    {
+        $this->resetPage();
+    }
 
     public $mappingId = null;
     public $user_id = '';
@@ -104,11 +115,21 @@ class LeaseMappingManager extends Component
         $query = StallMapping::with(['user', 'stall']);
 
         if ($this->search) {
-            $query->whereHas('user', function ($q) {
-                $q->where('name', 'like', "%{$this->search}%");
-            })->orWhereHas('stall', function ($q) {
-                $q->where('stall_number', 'like', "%{$this->search}%");
+            $query->where(function ($q) {
+                $q->whereHas('user', function ($u) {
+                    $u->where('name', 'like', "%{$this->search}%");
+                })->orWhereHas('stall', function ($s) {
+                    $s->where('stall_number', 'like', "%{$this->search}%");
+                });
             });
+        }
+
+        if ($this->statusFilter === 'active') {
+            $query->where('is_active', true);
+        } elseif ($this->statusFilter === 'requested') {
+            $query->where('renewal_status', 'requested');
+        } elseif ($this->statusFilter === 'terminated') {
+            $query->where('is_active', false);
         }
 
         return view('livewire.admin.lease-mapping-manager', [

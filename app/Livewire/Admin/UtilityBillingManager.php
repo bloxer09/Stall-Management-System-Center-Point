@@ -12,7 +12,20 @@ class UtilityBillingManager extends Component
 {
     use WithPagination;
 
+    public $search = '';
+    public $typeFilter = '';
     public $showModal = false;
+
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingTypeFilter()
+    {
+        $this->resetPage();
+    }
+
     public $stall_id = '';
     public $type = 'electricity';
     public $previous_reading = 0;
@@ -94,8 +107,20 @@ class UtilityBillingManager extends Component
 
     public function render()
     {
+        $query = UtilityReading::with('stall');
+
+        if ($this->search) {
+            $query->whereHas('stall', function ($q) {
+                $q->where('stall_number', 'like', "%{$this->search}%");
+            });
+        }
+
+        if ($this->typeFilter) {
+            $query->where('type', $this->typeFilter);
+        }
+
         return view('livewire.admin.utility-billing-manager', [
-            'readings' => UtilityReading::with('stall')->latest('reading_date')->paginate(10),
+            'readings' => $query->latest('reading_date')->paginate(10),
             'stalls' => Stall::all(),
         ]);
     }

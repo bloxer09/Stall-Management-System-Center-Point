@@ -36,18 +36,35 @@
         </label>
 
         <script>
-            function toggleAppTheme(checkbox) {
-                const theme = checkbox.checked ? 'dark' : 'light';
+            function applyAppTheme(theme) {
                 document.documentElement.setAttribute('data-theme', theme);
                 localStorage.setItem('theme', theme);
-            }
-            document.addEventListener('DOMContentLoaded', () => {
-                const currentTheme = document.documentElement.getAttribute('data-theme');
                 const toggle = document.getElementById('theme-toggle');
                 if (toggle) {
-                    toggle.checked = (currentTheme === 'dark');
+                    toggle.checked = (theme === 'dark');
                 }
-            });
+            }
+
+            function toggleAppTheme(checkbox) {
+                const theme = checkbox.checked ? 'dark' : 'light';
+                applyAppTheme(theme);
+            }
+
+            function syncThemeToggle() {
+                const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme', savedTheme);
+                const toggle = document.getElementById('theme-toggle');
+                if (toggle) {
+                    toggle.checked = (savedTheme === 'dark');
+                }
+            }
+
+            if (!window.__themeScriptInitialized) {
+                window.__themeScriptInitialized = true;
+                document.addEventListener('DOMContentLoaded', syncThemeToggle);
+                document.addEventListener('livewire:navigated', syncThemeToggle);
+            }
+            syncThemeToggle();
         </script>
 
         @auth

@@ -2,13 +2,13 @@
     <!-- Header -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-            <h2 class="text-2xl font-black tracking-tight">Stall & Floor Location Management</h2>
-            <p class="text-xs text-base-content/60 mt-1">Manage floor level locations, stall assignments, pricing, and grid layouts</p>
+            <h2 class="text-2xl font-black tracking-tight">Stall Catalogue & Inventory</h2>
+            <p class="text-xs text-base-content/60 mt-1">Manage commercial stall units, occupancy status, pricing, and details</p>
         </div>
         <div class="flex flex-wrap gap-2">
             <button wire:click="openModal" class="btn btn-primary btn-sm rounded-xl font-bold gap-1 shadow-xs">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                + Add Stall
+                Add Stall
             </button>
         </div>
     </div>
@@ -20,34 +20,7 @@
         </div>
     @endif
 
-    <!-- Section 1: Floor Locations Summary Cards -->
-    <div class="card bg-base-100 rounded-3xl shadow-md p-6 border border-base-300">
-        <h3 class="text-base font-extrabold text-base-content mb-3 flex items-center justify-between">
-            <span>Building Floor Levels & Zones</span>
-            <span class="text-xs font-normal text-base-content/60">{{ count($locations) }} active floor(s) configured</span>
-        </h3>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            @forelse($locations as $loc)
-                <div class="p-4 rounded-2xl border border-base-300 bg-base-200/50 flex justify-between items-start">
-                    <div>
-                        <div class="font-bold text-base-content text-sm">{{ $loc->name }}</div>
-                        <div class="text-xs text-base-content/60 mt-0.5">{{ $loc->description ?: 'No description' }}</div>
-                        <div class="text-[11px] text-base-content/50 mt-2 font-mono">
-                            Grid: {{ $loc->grid_rows }}x{{ $loc->grid_cols }} &bull; Stalls: {{ $loc->stalls_count ?? $loc->stalls()->count() }}
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-1">
-                        <button wire:click="openLocationModal({{ $loc->id }})" class="btn btn-ghost btn-xs text-primary font-bold">Edit</button>
-                        <button wire:click="deleteLocation({{ $loc->id }})" wire:confirm="Are you sure you want to delete floor location '{{ $loc->name }}'?" class="btn btn-ghost btn-xs text-error font-bold">Delete</button>
-                    </div>
-                </div>
-            @empty
-                <div class="col-span-3 text-center py-6 text-xs text-base-content/40 font-semibold">No floor locations added yet. Click "+ Add Floor" above to create one.</div>
-            @endforelse
-        </div>
-    </div>
-
-    <!-- Section 2: Stall Table with Filters -->
+    <!-- Stall Table with Filters -->
     <div class="card bg-base-100 shadow-md overflow-hidden border border-base-300 rounded-3xl">
         <!-- Search & Filter Bar -->
         <div class="p-4 bg-base-200/50 border-b border-base-300 flex flex-col md:flex-row gap-4 justify-between items-center">
@@ -75,6 +48,7 @@
             <table class="table w-full text-sm">
                 <thead>
                     <tr class="bg-base-200/40 text-base-content/70">
+                        <th class="font-bold">Photo</th>
                         <th class="font-bold">Stall Number</th>
                         <th class="font-bold">Floor Level</th>
                         <th class="font-bold">Monthly Price</th>
@@ -86,7 +60,16 @@
                 <tbody class="divide-y divide-base-200">
                     @forelse($stalls as $stall)
                         <tr class="hover:bg-base-200/40 transition">
-                            <td class="font-bold text-base-content">{{ $stall->stall_number }}</td>
+                            <td>
+                                @if($stall->image)
+                                    <img src="{{ asset('storage/' . $stall->image) }}" class="w-12 h-12 rounded-2xl object-cover border border-base-300 shadow-xs" alt="Stall Photo">
+                                @else
+                                    <div class="w-12 h-12 rounded-2xl bg-base-200 border border-base-300 flex items-center justify-center text-base-content/40">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                    </div>
+                                @endif
+                            </td>
+                            <td class="font-extrabold text-base-content">{{ $stall->stall_number }}</td>
                             <td>
                                 @if($stall->location)
                                     <span class="badge badge-primary font-bold text-xs">{{ $stall->location->name }}</span>
@@ -108,7 +91,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center py-10 text-base-content/40 text-xs font-semibold">No stalls found matching criteria.</td>
+                            <td colspan="7" class="text-center py-10 text-base-content/40 text-xs font-semibold">No stalls found matching criteria.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -125,6 +108,26 @@
             <div class="modal-box max-w-md p-6 bg-base-100 rounded-3xl border border-base-300 space-y-4">
                 <h3 class="text-lg font-bold text-base-content">{{ $stallId ? 'Edit Stall Details' : 'Add New Stall' }}</h3>
                 <form wire:submit.prevent="saveStall" class="space-y-4">
+                    <div class="form-control">
+                        <label class="label"><span class="label-text font-bold text-xs uppercase">Stall Photo / Cover Image</span></label>
+                        <input type="file" wire:model="image" accept="image/*" class="file-input file-input-bordered file-input-sm rounded-xl text-xs">
+                        @error('image') <span class="text-error text-xs mt-1">{{ $message }}</span> @enderror
+                        
+                        <div class="mt-2">
+                            @if($image)
+                                <div class="flex items-center gap-2">
+                                    <img src="{{ $image->temporaryUrl() }}" class="w-16 h-16 rounded-xl object-cover border border-base-300">
+                                    <span class="text-xs text-success font-bold">New image selected</span>
+                                </div>
+                            @elseif($existing_image)
+                                <div class="flex items-center gap-2">
+                                    <img src="{{ asset('storage/' . $existing_image) }}" class="w-16 h-16 rounded-xl object-cover border border-base-300">
+                                    <span class="text-xs text-base-content/60 font-medium">Current photo</span>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
                     <div class="form-control">
                         <label class="label"><span class="label-text font-bold text-xs uppercase">Stall Number *</span></label>
                         <input type="text" wire:model="stall_number" class="input input-bordered rounded-xl text-sm" placeholder="e.g. GF-101">

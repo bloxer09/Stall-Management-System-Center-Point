@@ -49,34 +49,34 @@
                 <tbody class="divide-y divide-base-200">
                     @forelse($tickets as $t)
                         <tr class="hover:bg-base-200/40 transition">
-                            <td class="font-mono text-xs font-bold text-primary">
+                            <td class="font-mono text-sm font-bold text-primary">
                                 #TKT-{{ str_pad($t->id, 5, '0', STR_PAD_LEFT) }}
                             </td>
                             <td>
-                                <div class="font-bold text-base-content">{{ $t->user->name ?? 'Tenant' }}</div>
-                                <div class="text-[11px] text-base-content/50">{{ $t->user->email ?? '' }}</div>
+                                <div class="font-extrabold text-sm text-base-content">{{ $t->user->name ?? 'Tenant' }}</div>
+                                <div class="text-xs font-medium text-base-content/70">{{ $t->user->email ?? '' }}</div>
                             </td>
                             <td>
                                 @if($t->stall)
-                                    <span class="badge badge-neutral font-mono font-bold text-xs">{{ $t->stall->stall_number }}</span>
+                                    <span class="badge badge-md badge-neutral font-mono font-bold text-xs">{{ $t->stall->stall_number }}</span>
                                 @else
-                                    <span class="text-xs text-base-content/40">General</span>
+                                    <span class="text-xs font-semibold text-base-content/60">General</span>
                                 @endif
                             </td>
-                            <td class="font-medium text-base-content/90 max-w-xs truncate">
+                            <td class="font-semibold text-sm text-base-content max-w-xs truncate">
                                 {{ $t->issue }}
                             </td>
                             <td>
-                                <span class="badge badge-sm font-bold uppercase {{ $t->status === 'open' ? 'badge-info text-white' : ($t->status === 'closed' ? 'badge-neutral' : 'badge-warning') }}">
+                                <span class="badge badge-md font-bold uppercase {{ $t->status === 'open' ? 'badge-info text-white' : ($t->status === 'closed' ? 'badge-neutral' : 'badge-warning') }}">
                                     {{ $t->status }}
                                 </span>
                             </td>
-                            <td class="text-xs text-base-content/60">
+                            <td class="text-xs font-semibold text-base-content/70">
                                 {{ $t->updated_at->diffForHumans() }}
                             </td>
                             <td class="text-right">
-                                <button wire:click="openThreadModal({{ $t->id }})" class="btn btn-primary btn-xs rounded-xl font-bold gap-1 shadow-xs">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                                <button wire:click="openThreadModal({{ $t->id }})" class="btn btn-primary btn-sm rounded-xl font-bold gap-1 shadow-xs">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                                     Chat ({{ $t->messages->count() }})
                                 </button>
                             </td>
@@ -174,11 +174,23 @@
                 </div>
 
                 <!-- Chat Reply Footer Form -->
-                <form wire:submit.prevent="sendMessage" class="p-3 bg-base-200/50 border-t border-base-300 flex items-center gap-2">
-                    <input type="text" wire:model="newMessage" placeholder="Type staff response..." required class="input input-sm input-bordered flex-1 rounded-xl text-xs" />
-                    <button type="submit" class="btn btn-primary btn-sm rounded-xl font-bold px-3">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-                    </button>
+                <form wire:submit.prevent="sendMessage" class="p-3 bg-base-200/50 border-t border-base-300 flex flex-col gap-2">
+                    @if($attachment)
+                        <div class="flex items-center justify-between text-[11px] bg-primary/10 text-primary px-3 py-1 rounded-xl border border-primary/20">
+                            <span class="truncate font-bold max-w-[220px]">📎 {{ $attachment->getClientOriginalName() }}</span>
+                            <button type="button" wire:click="$set('attachment', null)" class="text-error font-bold hover:scale-110 ml-2">&times;</button>
+                        </div>
+                    @endif
+                    <div class="flex items-center gap-2">
+                        <label class="btn btn-ghost btn-circle btn-xs text-base-content/70 hover:text-primary cursor-pointer" title="Attach File or Image">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                            <input type="file" wire:model="attachment" class="hidden">
+                        </label>
+                        <input type="text" wire:model="newMessage" placeholder="Type staff response..." required class="input input-sm input-bordered flex-1 rounded-xl text-xs" />
+                        <button type="submit" class="btn btn-primary btn-sm rounded-xl font-bold px-3">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                        </button>
+                    </div>
                 </form>
             </div>
         @endif

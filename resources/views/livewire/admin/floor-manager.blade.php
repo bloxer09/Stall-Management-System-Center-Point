@@ -7,7 +7,7 @@
         </div>
         <button wire:click="openModal" class="btn btn-primary btn-sm rounded-xl font-bold gap-1.5 shadow-xs">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            + Add Floor Level
+            Add Floor Level
         </button>
     </div>
 
@@ -46,27 +46,27 @@
                 <tbody class="divide-y divide-base-200">
                     @forelse($floors as $floor)
                         <tr class="hover:bg-base-200/40 transition">
-                            <td class="font-mono text-xs font-bold opacity-60">#{{ $floor->sort_order }}</td>
-                            <td class="font-bold text-base-content flex items-center gap-2">
-                                <div class="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
+                            <td class="font-mono text-sm font-bold text-base-content/70">#{{ $floor->sort_order }}</td>
+                            <td class="font-bold text-base-content flex items-center gap-2 py-3">
+                                <div class="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-sm font-black">
                                     {{ strtoupper(substr($floor->name, 0, 1)) }}
                                 </div>
-                                <span>{{ $floor->name }}</span>
+                                <span class="text-base font-extrabold text-base-content">{{ $floor->name }}</span>
                             </td>
-                            <td class="text-base-content/60 text-xs">{{ $floor->description ?: 'No description provided.' }}</td>
-                            <td class="font-mono text-xs text-primary font-semibold">
+                            <td class="text-sm text-base-content/80 font-medium max-w-md">{{ $floor->description ?: 'No description provided.' }}</td>
+                            <td class="font-mono text-sm text-primary font-bold">
                                 {{ $floor->grid_rows }} Rows &times; {{ $floor->grid_cols }} Cols
                             </td>
                             <td>
-                                <span class="badge badge-info text-white font-bold text-xs">
+                                <span class="badge badge-md badge-primary font-bold text-xs">
                                     {{ $floor->stalls_count }} Stalls
                                 </span>
                             </td>
                             <td class="text-right space-x-1">
-                                <button wire:click="openModal({{ $floor->id }})" class="btn btn-ghost btn-xs text-primary font-bold">
+                                <button wire:click="openModal({{ $floor->id }})" class="btn btn-ghost btn-sm text-primary font-bold">
                                     Edit
                                 </button>
-                                <button wire:click="deleteFloor({{ $floor->id }})" wire:confirm="Are you sure you want to delete '{{ $floor->name }}'?" class="btn btn-ghost btn-xs text-error font-bold">
+                                <button wire:click="deleteFloor({{ $floor->id }})" wire:confirm="Are you sure you want to delete '{{ $floor->name }}'?" class="btn btn-ghost btn-sm text-error font-bold">
                                     Delete
                                 </button>
                             </td>

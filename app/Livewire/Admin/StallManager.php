@@ -6,12 +6,14 @@ use App\Models\AuditLog;
 use App\Models\Stall;
 use App\Models\StallLocation;
 use Illuminate\Support\Facades\Auth;
+use App\Services\FileUploadService;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
 class StallManager extends Component
 {
-    use WithPagination;
+    use WithFileUploads, WithPagination;
 
     public $search = '';
     public $locationFilter = '';
@@ -24,6 +26,8 @@ class StallManager extends Component
     public $price = '';
     public $status = 'available';
     public $description = '';
+    public $image = null;
+    public $existing_image = null;
     public $showModal = false;
 
     // Floor Location Form Fields
@@ -41,11 +45,13 @@ class StallManager extends Component
         'price' => 'required|numeric|min:0',
         'status' => 'required|in:available,occupied,maintenance',
         'description' => 'nullable|string',
+        'image' => 'nullable|image|max:5120',
     ];
 
     public function openModal($id = null)
     {
         $this->resetValidation();
+        $this->reset(['image', 'existing_image']);
         if ($id) {
             $stall = Stall::findOrFail($id);
             $this->stallId = $stall->id;
@@ -54,8 +60,9 @@ class StallManager extends Component
             $this->price = $stall->price;
             $this->status = $stall->status;
             $this->description = $stall->description;
+            $this->existing_image = $stall->image;
         } else {
-            $this->reset(['stallId', 'stall_number', 'location_id', 'price', 'status', 'description']);
+            $this->reset(['stallId', 'stall_number', 'location_id', 'price', 'status', 'description', 'image', 'existing_image']);
         }
         $this->showModal = true;
     }
@@ -63,11 +70,17 @@ class StallManager extends Component
     public function closeModal()
     {
         $this->showModal = false;
+        $this->reset(['image', 'existing_image']);
     }
 
-    public function saveStall()
+    public function saveStall(FileUploadService $uploader)
     {
         $this->validate();
+
+        $imagePath = $this->existing_image;
+        if ($this->image) {
+            $imagePath = $uploader->uploadStallImage($this->image);
+        }
 
         Stall::updateOrCreate(
             ['id' => $this->stallId],
@@ -77,6 +90,7 @@ class StallManager extends Component
                 'price' => $this->price,
                 'status' => $this->status,
                 'description' => $this->description,
+                'image' => $imagePath,
             ]
         );
 

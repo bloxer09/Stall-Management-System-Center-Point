@@ -68,6 +68,12 @@
             @forelse($stalls as $stall)
                 <div class="card bg-base-100 rounded-3xl border border-base-300 shadow-md p-5 hover:border-primary/50 transition flex flex-col justify-between">
                     <div>
+                        @if($stall->image)
+                            <div class="w-full h-36 mb-3 rounded-2xl overflow-hidden border border-base-300">
+                                <img src="{{ asset('storage/' . $stall->image) }}" class="w-full h-full object-cover hover:scale-105 transition duration-300" alt="Stall Photo">
+                            </div>
+                        @endif
+
                         <div class="flex items-center justify-between">
                             <span class="badge badge-sm font-bold uppercase {{ $stall->status === 'available' ? 'badge-success text-white' : ($stall->status === 'occupied' ? 'badge-error text-white' : 'badge-warning') }}">
                                 {{ $stall->status }}
