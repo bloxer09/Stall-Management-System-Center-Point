@@ -1,20 +1,17 @@
 {
-  "name": "stallm",
-  "version": "1.0.0",
-  "description": "Stall Management frontend tooling",
-  "main": "index.js",
-  "scripts": {
-    "build:css": "tailwindcss -i ./public/assets/css/input.css -o ./public/assets/css/output.css --minify",
-    "watch:css": "tailwindcss -i ./public/assets/css/input.css -o ./public/assets/css/output.css --watch",
-    "test": "phpunit"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "devDependencies": {
-    "@tailwindcss/cli": "^4.3.3",
-    "daisyui": "^5.7.0",
-    "tailwindcss": "^4.2.1"
-  }
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build"
+    },
+    "devDependencies": {
+        "@tailwindcss/forms": "^0.5.7",
+        "autoprefixer": "^10.4.19",
+        "daisyui": "^4.12.10",
+        "laravel-vite-plugin": "^1.0.0",
+        "postcss": "^8.4.38",
+        "tailwindcss": "^3.4.3",
+        "vite": "^5.2.0"
+    }
 }
