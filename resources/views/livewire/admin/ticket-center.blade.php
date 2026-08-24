@@ -55,9 +55,9 @@
                             </td>
                             <td>
                                 <div class="flex items-center gap-2.5">
-                                    <div class="avatar placeholder">
-                                        <div class="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center border border-primary/20">
-                                            <span>{{ strtoupper(substr($t->user->name ?? 'T', 0, 1)) }}</span>
+                                    <div class="avatar">
+                                        <div class="w-8 h-8 rounded-full overflow-hidden border border-primary/20 shadow-xs">
+                                            <img src="{{ $t->user->avatar_url }}" onclick="openImageLightbox(this.src)" class="w-full h-full object-cover cursor-pointer" alt="Tenant Avatar" title="Click to view full photo">
                                         </div>
                                     </div>
                                     <div>
@@ -69,9 +69,9 @@
                             <td>
                                 @if($t->handler)
                                     <div class="flex items-center gap-2">
-                                        <div class="avatar placeholder">
-                                            <div class="w-6 h-6 rounded-full bg-success/20 text-success font-bold text-[10px] flex items-center justify-center">
-                                                <span>{{ strtoupper(substr($t->handler->name, 0, 1)) }}</span>
+                                        <div class="avatar">
+                                            <div class="w-6 h-6 rounded-full overflow-hidden border border-success/30 shadow-xs">
+                                                <img src="{{ $t->handler->avatar_url }}" onclick="openImageLightbox(this.src)" class="w-full h-full object-cover cursor-pointer" alt="Handler Avatar" title="Click to view full photo">
                                             </div>
                                         </div>
                                         <span class="text-xs font-bold text-base-content">{{ $t->handler->name }}</span>
@@ -101,6 +101,11 @@
                                 {{ $t->updated_at->diffForHumans() }}
                             </td>
                             <td class="text-right space-x-1">
+                                @if($t->assigned_to === null)
+                                    <button wire:click="claimTicket({{ $t->id }})" class="btn btn-warning btn-sm rounded-xl font-bold shadow-xs">
+                                        + Claim Ticket
+                                    </button>
+                                @endif
                                 <button wire:click="openThreadModal({{ $t->id }})" class="btn btn-primary btn-sm rounded-xl font-bold gap-1 shadow-xs">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                                     Chat ({{ $t->messages->count() }})
@@ -145,9 +150,9 @@
                 <!-- Mini Tab Header -->
                 <div class="bg-base-200/90 backdrop-blur-md px-4 py-3 border-b border-base-300 flex items-center justify-between">
                     <div class="flex items-center gap-2.5 truncate">
-                        <div class="avatar placeholder">
-                            <div class="bg-primary text-primary-content rounded-full w-8 h-8 font-bold text-xs flex items-center justify-center">
-                                <span>{{ strtoupper(substr($selectedTicket->user->name ?? 'T', 0, 1)) }}</span>
+                        <div class="avatar">
+                            <div class="w-8 h-8 rounded-full overflow-hidden border border-primary/20 shadow-xs">
+                                <img src="{{ $selectedTicket->user->avatar_url }}" onclick="openImageLightbox(this.src)" class="w-full h-full object-cover cursor-pointer" alt="Tenant Avatar" title="Click to view full photo">
                             </div>
                         </div>
                         <div class="truncate">
@@ -180,6 +185,11 @@
                 <div class="flex-1 overflow-y-auto p-4 space-y-3 bg-base-100">
                     @forelse($selectedTicket->messages as $msg)
                         <div class="chat {{ $msg->user_id === auth()->id() ? 'chat-end' : 'chat-start' }}">
+                            <div class="chat-image avatar">
+                                <div class="w-7 h-7 rounded-full overflow-hidden border border-base-300 shadow-xs">
+                                    <img src="{{ $msg->user->avatar_url }}" onclick="openImageLightbox(this.src)" class="w-full h-full object-cover cursor-pointer" alt="User Avatar" title="Click to view photo">
+                                </div>
+                            </div>
                             <div class="chat-header text-[10px] text-base-content/50 font-semibold mb-0.5 flex items-center gap-1">
                                 <span>{{ $msg->user->name }}</span>
                                 <time class="text-[9px] opacity-60 ml-1">{{ $msg->created_at->format('h:i A') }}</time>
@@ -193,9 +203,9 @@
                                     @endphp
                                     <div class="mt-2 pt-2 border-t border-current/20">
                                         @if($isImage)
-                                            <a href="{{ route('file.ticket-attachment', $msg->id) }}" target="_blank" class="block group">
-                                                <img src="{{ route('file.ticket-attachment', $msg->id) }}" alt="Attachment Preview" class="max-w-[200px] max-h-40 rounded-xl object-cover border border-base-300 shadow-xs group-hover:scale-105 transition">
-                                            </a>
+                                            <div onclick="openImageLightbox('{{ route('file.ticket-attachment', $msg->id) }}')" class="block group cursor-pointer">
+                                                <img src="{{ route('file.ticket-attachment', $msg->id) }}" alt="Attachment Preview" class="max-w-[200px] max-h-40 rounded-xl object-cover border border-base-300 shadow-xs group-hover:scale-105 transition cursor-pointer" title="Click to view full photo">
+                                            </div>
                                         @else
                                             <a href="{{ route('file.ticket-attachment', $msg->id) }}" target="_blank" class="flex items-center gap-1.5 p-2 rounded-xl bg-base-100/30 border border-current/20 text-xs font-bold underline">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>

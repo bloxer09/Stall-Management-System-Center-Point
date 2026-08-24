@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Payment;
+use App\Models\Invoice;
+use App\Models\PaymentTransaction;
 use App\Services\PayMongoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -36,11 +37,21 @@ class PayMongoWebhookController extends Controller
             $paymentMethod = $session['attributes']['payment_method_used'] ?? 'paymongo';
 
             if ($sessionId) {
-                Payment::where('paymongo_id', $sessionId)->update([
-                    'status' => 'paid',
-                    'paid_at' => now(),
-                    'payment_method' => $paymentMethod,
-                ]);
+                $transactions = PaymentTransaction::where('gateway_transaction_id', $sessionId)->get();
+
+                foreach ($transactions as $txn) {
+                    $txn->update([
+                        'status' => 'successful',
+                        'gateway' => $paymentMethod,
+                        'paid_at' => now(),
+                        'payload' => $session,
+                    ]);
+
+                    Invoice::where('id', $txn->invoice_id)->update([
+                        'status' => 'paid',
+                        'paid_at' => now(),
+                    ]);
+                }
             }
         }
 

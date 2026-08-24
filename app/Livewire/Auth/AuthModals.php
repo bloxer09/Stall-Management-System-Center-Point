@@ -14,8 +14,7 @@ use Livewire\Component;
 class AuthModals extends Component
 {
     public bool $isOpen = false;
-    public bool $showConfirmClose = false;
-    public string $activeTab = 'login'; // login, register, otp, forgot
+    public string $activeTab = 'login'; // login, register, forgot
 
     // Login Form
     public string $loginEmail = '';
@@ -30,11 +29,16 @@ class AuthModals extends Component
     public string $regPasswordConfirmation = '';
     public bool $terms = false;
 
-    // OTP Form
-    public string $otpInput = '';
-    public ?string $generatedOtp = null;
-    public ?int $pendingUserId = null;
     public bool $isMailConfigured = false;
+
+    // Forgot Password Form
+    public string $forgotEmail = '';
+    public string $forgotOtpInput = '';
+    public string $newPassword = '';
+    public string $newPasswordConfirmation = '';
+    public string $forgotStep = 'request'; // request, verify, success
+    public ?string $generatedForgotOtp = null;
+    public ?int $forgotUserId = null;
 
     public function mount()
     {
@@ -53,7 +57,6 @@ class AuthModals extends Component
         $this->resetValidation();
         $this->activeTab = 'login';
         $this->isOpen = true;
-        $this->showConfirmClose = false;
     }
 
     #[On('open-register-modal')]
@@ -62,32 +65,112 @@ class AuthModals extends Component
         $this->resetValidation();
         $this->activeTab = 'register';
         $this->isOpen = true;
-        $this->showConfirmClose = false;
+    }
+
+    #[On('open-forgot-password-modal')]
+    public function openForgotPassword(?string $email = null)
+    {
+        $this->resetValidation();
+        $this->activeTab = 'forgot';
+        $this->forgotStep = 'request';
+        if (!empty($email)) {
+            $this->forgotEmail = $email;
+        }
+        $this->isOpen = true;
+    }
+
+    public function processForgotPasswordRequest(MailjetMailer $mailer, SmsService $smsService)
+    {
+        $this->validate([
+            'forgotEmail' => 'required|email|exists:users,email',
+        ], [
+            'forgotEmail.exists' => 'No account found with this email address.',
+        ]);
+
+        $user = User::where('email', $this->forgotEmail)->first();
+        if (!$user) {
+            $this->addError('forgotEmail', 'No account found with this email address.');
+            return;
+        }
+
+        $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $this->generatedForgotOtp = $otp;
+        $this->forgotUserId = $user->id;
+
+        session([
+            'forgot_otp_hash' => hash('sha256', $otp),
+            'forgot_otp_user_id' => $user->id,
+            'forgot_otp_expires_at' => now()->addMinutes(10)->timestamp,
+        ]);
+
+        $sent = $mailer->sendOtp($user->email, $user->name, $otp);
+        $this->isMailConfigured = $sent;
+
+        if ($user->phone) {
+            try {
+                $smsService->sendSms($user->phone, "STALLM Password Reset Code: {$otp}. Valid for 10 minutes.");
+            } catch (\Exception $e) {
+                // Ignore SMS errors for local dev
+            }
+        }
+
+        $this->forgotStep = 'verify';
+    }
+
+    public function verifyForgotPasswordOtp()
+    {
+        $this->validate([
+            'forgotOtpInput' => 'required|numeric|digits:6',
+            'newPassword' => 'required|string|min:8|same:newPasswordConfirmation',
+        ]);
+
+        $key = 'forgot-otp:' . ($this->forgotUserId ?? 'guest');
+        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($key, 5)) {
+            $seconds = \Illuminate\Support\Facades\RateLimiter::availableIn($key);
+            $this->addError('forgotOtpInput', "Too many invalid OTP attempts. Please try again in {$seconds} seconds.");
+            return;
+        }
+
+        $expiresAt = session('forgot_otp_expires_at');
+        if (!$expiresAt || now()->timestamp > $expiresAt) {
+            $this->addError('forgotOtpInput', 'Your reset code has expired. Please request a new one.');
+            session()->forget(['forgot_otp_hash', 'forgot_otp_user_id', 'forgot_otp_expires_at']);
+            return;
+        }
+
+        $sessionHash = session('forgot_otp_hash');
+        $sessionUserId = session('forgot_otp_user_id');
+        $inputHash = hash('sha256', $this->forgotOtpInput);
+
+        if (hash_equals($sessionHash ?? '', $inputHash) && $this->forgotUserId === $sessionUserId) {
+            \Illuminate\Support\Facades\RateLimiter::clear($key);
+            $user = User::find($this->forgotUserId);
+            if ($user) {
+                $user->password = Hash::make($this->newPassword);
+                $user->save();
+
+                session()->forget(['forgot_otp_hash', 'forgot_otp_user_id', 'forgot_otp_expires_at']);
+                $this->forgotStep = 'success';
+                return;
+            }
+        }
+
+        \Illuminate\Support\Facades\RateLimiter::hit($key, 300);
+        $this->addError('forgotOtpInput', 'Invalid security code. Please check and try again.');
     }
 
     public function requestCloseModal()
     {
-        if ($this->activeTab === 'otp') {
-            $this->showConfirmClose = true;
-            return;
-        }
-
         $this->forceCloseModal();
-    }
-
-    public function cancelConfirmClose()
-    {
-        $this->showConfirmClose = false;
     }
 
     public function forceCloseModal()
     {
         $this->isOpen = false;
-        $this->showConfirmClose = false;
-        $this->reset(['otpInput', 'loginPassword', 'regPassword', 'regPasswordConfirmation']);
+        $this->reset(['loginPassword', 'regPassword', 'regPasswordConfirmation']);
     }
 
-    public function processLogin(MailjetMailer $mailer, SmsService $smsService)
+    public function processLogin()
     {
         $this->validate([
             'loginEmail' => 'required|email',
@@ -101,48 +184,14 @@ class AuthModals extends Component
             return;
         }
 
-        // Trigger 2FA OTP
-        $this->pendingUserId = $user->id;
-        $this->generatedOtp = (string) rand(100000, 999999);
-        session(['auth_otp' => $this->generatedOtp, 'auth_otp_user_id' => $user->id]);
+        Auth::login($user, $this->remember);
+        session()->regenerate();
+        $this->forceCloseModal();
 
-        Log::info("2FA OTP generated for user {$user->email}: {$this->generatedOtp}");
-
-        // Attempt dispatch via Mailjet & SMS
-        $sent = $mailer->sendOtp($user->email, $user->name, $this->generatedOtp);
-        $this->isMailConfigured = $sent;
-
-        if ($user->phone) {
-            $smsService->sendSms($user->phone, "STALLM 2FA Security OTP Code: {$this->generatedOtp}. Valid for 10 minutes.");
+        if ($user->isAdmin()) {
+            return redirect()->route('admin.dashboard');
         }
-
-        $this->activeTab = 'otp';
-    }
-
-    public function verifyOtp()
-    {
-        $this->validate([
-            'otpInput' => 'required|numeric|digits:6',
-        ]);
-
-        $sessionOtp = session('auth_otp');
-        $sessionUserId = session('auth_otp_user_id');
-
-        if ($this->otpInput === $sessionOtp && $this->pendingUserId === $sessionUserId) {
-            $user = User::find($this->pendingUserId);
-            if ($user) {
-                Auth::login($user, $this->remember);
-                session()->forget(['auth_otp', 'auth_otp_user_id']);
-                $this->forceCloseModal();
-
-                if ($user->isAdmin()) {
-                    return redirect()->route('admin.dashboard');
-                }
-                return redirect()->route('user.dashboard');
-            }
-        }
-
-        $this->addError('otpInput', 'Invalid 2FA verification code. Please check and try again.');
+        return redirect()->route('user.dashboard');
     }
 
     public function processRegister()
@@ -174,3 +223,4 @@ class AuthModals extends Component
         return view('livewire.auth.auth-modals');
     }
 }
+

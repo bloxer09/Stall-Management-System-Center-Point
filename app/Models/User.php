@@ -64,9 +64,14 @@ class User extends Authenticatable
         return $this->hasMany(StallMapping::class)->where('is_active', true);
     }
 
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
     public function payments()
     {
-        return $this->hasMany(Payment::class);
+        return $this->hasMany(Invoice::class);
     }
 
     public function tickets()

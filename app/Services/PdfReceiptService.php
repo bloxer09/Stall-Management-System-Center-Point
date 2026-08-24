@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Payment;
+use App\Models\Invoice;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Support\Facades\View;
@@ -16,20 +16,20 @@ class PdfReceiptService
         $this->qrCodeService = $qrCodeService;
     }
 
-    public function generateReceiptPdf(Payment $payment): string
+    public function generateReceiptPdf(Invoice $invoice): string
     {
-        $payment->load(['user', 'stall.location']);
-        $verificationUrl = route('receipt.verify', ['id' => $payment->id]);
+        $invoice->load(['user', 'stall.location', 'transactions', 'items']);
+        $verificationUrl = route('receipt.verify', ['id' => $invoice->id]);
         $qrCodeSvg = $this->qrCodeService->generateSvg($verificationUrl, 120);
 
         $html = View::make('pdf.receipt', [
-            'payment' => $payment,
+            'payment' => $invoice,
             'qrCode' => $qrCodeSvg,
             'verificationUrl' => $verificationUrl,
         ])->render();
 
         $options = new Options();
-        $options->set('isRemoteEnabled', true);
+        $options->set('isRemoteEnabled', false);
         $options->set('defaultFont', 'Helvetica');
 
         $dompdf = new Dompdf($options);

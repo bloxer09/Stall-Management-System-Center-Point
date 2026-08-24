@@ -3,8 +3,10 @@
 namespace Database\Seeders;
 
 use App\Models\AuditLog;
+use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use App\Models\Notification;
-use App\Models\Payment;
+use App\Models\PaymentTransaction;
 use App\Models\Setting;
 use App\Models\Stall;
 use App\Models\StallApplication;
@@ -14,7 +16,6 @@ use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\TicketParticipant;
 use App\Models\User;
-use App\Models\UtilityReading;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
@@ -163,7 +164,7 @@ class DatabaseSeeder extends Seeder
             );
         }
 
-        // 5. Populate Monthly Payments (12 months trend data for Chart.js)
+        // 5. Populate Monthly Invoices (12 months trend data for Chart.js)
         $methods = ['gcash', 'maya', 'card', 'cash'];
         foreach ($tenants as $tIndex => $tenant) {
             $activeMapping = StallMapping::where('user_id', $tenant->id)->where('is_active', true)->first();
@@ -174,40 +175,86 @@ class DatabaseSeeder extends Seeder
             // Past 12 Months Paid Transactions
             for ($m = 11; $m >= 1; $m--) {
                 $monthDate = Carbon::now()->subMonths($m);
-                Payment::firstOrCreate(
+                $period = $monthDate->format('Y-m');
+                $invoiceNum = 'INV-' . $monthDate->format('Ym') . '-' . str_pad($stall->id, 4, '0', STR_PAD_LEFT);
+
+                $invoice = Invoice::firstOrCreate(
                     [
                         'user_id' => $tenant->id,
                         'stall_id' => $stall->id,
-                        'due_date' => $monthDate->endOfMonth()->toDateString(),
+                        'billing_period' => $period,
                     ],
                     [
-                        'amount' => $stall->price,
+                        'invoice_number' => $invoiceNum,
+                        'total_amount' => $stall->price,
                         'status' => 'paid',
-                        'payment_method' => $methods[rand(0, 3)],
-                        'payment_reference' => 'PAY-' . strtoupper(bin2hex(random_bytes(4))),
+                        'due_date' => $monthDate->endOfMonth()->toDateString(),
                         'paid_at' => $monthDate->copy()->day(rand(5, 25)),
-                        'payment_notes' => 'Monthly rental invoice settled in full.',
+                        'notes' => 'Monthly rental invoice settled in full.',
                     ]
                 );
+
+                InvoiceItem::firstOrCreate([
+                    'invoice_id' => $invoice->id,
+                    'description' => 'Monthly Stall Rental - ' . $monthDate->format('F Y'),
+                ], [
+                    'amount' => $stall->price,
+                    'item_type' => 'rent',
+                ]);
+
+                PaymentTransaction::firstOrCreate([
+                    'invoice_id' => $invoice->id,
+                    'user_id' => $tenant->id,
+                ], [
+                    'gateway' => $methods[rand(0, 3)],
+                    'gateway_transaction_id' => 'TXN-' . strtoupper(bin2hex(random_bytes(4))),
+                    'amount' => $stall->price,
+                    'status' => 'successful',
+                    'paid_at' => $invoice->paid_at,
+                ]);
             }
 
             // Current Month Invoice (Some paid, some pending)
             $isPaidCurrent = $tIndex % 2 == 0;
-            Payment::firstOrCreate(
+            $currentPeriod = Carbon::now()->format('Y-m');
+            $currentInvoiceNum = 'INV-' . Carbon::now()->format('Ym') . '-' . str_pad($stall->id, 4, '0', STR_PAD_LEFT);
+
+            $currentInvoice = Invoice::firstOrCreate(
                 [
                     'user_id' => $tenant->id,
                     'stall_id' => $stall->id,
-                    'due_date' => Carbon::now()->endOfMonth()->toDateString(),
+                    'billing_period' => $currentPeriod,
                 ],
                 [
-                    'amount' => $stall->price,
+                    'invoice_number' => $currentInvoiceNum,
+                    'total_amount' => $stall->price,
                     'status' => $isPaidCurrent ? 'paid' : 'pending',
-                    'payment_method' => $isPaidCurrent ? $methods[rand(0, 2)] : null,
-                    'payment_reference' => $isPaidCurrent ? 'PAY-' . strtoupper(bin2hex(random_bytes(4))) : null,
+                    'due_date' => Carbon::now()->endOfMonth()->toDateString(),
                     'paid_at' => $isPaidCurrent ? Carbon::now()->subDays(rand(1, 5)) : null,
-                    'payment_notes' => 'Current billing period invoice.',
+                    'notes' => 'Current billing period invoice.',
                 ]
             );
+
+            InvoiceItem::firstOrCreate([
+                'invoice_id' => $currentInvoice->id,
+                'description' => 'Monthly Stall Rental - ' . Carbon::now()->format('F Y'),
+            ], [
+                'amount' => $stall->price,
+                'item_type' => 'rent',
+            ]);
+
+            if ($isPaidCurrent) {
+                PaymentTransaction::firstOrCreate([
+                    'invoice_id' => $currentInvoice->id,
+                    'user_id' => $tenant->id,
+                ], [
+                    'gateway' => $methods[rand(0, 2)],
+                    'gateway_transaction_id' => 'TXN-' . strtoupper(bin2hex(random_bytes(4))),
+                    'amount' => $stall->price,
+                    'status' => 'successful',
+                    'paid_at' => $currentInvoice->paid_at,
+                ]);
+            }
         }
 
         // 6. Create Support Tickets and Threaded Chat Messages
@@ -267,38 +314,11 @@ class DatabaseSeeder extends Seeder
             );
         }
 
-        // 8. Metered Utility Readings
-        foreach ($stalls as $s) {
-            // Electricity Reading
-            UtilityReading::firstOrCreate(
-                ['stall_id' => $s->id, 'type' => 'electricity', 'reading_date' => Carbon::now()->startOfMonth()->toDateString()],
-                [
-                    'previous_reading' => 1000.00,
-                    'current_reading' => 1350.00,
-                    'rate_per_unit' => 12.50,
-                    'total_amount' => 4375.00,
-                    'is_billed' => true,
-                ]
-            );
-
-            // Water Reading
-            UtilityReading::firstOrCreate(
-                ['stall_id' => $s->id, 'type' => 'water', 'reading_date' => Carbon::now()->startOfMonth()->toDateString()],
-                [
-                    'previous_reading' => 200.00,
-                    'current_reading' => 225.00,
-                    'rate_per_unit' => 45.00,
-                    'total_amount' => 1125.00,
-                    'is_billed' => true,
-                ]
-            );
-        }
-
-        // 9. Audit Logs
+        // 8. Audit Logs
         AuditLog::create(['user_id' => $admin->id, 'action' => 'System Database Seeding Completed', 'entity_type' => 'System', 'entity_id' => 1, 'ip_address' => '127.0.0.1']);
         AuditLog::create(['user_id' => $admin->id, 'action' => 'Generated Monthly Rental Invoices', 'entity_type' => 'Payment', 'entity_id' => 1, 'ip_address' => '127.0.0.1']);
 
-        // 10. System Settings
+        // 9. System Settings
         Setting::updateOrCreate(['setting_key' => 'privacy_policy'], ['setting_value' => 'Center Point Stall Management Privacy Policy']);
         Setting::updateOrCreate(['setting_key' => 'terms_conditions'], ['setting_value' => 'Center Point Stall Rental Terms and Conditions']);
 

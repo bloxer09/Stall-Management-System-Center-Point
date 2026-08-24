@@ -84,12 +84,7 @@ class TicketManager extends Component
             ->where('is_active', true)
             ->get();
 
-        if ($activeLeases->isEmpty()) {
-            $this->addError('stall_id', 'You must have at least 1 active leased stall to open a support ticket.');
-            return;
-        }
-
-        $assignedStallId = $this->stall_id ?: $activeLeases->first()->stall_id;
+        $assignedStallId = $this->stall_id ?: ($activeLeases->first()?->stall_id ?? null);
 
         $ticket = Ticket::create([
             'user_id' => auth()->id(),
@@ -103,6 +98,17 @@ class TicketManager extends Component
             'user_id' => auth()->id(),
             'message' => $this->issue,
         ]);
+
+        $admins = \App\Models\User::whereIn('role', ['admin', 'staff'])->get();
+        foreach ($admins as $adm) {
+            \App\Models\Notification::send(
+                $adm->id,
+                'ticket',
+                "New Ticket #TKT-" . str_pad($ticket->id, 5, '0', STR_PAD_LEFT),
+                auth()->user()->name . " submitted a new ticket: " . \Illuminate\Support\Str::limit($this->issue, 60),
+                route('admin.tickets')
+            );
+        }
 
         session()->flash('message', 'Support ticket created successfully!');
         $this->closeCreateModal();
@@ -177,6 +183,29 @@ class TicketManager extends Component
             'attachment_path' => $filePath,
             'reply_to_message_id' => $this->replyToMessageId,
         ]);
+
+        $ticket->touch();
+
+        if ($ticket->assigned_to) {
+            \App\Models\Notification::send(
+                $ticket->assigned_to,
+                'ticket_message',
+                "New reply on Ticket #TKT-" . str_pad($ticket->id, 5, '0', STR_PAD_LEFT),
+                auth()->user()->name . ": " . \Illuminate\Support\Str::limit($this->message, 60),
+                route('admin.tickets')
+            );
+        } else {
+            $admins = \App\Models\User::whereIn('role', ['admin', 'staff'])->get();
+            foreach ($admins as $adm) {
+                \App\Models\Notification::send(
+                    $adm->id,
+                    'ticket_message',
+                    "New message on Ticket #TKT-" . str_pad($ticket->id, 5, '0', STR_PAD_LEFT),
+                    auth()->user()->name . ": " . \Illuminate\Support\Str::limit($this->message, 60),
+                    route('admin.tickets')
+                );
+            }
+        }
 
         $this->reset(['message', 'attachment', 'replyToMessageId']);
         $this->markAsRead();

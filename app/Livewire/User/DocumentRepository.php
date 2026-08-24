@@ -2,7 +2,7 @@
 
 namespace App\Livewire\User;
 
-use App\Models\Payment;
+use App\Models\Invoice;
 use App\Models\StallMapping;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
@@ -19,7 +19,7 @@ class DocumentRepository extends Component
             ->latest()
             ->get();
 
-        $paidReceipts = Payment::with('stall')
+        $paidReceipts = Invoice::with('stall')
             ->where('user_id', $userId)
             ->where('status', 'paid')
             ->latest('paid_at')

@@ -89,6 +89,26 @@ To ensure the system is robust, secure, and user-friendly, the researchers utili
 - Visual Studio Code: The primary code editor for writing, managing, and debugging the system source code.
 
 
+Development and Testing Environment
+
+The development and testing environment refers to the software, hardware, local server stacks, testing tools, and third-party API sandboxes utilized during the design, implementation, and quality assurance of the Web Based Stall Management System for Center Point.
+
+Development Environment:
+- Hardware Specification: Host workstation equipped with an Intel Core processor, 16GB RAM, and 512GB SSD running Windows 11 64-bit operating system.
+- Local Server Stack: Laragon local development environment providing an integrated, high-performance stack with Apache 2.4 web server, PHP 8.2+ runtime environment, and MySQL 8.0 relational database server.
+- Code Editor and IDE: Visual Studio Code equipped with PHP Intelephense, Laravel Extra Intellisense, Blade Snippets, Tailwind CSS IntelliSense, and Git integration for code editing, syntax verification, and version control.
+- Dependency Management: Composer 2.x for PHP backend dependency resolution (Laravel framework, Livewire 3, Socialite, Dompdf, Mailjet SDK) and NPM for frontend asset building.
+- Version Control System: Git repository tracking system for source code change management, branch isolation, and feature tracking.
+
+Testing Environment:
+- Automated Testing Framework: PHPUnit 11 integrated with Laravel Test Bench for executing unit tests, feature tests, HTTP endpoint assertions, database state assertions, and mock API service responses.
+- API Testing & Webhook Sandbox: Postman and PayMongo Sandbox Environment for constructing and testing API requests, verifying JSON payloads, and simulating PayMongo webhook signature events (e.g., payment confirmation, checkout session completion).
+- Third-Party API Test Gateways: 
+  - Mailjet Test Mode for capturing and verifying transactional email dispatches.
+  - Semaphore Sandbox API for testing SMS notification dispatches and 2FA OTP code delivery.
+- Cross-Browser & Device Simulation: Google Chrome DevTools and Microsoft Edge for responsive UI testing across desktop, tablet, and mobile viewport dimensions, ensuring cross-browser compatibility and consistent rendering of Chart.js graphs and Livewire interactive components.
+
+
 Purpose and Description
 
 The primary purpose of this study is to develop the Web Based Stall Management System for Center Point — a comprehensive, full-stack digital platform that replaces all manual stall management processes with an integrated, automated, and user-centered system for administrators, staff, and tenants.
@@ -146,6 +166,21 @@ To realize this project, the following specific objectives were achieved:
 17. To evaluate the system's usability, functionality, and performance through user acceptance testing.
 
 
+Significance of the Study
+
+The development and implementation of the Web Based Stall Management System for Center Point yields substantial benefits for various stakeholders involved in commercial stall operations in Pagadian City, Zamboanga del Sur. Specifically, this study is significant to the following groups:
+
+- Center Point Management and Administrators — Provides a centralized, automated control panel to manage floor plan layouts, stall inventory, tenant profiles, lease contracts, and utility billing. Automates monthly invoicing and dispatches multi-stage payment reminders and 60/30-day lease expiry alerts, drastically reducing administrative workload, billing computation errors, and unmanaged lease expirations. Advanced financial reporting tools with exportable CSV and PDF summaries empower management with real-time financial visibility and data-driven decision-making capabilities.
+
+- Administrative and Office Staff — Streamlines daily operational tasks by replacing manual paper logbooks and handwritten receipts with digital workflows. The automated PayMongo payment webhook integration, online receipt generation with QR code verification, and structured Livewire support ticket chat system allow staff to process payments, track tenant concerns, and manage stall applications efficiently without administrative bottlenecks.
+
+- Stall Tenants — Enhances transparency and convenience by providing a 24/7 self-service tenant portal. Tenants can monitor active lease terms, view billing statements, pay rent online via GCash, Maya, or cards, download official receipts and contractual documents from a secure document repository, and receive automated email and SMS reminders for upcoming payments and lease contract end dates.
+
+- Prospective Tenants and Applicants — Eliminates the requirement to physically visit the administrative office for stall rental inquiries. The public-facing stall reservation portal allows prospective vendors to view real-time stall availability across floor levels and submit formal online applications with supporting documents conveniently from any location.
+
+- Future Researchers and IT Practitioners — Serves as a comprehensive reference and foundation for academic research regarding modern web-based property and stall rental management systems. Demonstrates the practical integration of Laravel 13.x, Livewire 3, online payment gateways (PayMongo), multi-channel messaging (Mailjet email and Semaphore SMS), OAuth 2.0 social authentication, and Two-Factor Authentication (2FA) in local commercial establishments.
+
+
 Scope and Limitations
 
 This study covers the design, development, testing, and deployment of the Web Based Stall Management System for Center Point in Pagadian City, covering tenant registration, stall assignment, lease contract management, automated billing, online payment processing, utility billing, support ticket communication, advanced financial reporting, public stall reservation, tenant document repository, lease expiry notifications, social authentication, Two-Factor Authentication, and audit logging.
@@ -164,36 +199,38 @@ However, the system has certain limitations. It requires a stable internet conne
 
 Definition of Terms
 
-The following terms are defined to provide conceptual clarity for this study:
+The following terminology is used to conceptualize and operationalize the study:
 
-- Laravel 13.x — A modern PHP web application framework following the Model-View-Controller (MVC) pattern, serving as the primary backend framework of the system.
-- Livewire 3 — A full-stack reactive component framework for Laravel enabling real-time server-side UI interactions without a separate JavaScript framework.
-- Center Point — The commercial establishment in Pagadian City, Zamboanga del Sur, that serves as the client of this study, offering stalls for rent across its floor levels.
-- Stall — A designated physical space within Center Point that is rented by a vendor for business operations.
-- Tenant — An individual or business entity that rents a stall and is registered in the system with access to the tenant portal.
-- Tenant Portal — The system interface allowing tenants to access their stall details, lease information, payment history, document repository, and support tickets.
-- Stall Mapping (Lease Contract) — A system record linking a tenant to a stall for a defined contract period with start and end dates and a PDF contract document.
-- Lease Expiry Notification — An automated alert sent via Mailjet email and Semaphore SMS to both the tenant and administrator at 60 and 30 days before a lease contract's end date.
-- Online Stall Reservation — A public-facing feature allowing prospective tenants to submit a formal rental application online, including business information and a preferred stall selection.
-- Stall Application — A record in the system representing a formal online rental application submitted by a prospective tenant through the public reservation portal.
-- Tenant Document Repository — A secure section of the tenant portal where tenants can access and download their lease contracts, payment receipts, billing statements, and other related documents.
-- Advanced Financial Reporting — A system module providing interactive revenue trend charts, occupancy rate analytics, overdue payment aging reports, and exportable financial summaries in CSV and PDF formats.
-- PayMongo — A Philippine payment gateway integrated into the system for secure online payment transactions via GCash, Maya, credit cards, and debit cards.
-- Automated Invoicing — The system's capability to automatically generate monthly rental invoices for all active leases using a scheduled Laravel Artisan command.
-- PDF Receipt — An official payment receipt generated using Dompdf, featuring an embedded QR code for online authenticity verification.
-- QR Code Verification — A feature allowing anyone to scan a QR code on a receipt to confirm its authenticity through an online verification endpoint.
-- Support Ticket — A digital concern or request submitted by a tenant, handled through a threaded real-time chat interface with file attachment support.
-- Utility Billing — A module recording metered utility readings per stall and computing corresponding billing charges.
-- Audit Log — A tamper-evident record of all significant administrative actions, including user identity, action, affected entity, timestamp, and IP address.
-- Role-Based Access Control (RBAC) — A security mechanism restricting system access based on the user's assigned role (Administrator, Staff, or Tenant).
-- Google OAuth 2.0 — A social login protocol allowing users to sign in using their Google account, implemented via the laravel/socialite package.
-- Facebook OAuth — A social login protocol allowing users to sign in using their Facebook account, also implemented via the laravel/socialite package.
-- Two-Factor Authentication (2FA) — An optional additional security layer for administrator and staff accounts requiring a one-time SMS OTP code sent via Semaphore after the initial password login.
-- OTP (One-Time Password) — A temporary, single-use numeric code sent to a user's registered mobile number via Semaphore SMS as part of the Two-Factor Authentication process.
-- Artisan Scheduler — A Laravel feature automating the execution of console commands on a defined schedule, used for monthly invoice generation, payment reminders, and lease expiry notifications.
-- Mailjet — A transactional email service used to send billing reminders, payment confirmations, lease expiry alerts, and stall application notifications.
-- Semaphore SMS — An SMS gateway used to send billing reminders, lease expiry alerts, and Two-Factor Authentication OTP codes.
-- Dompdf — A PHP HTML-to-PDF library used to generate official payment receipts and exportable financial report documents.
-- Chart.js — A JavaScript charting library used in the advanced financial reporting module to render interactive revenue trend and occupancy rate charts.
-- Dashboard — The main administrative control panel displaying key performance indicators such as total revenue, occupied stalls, active leases, pending applications, and pending support tickets.
-- Surcharge — An additional fee applied to tenants for late payment of rental invoices beyond the defined due date.
+| Term / Concept | Operational Definition |
+| :--- | :--- |
+| **Laravel 13.x** | A modern PHP web application framework following the Model-View-Controller (MVC) pattern, serving as the primary backend framework of the system. |
+| **Livewire 3** | A full-stack reactive component framework for Laravel enabling real-time server-side UI interactions without a separate JavaScript framework. |
+| **Center Point** | The commercial establishment in Pagadian City, Zamboanga del Sur, that serves as the client of this study, offering stalls for rent across its floor levels. |
+| **Stall** | A designated physical space within Center Point that is rented by a vendor for business operations. |
+| **Tenant** | An individual or business entity that rents a stall and is registered in the system with access to the tenant portal. |
+| **Tenant Portal** | The system interface allowing tenants to access their stall details, lease information, payment history, document repository, and support tickets. |
+| **Stall Mapping (Lease Contract)** | A system record linking a tenant to a stall for a defined contract period with start and end dates and a PDF contract document. |
+| **Lease Expiry Notification** | An automated alert sent via Mailjet email and Semaphore SMS to both the tenant and administrator at 60 and 30 days before a lease contract's end date. |
+| **Online Stall Reservation** | A public-facing feature allowing prospective tenants to submit a formal rental application online, including business information and a preferred stall selection. |
+| **Stall Application** | A record in the system representing a formal online rental application submitted by a prospective tenant through the public reservation portal. |
+| **Tenant Document Repository** | A secure section of the tenant portal where tenants can access and download their lease contracts, payment receipts, billing statements, and other related documents. |
+| **Advanced Financial Reporting** | A system module providing interactive revenue trend charts, occupancy rate analytics, overdue payment aging reports, and exportable financial summaries in CSV and PDF formats. |
+| **PayMongo** | A Philippine payment gateway integrated into the system for secure online payment transactions via GCash, Maya, credit cards, and debit cards. |
+| **Automated Invoicing** | The system's capability to automatically generate monthly rental invoices for all active leases using a scheduled Laravel Artisan command. |
+| **PDF Receipt** | An official payment receipt generated using Dompdf, featuring an embedded QR code for online authenticity verification. |
+| **QR Code Verification** | A feature allowing anyone to scan a QR code on a receipt to confirm its authenticity through an online verification endpoint. |
+| **Support Ticket** | A digital concern or request submitted by a tenant, handled through a threaded real-time chat interface with file attachment support. |
+| **Utility Billing** | A module recording metered utility readings per stall and computing corresponding billing charges. |
+| **Audit Log** | A tamper-evident record of all significant administrative actions, including user identity, action, affected entity, timestamp, and IP address. |
+| **Role-Based Access Control (RBAC)** | A security mechanism restricting system access based on the user's assigned role (Administrator, Staff, or Tenant). |
+| **Google OAuth 2.0** | A social login protocol allowing users to sign in using their Google account, implemented via the laravel/socialite package. |
+| **Facebook OAuth** | A social login protocol allowing users to sign in using their Facebook account, also implemented via the laravel/socialite package. |
+| **Two-Factor Authentication (2FA)** | An optional additional security layer for administrator and staff accounts requiring a one-time SMS OTP code sent via Semaphore after the initial password login. |
+| **OTP (One-Time Password)** | A temporary, single-use numeric code sent to a user's registered mobile number via Semaphore SMS as part of the Two-Factor Authentication process. |
+| **Artisan Scheduler** | A Laravel feature automating the execution of console commands on a defined schedule, used for monthly invoice generation, payment reminders, and lease expiry notifications. |
+| **Mailjet** | A transactional email service used to send billing reminders, payment confirmations, lease expiry alerts, and stall application notifications. |
+| **Semaphore SMS** | An SMS gateway used to send billing reminders, lease expiry alerts, and Two-Factor Authentication OTP codes. |
+| **Dompdf** | A PHP HTML-to-PDF library used to generate official payment receipts and exportable financial report documents. |
+| **Chart.js** | A JavaScript charting library used in the advanced financial reporting module to render interactive revenue trend and occupancy rate charts. |
+| **Dashboard** | The main administrative control panel displaying key performance indicators such as total revenue, occupied stalls, active leases, pending applications, and pending support tickets. |
+| **Surcharge** | An additional fee applied to tenants for late payment of rental invoices beyond the defined due date. |

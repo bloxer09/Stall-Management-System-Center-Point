@@ -1,25 +1,20 @@
 <div class="h-16 bg-base-100 border-b border-base-300 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs">
     <div class="flex items-center gap-3">
         <!-- Mobile Sidebar Drawer Toggle Button -->
+        @auth
         <label for="app-drawer" class="btn btn-ghost btn-square btn-sm lg:hidden text-base-content/80">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
         </label>
+        @endauth
 
-        <!-- Brand Identifier for Mobile -->
-        <a href="{{ route('home') }}" wire:navigate class="font-black text-base-content text-lg lg:hidden tracking-tight flex items-center gap-2">
-            <div class="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-primary-content font-black text-xs">S</div>
-            <span>STALLM</span>
-        </a>
-
-        <!-- Global Search Bar (Desktop) -->
-        <div class="hidden md:flex items-center">
-            <div class="relative w-64">
-                <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-base-content/50">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                </span>
-                <input type="text" placeholder="Quick search..." class="input input-sm input-bordered w-full pl-9 pr-3 rounded-xl text-xs bg-base-200/50 focus:bg-base-100 transition" />
+        <!-- Brand Identifier -->
+        <a href="{{ route('home') }}" wire:navigate class="font-black text-base-content text-lg tracking-tight flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-xl bg-primary flex items-center justify-center text-primary-content font-black text-xs shadow-xs">CP</div>
+            <div class="flex flex-col">
+                <span class="font-extrabold text-sm sm:text-base leading-tight">Center Point</span>
+                <span class="text-[9px] text-base-content/60 font-bold uppercase tracking-wider hidden sm:block">Stall Management</span>
             </div>
-        </div>
+        </a>
     </div>
 
     <!-- Right Top Header Controls -->

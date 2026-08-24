@@ -46,8 +46,18 @@
                 </main>
 
                 <!-- Footer -->
-                <footer class="border-t border-base-300 bg-base-100 py-4 px-6 text-center text-xs text-base-content/60">
-                    STALLM Commercial Property Platform &copy; {{ date('Y') }}. All rights reserved.
+                <footer class="border-t border-base-300 bg-base-100 py-6 px-6 text-center text-xs text-base-content/70 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div class="flex flex-col sm:flex-row items-center gap-2 text-center sm:text-left">
+                        <div class="w-6 h-6 rounded-lg bg-primary flex items-center justify-center text-primary-content font-black text-[10px]">CP</div>
+                        <span><strong>Center Point Commercial Complex</strong> &bull; Stall Management System &copy; {{ date('Y') }}. All rights reserved.</span>
+                    </div>
+                    <div class="flex items-center gap-3 font-semibold text-xs text-base-content/60">
+                        <span>Pagadian City, Zamboanga del Sur</span>
+                        <span>&bull;</span>
+                        <a href="{{ route('privacy') }}" wire:navigate class="hover:text-primary transition">Privacy Policy</a>
+                        <span>&bull;</span>
+                        <a href="{{ route('terms') }}" wire:navigate class="hover:text-primary transition">Terms & Conditions</a>
+                    </div>
                 </footer>
             </div> 
 
@@ -72,7 +82,7 @@
                         <nav class="p-4 space-y-1 text-sm font-medium">
                             <a href="{{ route('home') }}" wire:navigate class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition {{ request()->routeIs('home') ? 'bg-primary text-primary-content font-bold shadow-xs' : 'text-base-content/70 hover:text-base-content hover:bg-base-200' }}">
                                 <svg class="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 00-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                                <span>Browse Stalls</span>
+                                <span>Home / Overview</span>
                             </a>
 
                             @auth
@@ -109,11 +119,6 @@
                                         <span>Payments</span>
                                     </a>
 
-                                    <a href="{{ route('admin.utilities') }}" wire:navigate class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition {{ request()->routeIs('admin.utilities') ? 'bg-primary text-primary-content font-bold shadow-xs' : 'text-base-content/70 hover:text-base-content hover:bg-base-200' }}">
-                                        <svg class="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                                        <span>Utility Billing</span>
-                                    </a>
-
                                     <a href="{{ route('admin.tickets') }}" wire:navigate class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition {{ request()->routeIs('admin.tickets') ? 'bg-primary text-primary-content font-bold shadow-xs' : 'text-base-content/70 hover:text-base-content hover:bg-base-200' }}">
                                         <svg class="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                                         <span>Support Chat</span>
@@ -132,6 +137,11 @@
                                     <a href="{{ route('admin.error-logs') }}" wire:navigate class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition {{ request()->routeIs('admin.error-logs') ? 'bg-primary text-primary-content font-bold shadow-xs' : 'text-base-content/70 hover:text-base-content hover:bg-base-200' }}">
                                         <svg class="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                                         <span>Error Logs</span>
+                                    </a>
+
+                                    <a href="{{ route('admin.settings') }}" wire:navigate class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition {{ request()->routeIs('admin.settings') ? 'bg-primary text-primary-content font-bold shadow-xs' : 'text-base-content/70 hover:text-base-content hover:bg-base-200' }}">
+                                        <svg class="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                        <span>System Settings</span>
                                     </a>
                                 @else
                                     <div class="pt-4 pb-1.5 px-3 text-[10px] font-bold text-base-content/50 uppercase tracking-wider">Tenant Portal</div>
@@ -191,6 +201,33 @@
 
         <!-- Global Interactive Auth Modals -->
         <livewire:auth.auth-modals />
+
+        <!-- Global Image Lightbox Preview Overlay Modal -->
+        <div x-data="{ open: false, src: '' }"
+             x-on:open-lightbox.window="open = true; src = $event.detail.src"
+             x-show="open"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95"
+             class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+             style="display: none;">
+            <div class="relative max-w-4xl w-full max-h-[90vh] flex flex-col items-center justify-center" @click.outside="open = false">
+                <button @click="open = false" type="button" class="absolute -top-10 right-0 text-white hover:text-primary font-black text-xl bg-black/60 hover:bg-black/80 w-8 h-8 rounded-full flex items-center justify-center border border-white/30 shadow-lg cursor-pointer leading-none p-0 transition transform hover:scale-110" title="Close Preview">
+                    &times;
+                </button>
+                <img :src="src" class="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl border-2 border-white/20" alt="Full Image Preview">
+            </div>
+        </div>
+
+        <script>
+            function openImageLightbox(src) {
+                if (!src) return;
+                window.dispatchEvent(new CustomEvent('open-lightbox', { detail: { src: src } }));
+            }
+        </script>
 
         @livewireScripts
     </body>

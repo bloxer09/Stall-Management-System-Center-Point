@@ -70,15 +70,80 @@ The non-functional requirements ensure that the system performs efficiently, sec
 11. Ensure data security through Laravel authentication middleware, CSRF protection, IDOR-guarded file endpoints, webhook signature verification for PayMongo events, and OTP-based Two-Factor Authentication for privileged accounts.
 
 
-Technical Background
+Technical Background and System Architecture
 
 The Web Based Stall Management System for Center Point is developed as a full-stack, database-driven web application built on the Laravel 13.x PHP framework, which enforces the Model-View-Controller (MVC) architectural pattern. This ensures proper separation of concerns, improves code organization, and supports long-term maintainability.
 
+The following architectural diagram illustrates the integration between the client interface layer, authentication middleware, Livewire 3 reactive components, background services, and the MySQL database:
+
+```mermaid
+flowchart TB
+    subgraph ClientLayer [Client & User Interface Layer]
+        Guest[Prospective Tenant / Guest]
+        TenantUser[Stall Tenant]
+        AdminUser[Administrator & Staff]
+    end
+
+    subgraph WebLayer [Routing, Auth & Security Layer]
+        Router[Laravel Web Router]
+        Middleware[CheckRole & RequiresTwoFactor Middleware]
+        Socialite[Laravel Socialite OAuth 2.0]
+    end
+
+    subgraph ComponentLayer [Reactive Application Layer - Livewire 3]
+        FloorGrid[Floor Plan Grid Editor]
+        TicketChat[Support Ticket Real-Time Chat]
+        ReportsUI[Financial Analytics & Export UI]
+        DocRepo[Tenant Document Repository]
+        ResPortal[Public Stall Reservation Portal]
+    end
+
+    subgraph ServiceLayer [Business Logic & Service Gateways]
+        ArtisanCron[Laravel Artisan Scheduler]
+        PayMongoGW[PayMongo Payment Gateway]
+        MailjetGW[Mailjet Email Service API]
+        SemaphoreGW[Semaphore SMS Gateway API]
+        DompdfGW[Dompdf PDF Engine & QR Generator]
+    end
+
+    subgraph DataLayer [Data Storage Layer]
+        MySQL[(MySQL Relational Database)]
+    end
+
+    Guest -->|Public Access| ResPortal
+    TenantUser -->|Password / Google / Facebook Auth| Socialite
+    AdminUser -->|Auth + 2FA SMS OTP| Middleware
+    Middleware --> Router
+    Socialite --> Router
+    Router --> ComponentLayer
+    ComponentLayer --> ServiceLayer
+    ArtisanCron -->|Monthly Billing & 60/30 Day Expiry| ServiceLayer
+    ServiceLayer --> MySQL
+```
+
 Reactive user interface components are powered by Livewire 3, enabling server-rendered real-time interactions without a dedicated frontend JavaScript framework. This approach simplifies development while maintaining a dynamic user experience for features such as the floor plan grid editor, real-time notification bell, support ticket chat, document repository, advanced reports interface, and reservation portal form handling.
 
-The backend handles business logic including authentication with Google and Facebook OAuth, optional Two-Factor Authentication via Semaphore SMS OTP, stall management, lease management, automated invoice generation, lease expiry notification dispatching, payment processing, utility billing computation, support ticket coordination, document repository access, public reservation management, advanced financial reporting, and audit logging. MySQL is used as the relational database management system with InnoDB storage engine, foreign key constraints, indexed columns, and Laravel Eloquent ORM.
+The backend handles business logic including authentication with Google and Facebook OAuth, optional Two-Factor Authentication via Semaphore SMS OTP, stall management, lease management, automated invoice generation, lease expiry notification dispatching, payment processing, utility billing computation, support ticket coordination, document repository access, public reservation management, advanced financial reporting, and audit logging.
 
-The system integrates the PayMongo payment gateway for online rental payments, the Mailjet API for transactional email, and the Semaphore SMS Gateway for SMS notifications and 2FA OTP codes. Official PDF receipts and financial report documents are generated using the Dompdf library. Interactive revenue trend and occupancy rate charts in the advanced reporting module are rendered using Chart.js. Authentication is implemented using Laravel Breeze with Google OAuth 2.0 and Facebook OAuth social login via the laravel/socialite package. Role-based access is enforced through a CheckRole middleware applied to all route groups. Two-Factor Authentication is enforced through a dedicated RequiresTwoFactor middleware applied to administrator and staff routes when 2FA is enabled on the account. IDOR-protected file endpoints secure all private document downloads.
+
+Core Database Design (MySQL)
+
+The relational database schema is structured around the following core entities and their relationships, managed through Laravel migrations and Eloquent ORM:
+
+```mermaid
+erDiagram
+    stall_locations ||--|{ stalls : "categorizes"
+    stalls ||--o{ stall_mappings : "leased"
+    users ||--o{ stall_mappings : "holds"
+    stalls ||--o{ payments : "billed"
+    users ||--o{ payments : "has"
+    users ||--o{ tickets : "reports / makes"
+    users ||--o{ tickets : "opens"
+    tickets ||--|{ ticket_messages : "contains"
+    users ||--o{ audit_logs : "triggers"
+    users ||--o{ two_factor_codes : "verifies"
+    stalls ||--o{ stall_applications : "selects"
+```
 
 
 Programming Environment

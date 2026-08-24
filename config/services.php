@@ -30,4 +30,6 @@ return [
         'public_key' => env('PAYMONGO_PUBLIC_KEY'),
         'webhook_secret' => env('PAYMONGO_WEBHOOK_TOKEN'),
     ],
+
+    'enable_2fa' => env('ENABLE_2FA', false),
 ];

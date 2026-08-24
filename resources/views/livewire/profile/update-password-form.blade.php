@@ -1,38 +1,46 @@
-<section>
+<section class="space-y-6">
     <header>
-        <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">
+        <h2 class="text-lg font-black text-base-content">
             {{ __('Update Password') }}
         </h2>
-        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+        <p class="mt-1 text-xs text-base-content/60">
             {{ __('Ensure your account is using a long, random password to stay secure.') }}
         </p>
     </header>
 
-    <form wire:submit="updatePassword" class="mt-6 space-y-6">
-        <div>
-            <x-input-label for="update_password_current_password" :value="__('Current Password')" />
-            <x-text-input wire:model="current_password" id="update_password_current_password" type="password" class="mt-1 block w-full" autocomplete="current-password" />
-            <x-input-error :messages="$errors->get('current_password')" class="mt-2" />
+    <form wire:submit="updatePassword" class="space-y-4">
+        <div class="form-control">
+            <label class="label"><span class="label-text font-bold text-xs uppercase">{{ __('Current Password') }}</span></label>
+            <input wire:model="current_password" type="password" required autocomplete="current-password" class="input input-bordered rounded-xl text-sm" />
+            @error('current_password') <span class="text-xs text-error mt-1">{{ $message }}</span> @enderror
         </div>
 
-        <div>
-            <x-input-label for="update_password_password" :value="__('New Password')" />
-            <x-text-input wire:model="password" id="update_password_password" type="password" class="mt-1 block w-full" autocomplete="new-password" />
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
+        <div class="form-control">
+            <label class="label"><span class="label-text font-bold text-xs uppercase">{{ __('New Password') }}</span></label>
+            <input wire:model="password" type="password" required autocomplete="new-password" class="input input-bordered rounded-xl text-sm" />
+            @error('password') <span class="text-xs text-error mt-1">{{ $message }}</span> @enderror
         </div>
 
-        <div>
-            <x-input-label for="update_password_password_confirmation" :value="__('Confirm Password')" />
-            <x-text-input wire:model="password_confirmation" id="update_password_password_confirmation" type="password" class="mt-1 block w-full" autocomplete="new-password" />
-            <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
+        <div class="form-control">
+            <label class="label"><span class="label-text font-bold text-xs uppercase">{{ __('Confirm Password') }}</span></label>
+            <input wire:model="password_confirmation" type="password" required autocomplete="new-password" class="input input-bordered rounded-xl text-sm" />
+            @error('password_confirmation') <span class="text-xs text-error mt-1">{{ $message }}</span> @enderror
         </div>
 
-        <div class="flex items-center gap-4">
-            <x-primary-button>{{ __('Save Password') }}</x-primary-button>
+        <div class="flex flex-wrap items-center justify-between gap-4 pt-2">
+            <div class="flex items-center gap-4">
+                <button type="submit" class="btn btn-primary rounded-xl font-bold px-6 shadow-xs">
+                    {{ __('Save Password') }}
+                </button>
 
-            @if (session('status') === 'password-updated')
-                <p class="text-sm text-green-600 font-semibold">{{ __('Password updated successfully.') }}</p>
-            @endif
+                @if (session('status') === 'password-updated')
+                    <p class="text-xs text-success font-bold">{{ __('Password updated successfully.') }}</p>
+                @endif
+            </div>
+
+            <button type="button" onclick="Livewire.dispatch('open-forgot-password-modal', { email: '{{ auth()->user()->email }}' })" class="text-xs text-primary font-bold hover:underline">
+                Forgot current password? Recover via OTP
+            </button>
         </div>
     </form>
 </section>

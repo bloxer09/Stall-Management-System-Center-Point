@@ -57,9 +57,9 @@
                             <td>
                                 @if($t->handler)
                                     <div class="flex items-center gap-2">
-                                        <div class="avatar placeholder">
-                                            <div class="w-7 h-7 rounded-full bg-success/20 text-success font-bold text-xs flex items-center justify-center">
-                                                <span>{{ strtoupper(substr($t->handler->name, 0, 1)) }}</span>
+                                        <div class="avatar">
+                                            <div class="w-7 h-7 rounded-full overflow-hidden border border-success/30 shadow-xs">
+                                                <img src="{{ $t->handler->avatar_url }}" onclick="openImageLightbox(this.src)" class="w-full h-full object-cover cursor-pointer" alt="Handler Avatar" title="Click to view full photo">
                                             </div>
                                         </div>
                                         <span class="text-xs font-bold text-base-content">{{ $t->handler->name }}</span>
@@ -158,6 +158,11 @@
                 <div class="flex-1 overflow-y-auto p-4 space-y-3 bg-base-100">
                     @forelse($activeTicket->messages as $msg)
                         <div class="chat {{ $msg->user_id === auth()->id() ? 'chat-end' : 'chat-start' }}">
+                            <div class="chat-image avatar">
+                                <div class="w-7 h-7 rounded-full overflow-hidden border border-base-300 shadow-xs">
+                                    <img src="{{ $msg->user->avatar_url }}" onclick="openImageLightbox(this.src)" class="w-full h-full object-cover cursor-pointer" alt="User Avatar" title="Click to view photo">
+                                </div>
+                            </div>
                             <div class="chat-header text-[10px] text-base-content/50 font-semibold mb-0.5 flex items-center gap-1">
                                 <span>{{ $msg->user->name }}</span>
                                 <time class="text-[9px] opacity-60 ml-1">{{ $msg->created_at->format('h:i A') }}</time>
@@ -171,9 +176,9 @@
                                     @endphp
                                     <div class="mt-2 pt-2 border-t border-current/20">
                                         @if($isImage)
-                                            <a href="{{ route('file.ticket-attachment', $msg->id) }}" target="_blank" class="block group">
-                                                <img src="{{ route('file.ticket-attachment', $msg->id) }}" alt="Attachment Preview" class="max-w-[200px] max-h-40 rounded-xl object-cover border border-base-300 shadow-xs group-hover:scale-105 transition">
-                                            </a>
+                                            <div onclick="openImageLightbox('{{ route('file.ticket-attachment', $msg->id) }}')" class="block group cursor-pointer">
+                                                <img src="{{ route('file.ticket-attachment', $msg->id) }}" alt="Attachment Preview" class="max-w-[200px] max-h-40 rounded-xl object-cover border border-base-300 shadow-xs group-hover:scale-105 transition cursor-pointer" title="Click to view full photo">
+                                            </div>
                                         @else
                                             <a href="{{ route('file.ticket-attachment', $msg->id) }}" target="_blank" class="flex items-center gap-1.5 p-2 rounded-xl bg-base-100/30 border border-current/20 text-xs font-bold underline">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
@@ -244,11 +249,11 @@
 
             <h3 class="font-black text-lg text-base-content">Create New Support Ticket</h3>
             <form wire:submit.prevent="createTicket" class="space-y-4">
-                @if(count($myStalls) > 1)
+                @if(count($myStalls) > 0)
                 <div class="form-control">
                     <label class="label"><span class="label-text font-bold text-xs uppercase">Select Leased Stall (Optional)</span></label>
                     <select wire:model="stall_id" class="select select-bordered w-full rounded-xl text-sm">
-                        <option value="">-- Primary Active Stall --</option>
+                        <option value="">-- General Inquiry / No Stall --</option>
                         @foreach($myStalls as $st)
                             <option value="{{ $st->id }}">Stall #{{ $st->stall_number }} ({{ $st->location->name ?? 'Main' }})</option>
                         @endforeach

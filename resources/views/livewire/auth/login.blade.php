@@ -28,6 +28,9 @@
                 <input type="checkbox" wire:model="remember" class="checkbox checkbox-primary checkbox-sm rounded-md" />
                 <span class="label-text text-xs font-bold text-base-content/70">Remember me</span>
             </label>
+            <button type="button" onclick="Livewire.dispatch('open-forgot-password-modal')" class="text-xs text-primary font-bold hover:underline">
+                Forgot password?
+            </button>
         </div>
 
         <button type="submit" class="btn btn-primary w-full rounded-2xl font-bold text-sm shadow-md">

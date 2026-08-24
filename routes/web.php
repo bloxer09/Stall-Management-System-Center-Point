@@ -14,14 +14,18 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 Route::get('/', function () {
-    $locations = StallLocation::orderBy('sort_order')->get();
-    $stalls = Stall::with('location')->where('status', 'available')->get();
-    return view('pages.home', compact('locations', 'stalls'));
+    return view('pages.home');
 })->name('home');
 
-Route::get('/reservation', \App\Livewire\Public\StallReservation::class)->name('reservation');
-
 Route::get('/verify-receipt/{id}', [ReceiptVerificationController::class, 'verify'])->name('receipt.verify');
+
+Route::get('/privacy-policy', function () {
+    return view('pages.privacy');
+})->name('privacy');
+
+Route::get('/terms-and-conditions', function () {
+    return view('pages.terms');
+})->name('terms');
 
 /*
 |--------------------------------------------------------------------------
@@ -73,20 +77,12 @@ Route::middleware(['auth', 'role:user'])->prefix('user')->name('user.')->group(f
     })->name('documents');
 });
 
-use App\Http\Controllers\TwoFactorController;
-use App\Http\Middleware\RequiresTwoFactor;
-
-Route::middleware('auth')->group(function () {
-    Route::get('/two-factor-challenge', [TwoFactorController::class, 'challenge'])->name('two-factor.challenge');
-    Route::post('/two-factor-challenge', [TwoFactorController::class, 'verify'])->name('two-factor.verify');
-});
-
 /*
 |--------------------------------------------------------------------------
 | Admin & Staff Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'role:admin,staff', RequiresTwoFactor::class])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'role:admin,staff'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', function () {
         return view('pages.admin.dashboard');
     })->name('dashboard');
@@ -111,10 +107,6 @@ Route::middleware(['auth', 'role:admin,staff', RequiresTwoFactor::class])->prefi
         return view('pages.admin.payments');
     })->name('payments');
 
-    Route::get('/utilities', function () {
-        return view('pages.admin.utilities');
-    })->name('utilities');
-
     Route::get('/tickets', function () {
         return view('pages.admin.tickets');
     })->name('tickets');
@@ -131,13 +123,14 @@ Route::middleware(['auth', 'role:admin,staff', RequiresTwoFactor::class])->prefi
         return view('pages.admin.audit-logs');
     })->name('audit-logs');
 
-    Route::get('/applications', function () {
-        return view('pages.admin.applications');
-    })->name('applications');
-
     Route::get('/error-logs', function () {
         return view('pages.admin.error-logs');
     })->name('error-logs');
+
+    Route::get('/settings', function () {
+        return view('pages.admin.settings');
+    })->name('settings');
 });
 
 require __DIR__.'/auth.php';
+

@@ -43,6 +43,17 @@ class StallGridEditor extends Component
     {
         if (!$this->selectedStallId) return;
 
+        $occupiedByAnother = Stall::where('location_id', $this->selectedLocationId)
+            ->where('grid_row', $row)
+            ->where('grid_col', $col)
+            ->where('id', '!=', $this->selectedStallId)
+            ->exists();
+
+        if ($occupiedByAnother) {
+            session()->flash('error', "Cell (Row {$row}, Col {$col}) is already occupied by another stall.");
+            return;
+        }
+
         $stall = Stall::find($this->selectedStallId);
         if ($stall) {
             $stall->update([

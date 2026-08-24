@@ -72,6 +72,14 @@ class TicketCenter extends Component
         if ($ticket) {
             $ticket->update(['assigned_to' => Auth::id()]);
 
+            Notification::send(
+                $ticket->user_id,
+                'ticket_update',
+                "Ticket #TKT-" . str_pad($ticket->id, 5, '0', STR_PAD_LEFT) . " Assigned",
+                Auth::user()->name . " has claimed and is now handling your support ticket.",
+                route('user.tickets')
+            );
+
             AuditLog::log(
                 Auth::id(),
                 "Claimed support ticket #{$ticket->id} handler assignment",
@@ -152,13 +160,13 @@ class TicketCenter extends Component
 
         $ticket->touch();
 
-        Notification::create([
-            'user_id' => $ticket->user_id,
-            'title' => 'Support Ticket Reply',
-            'message' => "Management replied to your support ticket: {$ticket->subject}",
-            'type' => 'info',
-            'is_read' => false,
-        ]);
+        Notification::send(
+            $ticket->user_id,
+            'ticket_message',
+            "Support Ticket Reply (#TKT-" . str_pad($ticket->id, 5, '0', STR_PAD_LEFT) . ")",
+            Auth::user()->name . ": " . \Illuminate\Support\Str::limit($this->newMessage, 60),
+            route('user.tickets')
+        );
 
         $this->reset(['newMessage', 'attachment', 'replyToMessageId']);
         $this->markAsRead();
@@ -174,6 +182,14 @@ class TicketCenter extends Component
                 } else {
                     $ticket->update(['status' => $status]);
                 }
+
+                Notification::send(
+                    $ticket->user_id,
+                    'ticket_update',
+                    "Ticket #TKT-" . str_pad($ticket->id, 5, '0', STR_PAD_LEFT) . " Status Updated",
+                    "Your support ticket status has been updated to " . strtoupper($status) . ".",
+                    route('user.tickets')
+                );
 
                 AuditLog::log(
                     Auth::id(),

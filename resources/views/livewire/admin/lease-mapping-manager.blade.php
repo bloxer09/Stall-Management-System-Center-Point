@@ -52,8 +52,10 @@
                         <td>
                             <div class="flex items-center gap-2">
                                 <div class="avatar placeholder">
-                                    <div class="w-7 h-7 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center border border-primary/20">
-                                        <span>{{ strtoupper(substr($map->user->name ?? 'T', 0, 1)) }}</span>
+                                    <div class="avatar">
+                                        <div class="w-8 h-8 rounded-full overflow-hidden border border-primary/20 shadow-xs">
+                                            <img src="{{ $map->user->avatar_url }}" onclick="openImageLightbox(this.src)" class="w-full h-full object-cover cursor-pointer" alt="Tenant Avatar" title="Click to view full photo">
+                                        </div>
                                     </div>
                                 </div>
                                 <div>

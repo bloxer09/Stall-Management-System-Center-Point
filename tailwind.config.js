@@ -4,6 +4,7 @@ import daisyui from 'daisyui';
 
 /** @type {import('tailwindcss').Config} */
 export default {
+    darkMode: ['class', '[data-theme="dark"]'],
     content: [
         './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
         './storage/framework/views/*.php',
@@ -29,7 +30,10 @@ export default {
         },
     },
 
-    plugins: [forms, daisyui],
+    plugins: [
+        forms({ strategy: 'class' }),
+        daisyui,
+    ],
 
     daisyui: {
         themes: ["light", "dark"],

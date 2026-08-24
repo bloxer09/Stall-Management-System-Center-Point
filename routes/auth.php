@@ -12,7 +12,7 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
-    Route::view('profile', 'profile')->name('profile');
+    Route::view('profile', 'pages.profile')->name('profile');
 
     Route::post('/logout', function () {
         Auth::guard('web')->logout();

@@ -6,21 +6,6 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
 
-            <!-- Confirmation Overlay Dialog -->
-            @if($showConfirmClose)
-            <div class="p-5 bg-error/10 border border-error/30 rounded-2xl space-y-3 mb-4 text-center">
-                <div class="w-10 h-10 rounded-full bg-error/20 text-error flex items-center justify-center mx-auto">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                </div>
-                <h4 class="font-extrabold text-sm text-base-content">Cancel 2FA Verification?</h4>
-                <p class="text-xs text-base-content/70">Your pending two-factor authentication session will be canceled and you will need to sign in again.</p>
-                <div class="flex gap-2 justify-center pt-2">
-                    <button wire:click="cancelConfirmClose" class="btn btn-sm btn-outline rounded-xl text-xs font-bold">Keep Verification</button>
-                    <button wire:click="forceCloseModal" class="btn btn-sm btn-error text-white rounded-xl text-xs font-bold">Yes, Cancel 2FA</button>
-                </div>
-            </div>
-            @endif
-
             <!-- Header Tabs -->
             <div class="flex border-b border-base-300 mb-6">
                 @if($activeTab === 'login' || $activeTab === 'register')
@@ -30,10 +15,13 @@
                 <button wire:click="$set('activeTab', 'register')" class="flex-1 py-2.5 text-center font-bold text-sm border-b-2 transition {{ $activeTab === 'register' ? 'border-primary text-primary' : 'border-transparent text-base-content/60 hover:text-base-content' }}">
                     Register
                 </button>
-                @elseif($activeTab === 'otp')
-                <div class="py-2 font-bold text-sm text-base-content flex items-center gap-2">
-                    <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                    <span>Two-Factor Authentication</span>
+                @elseif($activeTab === 'forgot')
+                <div class="py-2 font-bold text-sm text-base-content flex items-center justify-between w-full">
+                    <span class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+                        Reset Password
+                    </span>
+                    <button type="button" wire:click="openLogin" class="text-xs text-primary font-bold hover:underline">Back to Sign In</button>
                 </div>
                 @endif
             </div>
@@ -58,6 +46,9 @@
                         <input type="checkbox" wire:model="remember" class="checkbox checkbox-primary checkbox-xs rounded-md" />
                         <span class="label-text text-xs text-base-content/70 font-medium">Remember me</span>
                     </label>
+                    <button type="button" wire:click="openForgotPassword" class="text-xs text-primary font-bold hover:underline">
+                        Forgot password?
+                    </button>
                 </div>
 
                 <button type="submit" class="btn btn-primary w-full rounded-xl font-bold text-sm shadow-sm" wire:loading.attr="disabled">
@@ -109,7 +100,12 @@
                 <div class="form-control">
                     <label class="label cursor-pointer justify-start gap-2 p-0">
                         <input type="checkbox" wire:model="terms" required class="checkbox checkbox-primary checkbox-xs rounded-md" />
-                        <span class="label-text text-xs text-base-content/70">I agree to Terms & Conditions and Privacy Policy</span>
+                        <span class="label-text text-xs text-base-content/80">
+                            I agree to the 
+                            <button type="button" onclick="document.getElementById('terms_modal').showModal()" class="text-primary font-bold hover:underline">Terms & Conditions</button> 
+                            and 
+                            <button type="button" onclick="document.getElementById('privacy_modal').showModal()" class="text-primary font-bold hover:underline">Privacy Policy</button>
+                        </span>
                     </label>
                 </div>
                 @error('terms') <span class="text-xs text-error block font-medium">{{ $message }}</span> @enderror
@@ -120,31 +116,69 @@
                 </button>
             </form>
 
-            <!-- 2FA OTP VERIFICATION -->
-            @elseif($activeTab === 'otp')
-            <form wire:submit="verifyOtp" class="space-y-4 text-center">
-                <div class="p-3 bg-base-200 text-base-content/80 rounded-2xl text-xs font-medium border border-base-300">
-                    A 6-digit verification code has been dispatched to your email and phone.
-                </div>
+            <!-- FORGOT PASSWORD FORM -->
+            @elseif($activeTab === 'forgot')
+                @if($forgotStep === 'request')
+                <form wire:submit="processForgotPasswordRequest" class="space-y-4">
+                    <p class="text-xs text-base-content/70">Enter your registered email address below. We will send you a 6-digit security code to reset your password.</p>
 
-                @if(app()->environment('local') || !$isMailConfigured)
-                <div class="p-3 bg-warning/10 text-warning-content rounded-2xl text-xs border border-warning/30 font-medium">
-                    <div class="font-bold uppercase text-[10px] text-warning">Development OTP Notice</div>
-                    <div class="mt-1">Code: <span class="font-mono font-bold text-sm tracking-widest text-base-content">{{ $generatedOtp }}</span></div>
+                    <div class="form-control">
+                        <label class="label pb-1"><span class="label-text font-semibold text-xs text-base-content/80">Email Address</span></label>
+                        <input type="email" wire:model="forgotEmail" placeholder="name@company.com" required class="input input-bordered bg-base-200/50 text-base-content w-full rounded-xl text-sm focus:input-primary" />
+                        @error('forgotEmail') <span class="text-xs text-error mt-1 block font-medium">{{ $message }}</span> @enderror
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-full rounded-xl font-bold text-sm shadow-sm" wire:loading.attr="disabled">
+                        <span wire:loading.remove wire:target="processForgotPasswordRequest">Send Reset Code</span>
+                        <span wire:loading wire:target="processForgotPasswordRequest" class="loading loading-spinner loading-xs"></span>
+                    </button>
+                </form>
+                @elseif($forgotStep === 'verify')
+                <form wire:submit="verifyForgotPasswordOtp" class="space-y-4">
+                    <div class="p-3 bg-base-200 text-base-content/80 rounded-2xl text-xs font-medium border border-base-300 text-center">
+                        A 6-digit security code was dispatched to <strong class="text-base-content">{{ $forgotEmail }}</strong>.
+                    </div>
+
+                    @if(app()->environment('local') || !$isMailConfigured)
+                    <div class="p-3 bg-warning/10 text-warning-content rounded-2xl text-xs border border-warning/30 font-medium text-center">
+                        <div class="font-bold uppercase text-[10px] text-warning">Development Reset Code</div>
+                        <div class="mt-1">Code: <span class="font-mono font-bold text-sm tracking-widest text-base-content">{{ $generatedForgotOtp }}</span></div>
+                    </div>
+                    @endif
+
+                    <div class="form-control">
+                        <label class="label justify-center pb-1"><span class="label-text font-bold uppercase tracking-widest text-xs text-base-content/60">6-Digit Security Code</span></label>
+                        <input type="text" wire:model="forgotOtpInput" maxlength="6" placeholder="123456" autofocus required class="input input-bordered bg-base-200/50 text-base-content w-48 mx-auto text-center text-2xl font-mono tracking-widest rounded-xl focus:input-primary" />
+                        @error('forgotOtpInput') <span class="text-xs text-error mt-1 block font-medium text-center">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="form-control">
+                            <label class="label pb-1"><span class="label-text font-semibold text-xs text-base-content/80">New Password</span></label>
+                            <input type="password" wire:model="newPassword" required class="input input-bordered bg-base-200/50 text-base-content w-full rounded-xl text-sm focus:input-primary" />
+                        </div>
+                        <div class="form-control">
+                            <label class="label pb-1"><span class="label-text font-semibold text-xs text-base-content/80">Confirm Password</span></label>
+                            <input type="password" wire:model="newPasswordConfirmation" required class="input input-bordered bg-base-200/50 text-base-content w-full rounded-xl text-sm focus:input-primary" />
+                        </div>
+                    </div>
+                    @error('newPassword') <span class="text-xs text-error block font-medium">{{ $message }}</span> @enderror
+
+                    <button type="submit" class="btn btn-primary w-full rounded-xl font-bold text-sm shadow-sm" wire:loading.attr="disabled">
+                        <span wire:loading.remove wire:target="verifyForgotPasswordOtp">Reset & Save Password</span>
+                        <span wire:loading wire:target="verifyForgotPasswordOtp" class="loading loading-spinner loading-xs"></span>
+                    </button>
+                </form>
+                @elseif($forgotStep === 'success')
+                <div class="text-center space-y-4 py-3">
+                    <div class="w-12 h-12 rounded-full bg-success/20 text-success flex items-center justify-center mx-auto">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    </div>
+                    <h4 class="font-extrabold text-base text-base-content">Password Reset Successfully!</h4>
+                    <p class="text-xs text-base-content/70">Your account password has been updated. You can now sign in with your new password.</p>
+                    <button type="button" wire:click="openLogin" class="btn btn-primary rounded-xl font-bold text-sm w-full">Sign In Now</button>
                 </div>
                 @endif
-
-                <div class="form-control">
-                    <label class="label justify-center pb-1"><span class="label-text font-bold uppercase tracking-widest text-xs text-base-content/60">6-Digit Code</span></label>
-                    <input type="text" wire:model="otpInput" maxlength="6" placeholder="123456" autofocus required class="input input-bordered bg-base-200/50 text-base-content w-48 mx-auto text-center text-2xl font-mono tracking-widest rounded-xl focus:input-primary" />
-                    @error('otpInput') <span class="text-xs text-error mt-2 block font-medium">{{ $message }}</span> @enderror
-                </div>
-
-                <button type="submit" class="btn btn-primary w-full rounded-xl font-bold text-sm shadow-sm" wire:loading.attr="disabled">
-                    <span wire:loading.remove wire:target="verifyOtp">Verify Code & Login</span>
-                    <span wire:loading wire:target="verifyOtp" class="loading loading-spinner loading-xs"></span>
-                </button>
-            </form>
             @endif
         </div>
 
@@ -153,4 +187,51 @@
         </form>
     </dialog>
     @endif
+
+    <!-- Terms & Conditions Dialog -->
+    <dialog id="terms_modal" class="modal">
+        <div class="modal-box max-w-2xl bg-base-100 text-base-content rounded-3xl border border-base-300 p-6 space-y-4 shadow-2xl">
+            <h3 class="font-extrabold text-xl text-base-content flex items-center gap-2">
+                <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Terms & Conditions
+            </h3>
+            <div class="max-h-80 overflow-y-auto pr-2 text-xs space-y-3 leading-relaxed text-base-content/80 border-t border-b border-base-300 py-4">
+                <p class="font-bold text-sm text-base-content">1. Lease & Facility Agreement</p>
+                <p>All stall leases and occupancies managed through the STALLM platform are subject to facility verification and management regulations.</p>
+                <p class="font-bold text-sm text-base-content">2. Payment & Monthly Invoicing Terms</p>
+                <p>Invoices for stall monthly rental must be settled on or before the designated due date via supported channels (PayMongo, Cash, or Direct Transfer). Failure to pay on time may result in late penalties or lease suspension.</p>
+                <p class="font-bold text-sm text-base-content">3. Acceptable Use & Conduct</p>
+                <p>Tenants agree to operate strictly within designated stall boundaries and comply with building health, sanitation, safety, and fire code regulations at all times.</p>
+            </div>
+            <div class="modal-action flex justify-between items-center pt-2">
+                <form method="dialog"><button class="btn btn-sm btn-ghost rounded-xl">Close</button></form>
+                <button type="button" onclick="@this.set('terms', true); document.getElementById('terms_modal').close()" class="btn btn-sm btn-primary rounded-xl font-bold px-5 shadow-xs">I Understand & Accept</button>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop"><button>close</button></form>
+    </dialog>
+
+    <!-- Privacy Policy Dialog -->
+    <dialog id="privacy_modal" class="modal">
+        <div class="modal-box max-w-2xl bg-base-100 text-base-content rounded-3xl border border-base-300 p-6 space-y-4 shadow-2xl">
+            <h3 class="font-extrabold text-xl text-base-content flex items-center gap-2">
+                <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                Privacy Policy
+            </h3>
+            <div class="max-h-80 overflow-y-auto pr-2 text-xs space-y-3 leading-relaxed text-base-content/80 border-t border-b border-base-300 py-4">
+                <p class="font-bold text-sm text-base-content">1. Personal Information Collection</p>
+                <p>We collect personal information including full name, email address, phone number, and official identification documents strictly for stall lease processing and account management.</p>
+                <p class="font-bold text-sm text-base-content">2. Security & Encryption Standards</p>
+                <p>Your authentication credentials and sensitive data are encrypted using industry-standard security protocols for robust account protection.</p>
+                <p class="font-bold text-sm text-base-content">3. Third-Party Integrations</p>
+                <p>Payment details are securely handled via PayMongo gateways and SMS/Email notifications are sent via Semaphore & Mailjet. We never sell your personal information to third parties.</p>
+            </div>
+            <div class="modal-action flex justify-between items-center pt-2">
+                <form method="dialog"><button class="btn btn-sm btn-ghost rounded-xl">Close</button></form>
+                <button type="button" onclick="@this.set('terms', true); document.getElementById('privacy_modal').close()" class="btn btn-sm btn-primary rounded-xl font-bold px-5 shadow-xs">I Understand & Accept</button>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop"><button>close</button></form>
+    </dialog>
 </div>
+

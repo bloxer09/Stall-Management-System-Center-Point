@@ -16,6 +16,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\CheckRole::class,
         ]);
 
+        $middleware->validateCsrfTokens(except: [
+            '/payment/paymongo-webhook',
+        ]);
+
         $middleware->redirectTo(
             guests: '/login',
             users: function () {

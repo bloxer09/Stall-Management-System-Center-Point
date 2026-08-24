@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Official Receipt - #{{ $payment->id }}</title>
+    <title>Official Receipt - #{{ $payment->invoice_number }}</title>
     <style>
         body { font-family: Helvetica, Arial, sans-serif; font-size: 14px; color: #333; margin: 0; padding: 20px; }
         .header { border-bottom: 2px solid #4F46E5; padding-bottom: 15px; margin-bottom: 20px; }
@@ -19,7 +19,7 @@
 <body>
     <div class="header">
         <div class="title">STALLM OFFICIAL RECEIPT</div>
-        <div class="sub">Receipt #{{ str_pad($payment->id, 8, '0', STR_PAD_LEFT) }} | Date: {{ $payment->paid_at ? $payment->paid_at->format('M d, Y') : now()->format('M d, Y') }}</div>
+        <div class="sub">Receipt #{{ $payment->invoice_number }} | Date: {{ $payment->paid_at ? $payment->paid_at->format('M d, Y') : now()->format('M d, Y') }}</div>
     </div>
 
     <table class="details-table">
@@ -33,19 +33,19 @@
         </tr>
         <tr>
             <th>Payment Method:</th>
-            <td>{{ strtoupper($payment->payment_method ?? 'N/A') }}</td>
+            <td>{{ strtoupper($payment->transactions->last()->gateway ?? 'CASH') }}</td>
         </tr>
         <tr>
             <th>Reference Code:</th>
-            <td>{{ $payment->payment_reference ?? $payment->paymongo_id ?? 'OFFICE-CASH' }}</td>
+            <td>{{ $payment->transactions->last()->gateway_transaction_id ?? $payment->invoice_number }}</td>
         </tr>
         <tr>
             <th>Payment Notes:</th>
-            <td>{{ $payment->payment_notes ?: 'Monthly Stall Lease Invoice' }}</td>
+            <td>{{ $payment->notes ?: ($payment->items->pluck('description')->join(', ') ?: 'Monthly Stall Lease Invoice') }}</td>
         </tr>
         <tr>
             <th class="total">Amount Paid:</th>
-            <td class="total" style="color: #059669;">₱{{ number_format($payment->amount, 2) }}</td>
+            <td class="total" style="color: #059669;">₱{{ number_format($payment->total_amount, 2) }}</td>
         </tr>
     </table>
 

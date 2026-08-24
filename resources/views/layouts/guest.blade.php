@@ -12,8 +12,8 @@
 
         @livewireStyles
     </head>
-    <body class="font-sans antialiased bg-slate-100 text-slate-900 min-h-screen flex flex-col justify-center items-center p-4">
-        <div class="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-slate-200">
+    <body class="font-sans antialiased bg-base-200 text-base-content min-h-screen flex flex-col justify-center items-center p-4">
+        <div class="w-full max-w-md bg-base-100 p-8 rounded-3xl shadow-xl border border-base-300">
             {{ $slot }}
         </div>
         @livewireScripts

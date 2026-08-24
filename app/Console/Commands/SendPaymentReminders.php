@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Invoice;
 use App\Models\Notification;
-use App\Models\Payment;
 use App\Services\MailjetMailer;
 use App\Services\SmsService;
 use Carbon\Carbon;
@@ -23,23 +23,23 @@ class SendPaymentReminders extends Command
         $days3 = $today->copy()->addDays(3)->toDateString();
         $todayStr = $today->toDateString();
 
-        $pendingPayments = Payment::with(['user', 'stall'])
+        $pendingInvoices = Invoice::with(['user', 'stall'])
             ->where('status', 'pending')
             ->whereIn('due_date', [$days7, $days3, $todayStr])
             ->get();
 
         $sentCount = 0;
 
-        foreach ($pendingPayments as $payment) {
-            $user = $payment->user;
-            $stall = $payment->stall;
+        foreach ($pendingInvoices as $invoice) {
+            $user = $invoice->user;
+            $stall = $invoice->stall;
             if (!$user) continue;
 
-            $daysLeft = Carbon::parse($payment->due_date)->diffInDays($today);
-            $dueText = $daysLeft == 0 ? "is due TODAY" : "is due in {$daysLeft} days ({$payment->due_date})";
+            $daysLeft = Carbon::parse($invoice->due_date)->diffInDays($today);
+            $dueText = $daysLeft == 0 ? "is due TODAY" : "is due in {$daysLeft} days ({$invoice->due_date})";
 
             $title = "Payment Reminder: Stall {$stall->stall_number}";
-            $msg = "Hello {$user->name}, your invoice of ₱" . number_format($payment->amount, 2) . " for Stall {$stall->stall_number} {$dueText}.";
+            $msg = "Hello {$user->name}, your invoice of ₱" . number_format($invoice->total_amount, 2) . " for Stall {$stall->stall_number} {$dueText}.";
 
             // In-app notification
             Notification::send($user->id, 'payment_reminder', $title, $msg, route('user.payments'));

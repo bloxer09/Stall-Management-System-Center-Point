@@ -59,21 +59,35 @@ class LeaseMappingManager extends Component
     {
         $this->validate();
 
+        $alreadyActive = StallMapping::where('stall_id', $this->stall_id)
+            ->where('is_active', true)
+            ->exists();
+
+        if ($alreadyActive) {
+            $this->addError('stall_id', 'This stall already has an active lease. Please terminate the existing lease before creating a new one.');
+            return;
+        }
+
         $filePath = null;
         if ($this->contract_file) {
             $filePath = $uploader->uploadContractDocument($this->contract_file);
         }
 
-        StallMapping::create([
-            'user_id' => $this->user_id,
-            'stall_id' => $this->stall_id,
-            'start_date' => $this->start_date,
-            'end_date' => $this->end_date,
-            'is_active' => true,
-            'contract_document' => $filePath,
-        ]);
+        $mapping = \Illuminate\Support\Facades\DB::transaction(function () use ($filePath) {
+            $map = StallMapping::create([
+                'user_id' => $this->user_id,
+                'stall_id' => $this->stall_id,
+                'start_date' => $this->start_date,
+                'end_date' => $this->end_date,
+                'is_active' => true,
+                'contract_document' => $filePath,
+            ]);
 
-        Stall::where('id', $this->stall_id)->update(['status' => 'occupied']);
+            Stall::where('id', $this->stall_id)->update(['status' => 'occupied']);
+            return $map;
+        });
+
+        \App\Models\AuditLog::record("Created lease mapping #{$mapping->id} for Stall #{$mapping->stall_id}", 'StallMapping', $mapping->id);
 
         session()->flash('message', 'Lease mapping created successfully!');
         $this->closeModal();
@@ -88,6 +102,8 @@ class LeaseMappingManager extends Component
                 'renewal_status' => 'approved',
                 'requested_end_date' => null,
             ]);
+
+            \App\Models\AuditLog::record("Approved lease renewal for mapping #{$mappingId}", 'StallMapping', $mappingId);
             session()->flash('message', 'Renewal request approved!');
         }
     }
@@ -99,14 +115,20 @@ class LeaseMappingManager extends Component
             'renewal_status' => 'rejected',
             'requested_end_date' => null,
         ]);
+
+        \App\Models\AuditLog::record("Rejected lease renewal for mapping #{$mappingId}", 'StallMapping', $mappingId);
         session()->flash('message', 'Renewal request rejected.');
     }
 
     public function terminateLease($mappingId)
     {
         $mapping = StallMapping::findOrFail($mappingId);
-        $mapping->update(['is_active' => false]);
-        Stall::where('id', $mapping->stall_id)->update(['status' => 'available']);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($mapping) {
+            $mapping->update(['is_active' => false]);
+            Stall::where('id', $mapping->stall_id)->update(['status' => 'available']);
+        });
+
+        \App\Models\AuditLog::record("Terminated lease mapping #{$mappingId}", 'StallMapping', $mappingId);
         session()->flash('message', 'Lease terminated successfully.');
     }
 

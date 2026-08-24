@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Payment;
+use App\Models\Invoice;
 use App\Services\PdfReceiptService;
-use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
 
@@ -12,7 +11,7 @@ class ReceiptVerificationController extends Controller
 {
     public function verify(int $id): View
     {
-        $payment = Payment::with(['user', 'stall.location'])->findOrFail($id);
+        $payment = Invoice::with(['user', 'stall.location', 'transactions', 'items'])->findOrFail($id);
         return view('pages.verify_receipt', [
             'payment' => $payment,
         ]);
@@ -20,17 +19,17 @@ class ReceiptVerificationController extends Controller
 
     public function downloadPdf(int $id, PdfReceiptService $pdfService): Response
     {
-        $payment = Payment::findOrFail($id);
+        $invoice = Invoice::findOrFail($id);
         
-        // Authorization check: Admin/Staff or the owner of the payment
-        if (!auth()->user()->isStaff() && auth()->id() !== $payment->user_id) {
+        // Authorization check: Admin/Staff or the owner of the invoice
+        if (!auth()->user()->isStaff() && auth()->id() !== $invoice->user_id) {
             abort(403, 'Unauthorized access to payment receipt.');
         }
 
-        $pdf = $pdfService->generateReceiptPdf($payment);
+        $pdf = $pdfService->generateReceiptPdf($invoice);
         return response($pdf, 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="receipt_' . $payment->id . '.pdf"',
+            'Content-Disposition' => 'inline; filename="receipt_' . $invoice->invoice_number . '.pdf"',
         ]);
     }
 }

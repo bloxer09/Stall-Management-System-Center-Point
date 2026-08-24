@@ -25,7 +25,8 @@ class NavbarNotificationBell extends Component
             $this->notifications = Notification::where('user_id', auth()->id())
                 ->latest()
                 ->take(5)
-                ->get();
+                ->get()
+                ->toArray();
         }
     }
 

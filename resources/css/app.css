@@ -9,16 +9,43 @@
   }
 }
 
-/* Light mode high-contrast text enhancements */
+/* Light mode high-contrast text & component enhancements */
 [data-theme='light'] body {
   color: #0f172a;
 }
 [data-theme='light'] .text-base-content\/60,
 [data-theme='light'] .text-base-content\/50 {
-  color: #334155;
+  color: #475569;
 }
 [data-theme='light'] .text-base-content\/70 {
-  color: #1e293b;
+  color: #334155;
+}
+
+[data-theme='light'] input.input,
+[data-theme='light'] select.select,
+[data-theme='light'] textarea.textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Dark mode high-contrast input & card enhancements */
+[data-theme='dark'] input.input,
+[data-theme='dark'] select.select,
+[data-theme='dark'] textarea.textarea {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+[data-theme='light'] .card {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+[data-theme='dark'] .card {
+  background-color: #0f172a;
+  color: #f8fafc;
 }
 
 /* Custom Enterprise Scrollbars */

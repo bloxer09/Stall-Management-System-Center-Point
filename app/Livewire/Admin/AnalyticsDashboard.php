@@ -3,52 +3,45 @@
 namespace App\Livewire\Admin;
 
 use App\Models\AuditLog;
-use App\Models\Payment;
+use App\Models\Invoice;
 use App\Models\Stall;
 use App\Models\StallLocation;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
-
 use Livewire\Component;
 
 class AnalyticsDashboard extends Component
 {
-    public function exportCsv()
+    public function exportXlsx(\App\Services\XlsxExportService $exporter)
     {
-        AuditLog::log(Auth::id(), 'Exported Analytics CSV Report', 'Analytics', 1);
+        AuditLog::record('Exported Analytics XLSX Report', 'Analytics', 1);
 
-        $payments = Payment::with(['user', 'stall'])->where('status', 'paid')->latest()->get();
+        $invoices = Invoice::with(['user', 'stall', 'transactions'])->where('status', 'paid')->latest()->get();
+        $filename = 'analytics_revenue_report_' . date('Y_m_d_His') . '.xlsx';
 
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="analytics_revenue_report_' . date('Y_m_d') . '.csv"',
-        ];
+        $headers = ['Invoice Number', 'Tenant Name', 'Tenant Email', 'Stall Number', 'Amount (PHP)', 'Method', 'Reference', 'Paid Date'];
+        $rows = [];
 
-        $callback = function () use ($payments) {
-            $file = fopen('php://output', 'w');
-            fputcsv($file, ['Payment ID', 'Tenant Name', 'Tenant Email', 'Stall Number', 'Amount (PHP)', 'Method', 'Reference', 'Paid Date']);
+        foreach ($invoices as $inv) {
+            $lastTxn = $inv->transactions->last();
+            $rows[] = [
+                $inv->invoice_number,
+                $inv->user->name ?? 'N/A',
+                $inv->user->email ?? 'N/A',
+                $inv->stall->stall_number ?? 'N/A',
+                $inv->total_amount,
+                strtoupper($lastTxn->gateway ?? 'CASH'),
+                $lastTxn->gateway_transaction_id ?? 'N/A',
+                $inv->paid_at ? Carbon::parse($inv->paid_at)->format('Y-m-d H:i') : 'N/A',
+            ];
+        }
 
-            foreach ($payments as $p) {
-                fputcsv($file, [
-                    '#PAY-' . $p->id,
-                    $p->user->name ?? 'N/A',
-                    $p->user->email ?? 'N/A',
-                    $p->stall->stall_number ?? 'N/A',
-                    $p->amount,
-                    strtoupper($p->payment_method ?? 'CASH'),
-                    $p->payment_reference ?? 'N/A',
-                    $p->paid_at ? Carbon::parse($p->paid_at)->format('Y-m-d H:i') : '',
-                ]);
-            }
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+        return $exporter->downloadXlsx($filename, $headers, $rows);
     }
 
     public function exportPdf()
     {
-        AuditLog::log(Auth::id(), 'Exported Analytics PDF Summary Report', 'Analytics', 1);
+        AuditLog::record('Exported Analytics PDF Summary Report', 'Analytics', 1);
 
         return redirect()->route('admin.reports');
     }
@@ -61,24 +54,30 @@ class AnalyticsDashboard extends Component
         $maintenanceStalls = Stall::where('status', 'maintenance')->count();
         $occupancyRate = $totalStalls > 0 ? round(($occupiedStalls / $totalStalls) * 100, 1) : 0;
 
-        $totalRevenue = Payment::where('status', 'paid')->sum('amount');
-        $monthlyRevenue = Payment::where('status', 'paid')
+        $totalRevenue = Invoice::where('status', 'paid')->sum('total_amount');
+        $monthlyRevenue = Invoice::where('status', 'paid')
             ->whereMonth('paid_at', Carbon::now()->month)
             ->whereYear('paid_at', Carbon::now()->year)
-            ->sum('amount');
+            ->sum('total_amount');
 
-        // 12-month revenue breakdown for Chart.js
+        // Aggregated 12-month revenue query (DB-agnostic for MySQL and SQLite)
+        $driver = \Illuminate\Support\Facades\DB::connection()->getDriverName();
+        $dateFormat = $driver === 'sqlite' ? "strftime('%Y-%m', paid_at)" : "DATE_FORMAT(paid_at, '%Y-%m')";
+
+        $rawRevenue = Invoice::selectRaw("{$dateFormat} as month_key, SUM(total_amount) as revenue")
+            ->where('status', 'paid')
+            ->where('paid_at', '>=', now()->subMonths(11)->startOfMonth())
+            ->groupByRaw($dateFormat)
+            ->pluck('revenue', 'month_key')
+            ->toArray();
+
         $monthsLabels = [];
         $revenueData = [];
         for ($i = 11; $i >= 0; $i--) {
             $month = Carbon::now()->subMonths($i);
-            $revenue = Payment::where('status', 'paid')
-                ->whereMonth('paid_at', $month->month)
-                ->whereYear('paid_at', $month->year)
-                ->sum('amount');
-
+            $key = $month->format('Y-m');
             $monthsLabels[] = $month->format('M Y');
-            $revenueData[] = (float) $revenue;
+            $revenueData[] = (float) ($rawRevenue[$key] ?? 0);
         }
 
         // Occupancy breakdown by Floor Location

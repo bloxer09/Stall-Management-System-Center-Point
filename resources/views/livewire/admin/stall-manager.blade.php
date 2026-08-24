@@ -61,13 +61,7 @@
                     @forelse($stalls as $stall)
                         <tr class="hover:bg-base-200/40 transition">
                             <td>
-                                @if($stall->image)
-                                    <img src="{{ asset('storage/' . $stall->image) }}" class="w-12 h-12 rounded-2xl object-cover border border-base-300 shadow-xs" alt="Stall Photo">
-                                @else
-                                    <div class="w-12 h-12 rounded-2xl bg-base-200 border border-base-300 flex items-center justify-center text-base-content/40">
-                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                    </div>
-                                @endif
+                                <img src="{{ $stall->image_url }}" onclick="openImageLightbox(this.src)" class="w-12 h-12 rounded-2xl object-cover border border-base-300 shadow-xs cursor-pointer hover:scale-110 transition" alt="Stall Photo" title="Click to view full image">
                             </td>
                             <td class="font-extrabold text-base-content">{{ $stall->stall_number }}</td>
                             <td>
@@ -173,49 +167,6 @@
                 </form>
             </div>
             <form method="dialog" class="modal-backdrop"><button wire:click="closeModal">close</button></form>
-        </dialog>
-    @endif
-
-    <!-- Modal 2: Floor Location Add/Edit Modal -->
-    @if($showLocationModal)
-        <dialog class="modal modal-open">
-            <div class="modal-box max-w-md p-6 bg-base-100 rounded-3xl border border-base-300 space-y-4">
-                <h3 class="text-lg font-bold text-base-content">{{ $editingLocationId ? 'Edit Floor Location' : 'Add New Floor Location' }}</h3>
-                <form wire:submit.prevent="saveLocation" class="space-y-4">
-                    <div class="form-control">
-                        <label class="label"><span class="label-text font-bold text-xs uppercase">Floor Name *</span></label>
-                        <input type="text" wire:model="location_name" class="input input-bordered rounded-xl text-sm" placeholder="e.g. 3rd Floor Mezzanine">
-                        @error('location_name') <span class="text-error text-xs mt-1">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="form-control">
-                        <label class="label"><span class="label-text font-bold text-xs uppercase">Description</span></label>
-                        <textarea wire:model="location_description" rows="2" class="textarea textarea-bordered rounded-xl text-sm" placeholder="Description..."></textarea>
-                        @error('location_description') <span class="text-error text-xs mt-1">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="grid grid-cols-3 gap-3">
-                        <div class="form-control">
-                            <label class="label"><span class="label-text font-bold text-[10px] uppercase">Sort Order</span></label>
-                            <input type="number" wire:model="location_sort_order" class="input input-bordered rounded-xl text-sm">
-                        </div>
-                        <div class="form-control">
-                            <label class="label"><span class="label-text font-bold text-[10px] uppercase">Grid Rows</span></label>
-                            <input type="number" wire:model="location_grid_rows" class="input input-bordered rounded-xl text-sm">
-                        </div>
-                        <div class="form-control">
-                            <label class="label"><span class="label-text font-bold text-[10px] uppercase">Grid Cols</span></label>
-                            <input type="number" wire:model="location_grid_cols" class="input input-bordered rounded-xl text-sm">
-                        </div>
-                    </div>
-
-                    <div class="flex justify-end gap-2 pt-2">
-                        <button type="button" wire:click="closeLocationModal" class="btn btn-ghost rounded-xl font-bold">Cancel</button>
-                        <button type="submit" class="btn btn-success text-white rounded-xl font-bold">Save Floor Location</button>
-                    </div>
-                </form>
-            </div>
-            <form method="dialog" class="modal-backdrop"><button wire:click="closeLocationModal">close</button></form>
         </dialog>
     @endif
 </div>

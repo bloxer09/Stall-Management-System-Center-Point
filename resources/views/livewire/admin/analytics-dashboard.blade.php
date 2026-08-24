@@ -6,9 +6,9 @@
             <p class="text-xs text-base-content/60 mt-1">Real-time commercial stall occupancy, revenue trends, and operational metrics</p>
         </div>
         <div class="flex items-center gap-2">
-            <button wire:click="exportCsv" class="btn btn-outline btn-sm rounded-xl font-bold gap-1.5 shadow-xs">
+            <button wire:click="exportXlsx" class="btn btn-outline btn-sm rounded-xl font-bold gap-1.5 shadow-xs">
                 <svg class="w-4 h-4 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                Export CSV Data
+                Export Excel (.xlsx)
             </button>
             <button wire:click="exportPdf" class="btn btn-primary btn-sm rounded-xl font-bold gap-1.5 shadow-xs">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
@@ -47,12 +47,15 @@
         </div>
 
         <div class="stat p-5">
-            <div class="stat-title text-xs font-bold text-base-content/60 uppercase tracking-wider">Stall Inventory</div>
-            <div class="flex items-center gap-2 mt-2">
-                <span class="badge badge-success font-bold text-xs">{{ $availableStalls }} Free</span>
-                <span class="badge badge-warning font-bold text-xs">{{ $maintenanceStalls }} Maint</span>
+            <div class="stat-figure text-warning">
+                <svg class="w-8 h-8 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
             </div>
-            <div class="stat-desc text-xs text-base-content/50 mt-2">Active Stall Units</div>
+            <div class="stat-title text-xs font-bold text-base-content/60 uppercase tracking-wider">Stall Inventory</div>
+            <div class="stat-value text-2xl font-black text-base-content mt-1">{{ $totalStalls }} <span class="text-xs font-bold text-base-content/60 tracking-normal font-sans">Units</span></div>
+            <div class="stat-desc text-xs mt-1 flex items-center gap-1.5 flex-wrap">
+                <span class="badge badge-success badge-sm font-extrabold text-[10px] text-white py-1 px-2.5">{{ $availableStalls }} Available</span>
+                <span class="badge badge-warning badge-sm font-extrabold text-[10px] text-white py-1 px-2.5">{{ $maintenanceStalls }} Maint</span>
+            </div>
         </div>
     </div>
 

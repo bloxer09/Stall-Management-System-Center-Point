@@ -4,10 +4,16 @@
             <h1 class="text-2xl font-black tracking-tight text-base-content">Payment Ledger & Transactions</h1>
             <p class="text-xs text-base-content/60 mt-1">Track PayMongo online checkouts, office cash payments, and billing status</p>
         </div>
-        <button wire:click="openManualModal" class="btn btn-primary btn-sm rounded-xl font-bold gap-1 shadow-xs">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            Record Office Cash Payment
-        </button>
+        <div class="flex items-center gap-2">
+            <button wire:click="exportXlsx" class="btn btn-outline btn-sm rounded-xl font-bold gap-1 shadow-xs">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Export Excel (.xlsx)
+            </button>
+            <button wire:click="openManualModal" class="btn btn-primary btn-sm rounded-xl font-bold gap-1 shadow-xs">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Record Office Cash Payment
+            </button>
+        </div>
     </div>
 
     @if(session()->has('message'))
@@ -50,11 +56,22 @@
                 <tbody class="divide-y divide-base-200">
                     @forelse($payments as $p)
                         <tr class="hover:bg-base-200/40 transition">
-                            <td class="font-mono font-bold text-primary">#INV-{{ str_pad($p->id, 5, '0', STR_PAD_LEFT) }}</td>
-                            <td class="font-bold text-base-content">{{ $p->user->name ?? 'Deleted User' }}</td>
+                            <td class="font-mono font-bold text-primary">#{{ $p->invoice_number }}</td>
+                            <td>
+                                <div class="flex items-center gap-2">
+                                    @if($p->user)
+                                        <div class="avatar">
+                                            <div class="w-7 h-7 rounded-full overflow-hidden border border-primary/20 shadow-xs">
+                                                <img src="{{ $p->user->avatar_url }}" onclick="openImageLightbox(this.src)" class="w-full h-full object-cover cursor-pointer" alt="Tenant Avatar" title="Click to view full photo">
+                                            </div>
+                                        </div>
+                                    @endif
+                                    <span class="font-bold text-base-content">{{ $p->user->name ?? 'Deleted User' }}</span>
+                                </div>
+                            </td>
                             <td class="font-medium text-base-content/70">Stall #{{ $p->stall->stall_number ?? 'N/A' }}</td>
-                            <td class="font-black text-primary">₱{{ number_format($p->amount, 2) }}</td>
-                            <td class="uppercase text-[11px] font-semibold text-base-content/60">{{ $p->payment_method ?? 'paymongo' }}</td>
+                            <td class="font-black text-primary">₱{{ number_format($p->total_amount, 2) }}</td>
+                            <td class="uppercase text-[11px] font-semibold text-base-content/60">{{ $p->transactions->last()->gateway ?? ($p->status === 'paid' ? 'cash' : 'paymongo') }}</td>
                             <td>
                                 <span class="badge badge-sm font-bold uppercase {{ $p->status === 'paid' ? 'badge-success text-white' : ($p->status === 'pending' ? 'badge-warning' : 'badge-error text-white') }}">
                                     {{ $p->status }}
@@ -62,7 +79,7 @@
                             </td>
                             <td class="text-right">
                                 @if($p->status !== 'paid')
-                                    <button wire:click="markAsPaid({{ $p->id }})" class="btn btn-xs btn-outline btn-success rounded-xl font-bold">
+                                    <button wire:click="markAsPaid({{ $p->id }})" wire:loading.attr="disabled" class="btn btn-xs btn-outline btn-success rounded-xl font-bold">
                                         Mark Paid
                                     </button>
                                 @else
@@ -110,8 +127,8 @@
                     <label class="label pb-1"><span class="label-text font-bold text-xs">Tenant Account</span></label>
                     <select wire:model="user_id" required class="select select-bordered select-sm w-full rounded-xl text-xs">
                         <option value="">-- Select Tenant --</option>
-                        @foreach($users as $u)
-                            <option value="{{ $u->id }}">{{ $u->name }} ({{ $u->email }})</option>
+                        @foreach($modalUsers as $u)
+                            <option value="{{ $u['id'] }}">{{ $u['name'] }} ({{ $u['email'] }})</option>
                         @endforeach
                     </select>
                 </div>
@@ -120,8 +137,8 @@
                     <label class="label pb-1"><span class="label-text font-bold text-xs">Stall</span></label>
                     <select wire:model="stall_id" required class="select select-bordered select-sm w-full rounded-xl text-xs">
                         <option value="">-- Select Stall --</option>
-                        @foreach($stalls as $st)
-                            <option value="{{ $st->id }}">Stall #{{ $st->stall_number }}</option>
+                        @foreach($modalStalls as $st)
+                            <option value="{{ $st['id'] }}">Stall #{{ $st['stall_number'] }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -136,7 +153,10 @@
                     <input type="text" wire:model="payment_reference" required placeholder="OFFICE-CASH-1002" class="input input-bordered input-sm w-full rounded-xl text-xs" />
                 </div>
 
-                <button type="submit" class="btn btn-primary w-full rounded-xl font-bold text-sm">Record Payment</button>
+                <button type="submit" wire:loading.attr="disabled" wire:target="recordManualPayment" class="btn btn-primary w-full rounded-xl font-bold text-sm">
+                    <span wire:loading.remove wire:target="recordManualPayment">Record Payment</span>
+                    <span wire:loading wire:target="recordManualPayment" class="loading loading-spinner loading-xs"></span>
+                </button>
             </form>
         </div>
         <form method="dialog" class="modal-backdrop"><button wire:click="requestCloseModal">close</button></form>

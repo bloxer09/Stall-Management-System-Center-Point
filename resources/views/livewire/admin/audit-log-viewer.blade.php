@@ -4,9 +4,9 @@
             <h2 class="text-xl font-black tracking-tight text-base-content">System Audit Logs</h2>
             <p class="text-xs text-base-content/60 mt-1">Chronological history of security events, allocations, and administrative actions.</p>
         </div>
-        <button wire:click="exportCsv" class="btn btn-outline btn-sm rounded-xl font-bold gap-1 shadow-xs">
+        <button wire:click="exportXlsx" class="btn btn-outline btn-sm rounded-xl font-bold gap-1 shadow-xs">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-            Export CSV
+            Export Excel (.xlsx)
         </button>
     </div>
 
@@ -38,7 +38,18 @@
                     @forelse($logs as $log)
                     <tr class="hover:bg-base-200/40 transition">
                         <td class="font-mono text-xs text-base-content/70 font-semibold">{{ $log->created_at->format('Y-m-d H:i:s') }}</td>
-                        <td class="font-extrabold text-base-content">{{ $log->user->name ?? 'System/Guest' }}</td>
+                        <td>
+                            <div class="flex items-center gap-2">
+                                @if($log->user)
+                                    <div class="avatar">
+                                        <div class="w-7 h-7 rounded-full overflow-hidden border border-primary/20 shadow-xs">
+                                            <img src="{{ $log->user->avatar_url }}" onclick="openImageLightbox(this.src)" class="w-full h-full object-cover cursor-pointer" alt="User Avatar" title="Click to view full photo">
+                                        </div>
+                                    </div>
+                                @endif
+                                <span class="font-extrabold text-base-content">{{ $log->user->name ?? 'System/Guest' }}</span>
+                            </div>
+                        </td>
                         <td class="font-bold text-primary text-xs">{{ $log->action }}</td>
                         <td class="text-xs text-base-content/80 font-medium">{{ $log->entity_type ? "{$log->entity_type} #{$log->entity_id}" : 'N/A' }}</td>
                         <td class="text-right font-mono text-xs text-base-content/60">{{ $log->ip_address }}</td>

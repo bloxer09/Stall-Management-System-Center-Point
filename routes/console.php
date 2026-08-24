@@ -5,6 +5,6 @@ use App\Console\Commands\GenerateMonthlyInvoices;
 use App\Console\Commands\SendPaymentReminders;
 use App\Console\Commands\NotifyExpiringLeases;
 
-Schedule::command('stallm:generate-invoices')->monthlyOn(1, '00:00');
+Schedule::command('billing:generate-invoices')->monthlyOn(1, '00:00');
 Schedule::command('stallm:send-reminders')->dailyAt('08:00');
 Schedule::command('stallm:notify-expiring-leases')->dailyAt('07:00');

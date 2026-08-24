@@ -26,6 +26,18 @@ class Stall extends Model
         'grid_col' => 'integer',
     ];
 
+    public function getImageUrlAttribute(): string
+    {
+        if ($this->image) {
+            if (str_starts_with($this->image, 'http://') || str_starts_with($this->image, 'https://')) {
+                return $this->image;
+            }
+            return asset('storage/' . $this->image);
+        }
+
+        return asset('images/default_stall.jpg');
+    }
+
     public function location()
     {
         return $this->belongsTo(StallLocation::class, 'location_id');
@@ -41,18 +53,23 @@ class Stall extends Model
         return $this->hasOne(StallMapping::class)->where('is_active', true);
     }
 
+    public function currentLease()
+    {
+        return $this->hasOne(StallMapping::class)->where('is_active', true);
+    }
+
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
     public function payments()
     {
-        return $this->hasMany(Payment::class);
+        return $this->hasMany(Invoice::class);
     }
 
     public function tickets()
     {
         return $this->hasMany(Ticket::class);
-    }
-
-    public function utilityReadings()
-    {
-        return $this->hasMany(UtilityReading::class);
     }
 }

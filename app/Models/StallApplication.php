@@ -11,6 +11,7 @@ class StallApplication extends Model
     use HasFactory;
 
     protected $fillable = [
+        'user_id',
         'applicant_name',
         'applicant_email',
         'applicant_phone',
@@ -20,6 +21,7 @@ class StallApplication extends Model
         'message',
         'document',
         'status',
+        'rejection_reason',
         'reviewed_by',
         'reviewed_at',
     ];
@@ -27,6 +29,11 @@ class StallApplication extends Model
     protected $casts = [
         'reviewed_at' => 'datetime',
     ];
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 
     public function preferredStall(): BelongsTo
     {

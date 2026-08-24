@@ -29,6 +29,15 @@ This chapter details the development lifecycle, testing strategies, and deployme
 
 To build a reliable platform, the research team adopted the Software Development Life Cycle (SDLC) using the sequential Waterfall Model. The structured phases — Planning, Analysis and Design, Coding and Development, Testing, Implementation, and Maintenance — ensured that each technical and operational milestone was verified before proceeding to the next.
 
+```mermaid
+flowchart TD
+    Phase1[1. Planning & Requirements Assessment] --> Phase2[2. Architectural & Database Design]
+    Phase2 --> Phase3[3. Coding & Livewire 3 Development]
+    Phase3 --> Phase4[4. Automated PHPUnit & E2E Testing]
+    Phase4 --> Phase5[5. Server Implementation & User Training]
+    Phase5 --> Phase6[6. System Maintenance & Security Auditing]
+```
+
 
 Planning
 
@@ -95,7 +104,7 @@ The system architecture was organized into the following functional modules:
 
 16. Audit Logging and Security Monitoring: Recording all significant administrative actions with the responsible user's identity, action description, affected entity, timestamp, and IP address.
 
-The relational database schema is structured around the following tables, managed through Laravel migrations:
+The relational database schema is structured around the following core tables, managed through Laravel migrations:
 
 - users: Stores credentials, roles (admin, staff, user), Google ID and Facebook ID for social logins, profile picture, email and phone verification timestamps, two_factor_enabled flag, and two_factor_confirmed_at timestamp.
 - stall_locations: Categorizes stall zones or floor levels.
@@ -145,7 +154,27 @@ The system dispatches automated lease expiry notifications through a separate sc
 
 PayMongo Online Payment Gateway Integration
 
-To support online rental payments via GCash, Maya, and credit or debit cards, the system integrates with the PayMongo REST API:
+To support online rental payments via GCash, Maya, and credit or debit cards, the system integrates with the PayMongo REST API. The following sequence diagram details the interaction flow between the tenant, the StallM system backend, the PayMongo API, and the database upon payment completion:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Tenant
+    participant App as StallM App (Laravel / Livewire)
+    participant PM as PayMongo API Gateway
+    participant DB as MySQL Database
+    
+    Tenant->>App: Selects unpaid invoice & clicks 'Pay Online'
+    App->>PM: POST /v1/checkout_sessions (Amount, Tenant Info, Redirect URL)
+    PM-->>App: Returns Checkout Session URL & Token
+    App-->>Tenant: Redirects tenant to PayMongo Checkout Page
+    Tenant->>PM: Selects payment method (GCash / Maya / Card) & confirms
+    PM->>App: Asynchronous HTTP Webhook (checkout_session.payment.paid)
+    App->>App: Validates PayMongo Webhook Signature Header
+    App->>DB: Updates invoice status to 'paid' & stores PayMongo Reference ID
+    App->>DB: Triggers Dompdf official receipt & QR code generation
+    App-->>Tenant: Dispatches Mailjet email & Semaphore SMS receipt notification
+```
 
 1. Session Creation: When a tenant selects unpaid invoices and clicks "Pay Online," the payment controller sends a request to the PayMongo API to create a Checkout Session populated with billing details, tenant information, and redirect URLs.
 
@@ -163,7 +192,26 @@ The advanced reporting module provides administrators with a comprehensive finan
 
 Two-Factor Authentication (2FA)
 
-The system implements optional Two-Factor Authentication for administrator and staff accounts. When an administrator or staff member enables 2FA through their account settings, all subsequent logins trigger a secondary verification step. After successful password authentication, the system generates a cryptographically random 6-digit OTP, stores it in the two_factor_codes table with an expiry timestamp of 10 minutes, and dispatches it to the user's registered phone number via Semaphore SMS. The user is then redirected to a challenge page where they must enter the OTP to complete the login. A dedicated RequiresTwoFactor middleware, applied to all administrator and staff route groups, verifies the presence of a valid two_factor_verified flag in the session and redirects unverified users to the challenge page. OTP codes are invalidated immediately upon successful verification or upon expiry.
+The system implements optional Two-Factor Authentication for administrator and staff accounts. When an administrator or staff member enables 2FA through their account settings, all subsequent logins trigger a secondary verification step. The security verification sequence is illustrated in the flowchart below:
+
+```mermaid
+flowchart TD
+    Start[User Auth Request] --> PasswordCheck{Valid Email & Password?}
+    PasswordCheck -- No --> AuthFail[Return Authentication Error]
+    PasswordCheck -- Yes --> Check2FA{Account 2FA Enabled?}
+    Check2FA -- No --> Dashboard[Grant Access to System Dashboard]
+    Check2FA -- Yes --> GenOTP[Generate 6-Digit Numeric OTP]
+    GenOTP --> SaveOTP[Save OTP & 10-Min Expiry in two_factor_codes]
+    SaveOTP --> DispatchSMS[Dispatch OTP via Semaphore SMS API]
+    DispatchSMS --> ChallengePage[Redirect to 2FA Challenge View]
+    ChallengePage --> EnterOTP[User Enters OTP]
+    EnterOTP --> VerifyOTP{Valid & Unexpired?}
+    VerifyOTP -- No --> OTPFail[Display Invalid Code Error]
+    VerifyOTP -- Yes --> MarkSession[Set Session two_factor_verified = true]
+    MarkSession --> Dashboard
+```
+
+After successful password authentication, the system generates a cryptographically random 6-digit OTP, stores it in the two_factor_codes table with an expiry timestamp of 10 minutes, and dispatches it to the user's registered phone number via Semaphore SMS. The user is then redirected to a challenge page where they must enter the OTP to complete the login. A dedicated RequiresTwoFactor middleware, applied to all administrator and staff route groups, verifies the presence of a valid two_factor_verified flag in the session and redirects unverified users to the challenge page. OTP codes are invalidated immediately upon successful verification or upon expiry.
 
 
 Public Stall Reservation Portal

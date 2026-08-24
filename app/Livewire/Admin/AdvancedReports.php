@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Admin;
 
-use App\Models\Payment;
+use App\Models\Invoice;
 use App\Models\Stall;
 use Carbon\Carbon;
 use Dompdf\Dompdf;
@@ -13,7 +13,7 @@ class AdvancedReports extends Component
 {
     public function exportCsv()
     {
-        $payments = Payment::with(['user', 'stall'])->orderBy('created_at', 'desc')->get();
+        $invoices = Invoice::with(['user', 'stall', 'transactions'])->orderBy('created_at', 'desc')->get();
         $csvFileName = 'financial-report-' . date('Y-m-d') . '.csv';
 
         $headers = [
@@ -24,22 +24,23 @@ class AdvancedReports extends Component
             "Expires"             => "0"
         ];
 
-        $columns = ['Payment ID', 'Tenant', 'Stall Number', 'Amount', 'Status', 'Payment Method', 'Paid At', 'Due Date'];
+        $columns = ['Invoice Number', 'Tenant', 'Stall Number', 'Amount', 'Status', 'Payment Method', 'Paid At', 'Due Date'];
 
-        $callback = function () use ($payments, $columns) {
+        $callback = function () use ($invoices, $columns) {
             $file = fopen('php://output', 'w');
             fputcsv($file, $columns);
 
-            foreach ($payments as $p) {
+            foreach ($invoices as $inv) {
+                $lastTxn = $inv->transactions->last();
                 fputcsv($file, [
-                    $p->id,
-                    $p->user->name ?? 'N/A',
-                    $p->stall->stall_number ?? 'N/A',
-                    $p->amount,
-                    $p->status,
-                    $p->payment_method ?? 'N/A',
-                    $p->paid_at ? Carbon::parse($p->paid_at)->format('Y-m-d H:i:s') : '',
-                    $p->due_date ?? '',
+                    $inv->invoice_number,
+                    $inv->user->name ?? 'N/A',
+                    $inv->stall->stall_number ?? 'N/A',
+                    $inv->total_amount,
+                    $inv->status,
+                    $lastTxn->gateway ?? ($inv->status === 'paid' ? 'cash' : 'N/A'),
+                    $inv->paid_at ? Carbon::parse($inv->paid_at)->format('Y-m-d H:i:s') : '',
+                    $inv->due_date ? Carbon::parse($inv->due_date)->format('Y-m-d') : '',
                 ]);
             }
 
@@ -51,12 +52,12 @@ class AdvancedReports extends Component
 
     public function exportPdf()
     {
-        $totalRevenue = Payment::where('status', 'paid')->sum('amount');
-        $pendingAmount = Payment::where('status', 'pending')->sum('amount');
+        $totalRevenue = Invoice::where('status', 'paid')->sum('total_amount');
+        $pendingAmount = Invoice::where('status', 'pending')->sum('total_amount');
         $totalStalls = Stall::count();
         $occupiedStalls = Stall::where('status', 'occupied')->count();
 
-        $payments = Payment::with(['user', 'stall'])->latest()->take(50)->get();
+        $payments = Invoice::with(['user', 'stall'])->latest()->take(50)->get();
 
         $html = view('pdf.financial-report', [
             'totalRevenue' => $totalRevenue,
@@ -68,7 +69,7 @@ class AdvancedReports extends Component
         ])->render();
 
         $options = new Options();
-        $options->set('isRemoteEnabled', true);
+        $options->set('isRemoteEnabled', false);
         $options->set('defaultFont', 'Helvetica');
 
         $dompdf = new Dompdf($options);
@@ -88,43 +89,49 @@ class AdvancedReports extends Component
         $vacantStalls = Stall::where('status', 'available')->count();
         $maintenanceStalls = Stall::where('status', 'maintenance')->count();
 
-        $totalRevenue = Payment::where('status', 'paid')->sum('amount');
-        $monthlyRevenue = Payment::where('status', 'paid')
+        $totalRevenue = Invoice::where('status', 'paid')->sum('total_amount');
+        $monthlyRevenue = Invoice::where('status', 'paid')
             ->whereMonth('paid_at', Carbon::now()->month)
             ->whereYear('paid_at', Carbon::now()->year)
-            ->sum('amount');
+            ->sum('total_amount');
 
         // Overdue Payment Aging
         $today = Carbon::today();
-        $overdue30 = Payment::with(['user', 'stall'])
+        $overdue30 = Invoice::with(['user', 'stall'])
             ->where('status', 'pending')
             ->where('due_date', '<', $today)
             ->where('due_date', '>=', $today->copy()->subDays(30))
             ->get();
 
-        $overdue60 = Payment::with(['user', 'stall'])
+        $overdue60 = Invoice::with(['user', 'stall'])
             ->where('status', 'pending')
             ->where('due_date', '<', $today->copy()->subDays(30))
             ->where('due_date', '>=', $today->copy()->subDays(60))
             ->get();
 
-        $overdue90 = Payment::with(['user', 'stall'])
+        $overdue90 = Invoice::with(['user', 'stall'])
             ->where('status', 'pending')
             ->where('due_date', '<', $today->copy()->subDays(60))
             ->get();
 
-        // 12-month revenue trend
+        // 12-month revenue trend aggregated query (DB-agnostic for MySQL and SQLite)
+        $driver = \Illuminate\Support\Facades\DB::connection()->getDriverName();
+        $dateFormat = $driver === 'sqlite' ? "strftime('%Y-%m', paid_at)" : "DATE_FORMAT(paid_at, '%Y-%m')";
+
+        $rawTrend = Invoice::selectRaw("{$dateFormat} as month_key, SUM(total_amount) as revenue")
+            ->where('status', 'paid')
+            ->where('paid_at', '>=', now()->subMonths(11)->startOfMonth())
+            ->groupByRaw($dateFormat)
+            ->pluck('revenue', 'month_key')
+            ->toArray();
+
         $monthlyTrend = [];
         for ($i = 11; $i >= 0; $i--) {
             $month = Carbon::now()->subMonths($i);
-            $rev = Payment::where('status', 'paid')
-                ->whereMonth('paid_at', $month->month)
-                ->whereYear('paid_at', $month->year)
-                ->sum('amount');
-
+            $key = $month->format('Y-m');
             $monthlyTrend[] = [
                 'month' => $month->format('M Y'),
-                'revenue' => (float)$rev,
+                'revenue' => (float) ($rawTrend[$key] ?? 0),
             ];
         }
 

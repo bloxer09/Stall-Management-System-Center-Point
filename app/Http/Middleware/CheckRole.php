@@ -22,3 +22,4 @@ class CheckRole
         abort(403, 'Unauthorized access: Insufficient role permissions.');
     }
 }
+
