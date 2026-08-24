@@ -41,8 +41,8 @@ class UpdateProfileInformationForm extends Component
 
         if ($this->photo) {
             $path = $this->photo->store('profile-photos', 'public');
-            $validated['profile_picture'] = Storage::url($path);
-            $this->currentPhoto = $validated['profile_picture'];
+            $validated['profile_picture'] = $path;
+            $this->currentPhoto = $path;
         }
 
         $user->fill([

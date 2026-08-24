@@ -9,10 +9,14 @@ use App\Models\TicketParticipant;
 use App\Services\FileUploadService;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use Livewire\WithPagination;
 
 class TicketManager extends Component
 {
-    use WithFileUploads;
+    use WithFileUploads, WithPagination;
+
+    public $search = '';
+    public $statusFilter = '';
 
     public $showCreateModal = false;
     public $showConfirmClose = false;
@@ -20,14 +24,27 @@ class TicketManager extends Component
     public $issue = '';
 
     public $activeTicketId = null;
+    public $showThreadModal = false;
+    public $isWidgetMinimized = false;
+
     public $message = '';
     public $attachment = null;
     public $replyToMessageId = null;
 
     protected $rules = [
-        'stall_id' => 'required|exists:stalls,id',
+        'stall_id' => 'nullable|exists:stalls,id',
         'issue' => 'required|string|min:5',
     ];
+
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingStatusFilter()
+    {
+        $this->resetPage();
+    }
 
     public function openCreateModal()
     {
@@ -63,19 +80,20 @@ class TicketManager extends Component
     {
         $this->validate();
 
-        $myStallIds = StallMapping::where('user_id', auth()->id())
+        $activeLeases = StallMapping::where('user_id', auth()->id())
             ->where('is_active', true)
-            ->pluck('stall_id')
-            ->toArray();
+            ->get();
 
-        if (!in_array($this->stall_id, $myStallIds)) {
-            $this->addError('stall_id', 'You can only create tickets for your active leased stalls.');
+        if ($activeLeases->isEmpty()) {
+            $this->addError('stall_id', 'You must have at least 1 active leased stall to open a support ticket.');
             return;
         }
 
+        $assignedStallId = $this->stall_id ?: $activeLeases->first()->stall_id;
+
         $ticket = Ticket::create([
             'user_id' => auth()->id(),
-            'stall_id' => $this->stall_id,
+            'stall_id' => $assignedStallId,
             'issue' => $this->issue,
             'status' => 'open',
         ]);
@@ -88,19 +106,33 @@ class TicketManager extends Component
 
         session()->flash('message', 'Support ticket created successfully!');
         $this->closeCreateModal();
-        $this->selectTicket($ticket->id);
+        $this->openThreadModal($ticket->id);
     }
 
-    public function selectTicket($id)
+    public function openThreadModal($id)
     {
+        $this->resetValidation();
         $ticket = Ticket::where('user_id', auth()->id())->find($id);
 
-        if (!$ticket) {
-            return;
-        }
+        if (!$ticket) return;
 
         $this->activeTicketId = $ticket->id;
+        $this->showThreadModal = true;
+        $this->isWidgetMinimized = false;
         $this->markAsRead();
+    }
+
+    public function toggleWidgetMinimize()
+    {
+        $this->isWidgetMinimized = !$this->isWidgetMinimized;
+    }
+
+    public function closeThreadModal()
+    {
+        $this->showThreadModal = false;
+        $this->activeTicketId = null;
+        $this->isWidgetMinimized = false;
+        $this->reset(['message', 'attachment', 'replyToMessageId']);
     }
 
     public function markAsRead()
@@ -152,21 +184,26 @@ class TicketManager extends Component
 
     public function render()
     {
-        $tickets = Ticket::with(['stall'])
-            ->where('user_id', auth()->id())
-            ->latest()
-            ->get();
+        $ticketsQuery = Ticket::with(['handler', 'stall', 'messages'])
+            ->where('user_id', auth()->id());
+
+        if ($this->search) {
+            $ticketsQuery->where('issue', 'like', "%{$this->search}%");
+        }
+
+        if ($this->statusFilter) {
+            $ticketsQuery->where('status', $this->statusFilter);
+        }
 
         $activeTicket = null;
-        $messages = [];
+        $otherParticipant = null;
 
         if ($this->activeTicketId) {
-            $activeTicket = Ticket::with(['stall'])->where('user_id', auth()->id())->find($this->activeTicketId);
+            $activeTicket = Ticket::with(['user', 'handler', 'stall', 'messages.user', 'participants'])->where('user_id', auth()->id())->find($this->activeTicketId);
             if ($activeTicket) {
-                $messages = TicketMessage::with(['user', 'parentMessage.user'])
-                    ->where('ticket_id', $this->activeTicketId)
-                    ->orderBy('created_at', 'asc')
-                    ->get();
+                $otherParticipant = TicketParticipant::where('ticket_id', $this->activeTicketId)
+                    ->where('user_id', '!=', auth()->id())
+                    ->first();
             }
         }
 
@@ -177,9 +214,9 @@ class TicketManager extends Component
             ->pluck('stall');
 
         return view('livewire.user.ticket-manager', [
-            'tickets' => $tickets,
+            'tickets' => $ticketsQuery->latest()->paginate(10),
             'activeTicket' => $activeTicket,
-            'messages' => $messages,
+            'otherParticipant' => $otherParticipant,
             'myStalls' => $myStalls,
         ]);
     }

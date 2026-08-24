@@ -49,8 +49,20 @@
                 <tbody class="divide-y divide-base-200">
                     @forelse($mappings as $map)
                     <tr class="hover:bg-base-200/40 transition">
-                        <td class="font-bold text-base-content">{{ $map->user->name }}</td>
-                        <td class="text-base-content/80">Stall {{ $map->stall->stall_number }}</td>
+                        <td>
+                            <div class="flex items-center gap-2">
+                                <div class="avatar placeholder">
+                                    <div class="w-7 h-7 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center border border-primary/20">
+                                        <span>{{ strtoupper(substr($map->user->name ?? 'T', 0, 1)) }}</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="font-extrabold text-sm text-base-content">{{ $map->user->name }}</div>
+                                    <div class="text-[10px] text-base-content/60">{{ $map->user->email }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-base-content/80 font-bold">Stall {{ $map->stall->stall_number }}</td>
                         <td class="text-xs text-base-content/60 font-mono">
                             {{ $map->start_date->format('M d, Y') }} - {{ $map->end_date->format('M d, Y') }}
                         </td>

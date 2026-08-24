@@ -4,50 +4,60 @@ namespace App\Console\Commands;
 
 use App\Models\Payment;
 use App\Models\StallMapping;
-use Carbon\Carbon;
 use Illuminate\Console\Command;
 
 class GenerateMonthlyInvoices extends Command
 {
-    protected $signature = 'stallm:generate-invoices';
-    protected $description = 'Generate monthly recurring invoices for active stall mappings';
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'billing:generate-invoices';
 
-    public function handle(): int
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Automatically generate monthly rental invoices for all active tenant leases.';
+
+    /**
+     * Execute the console command.
+     */
+    public function handle()
     {
-        $this->info('Starting automated monthly invoice generation...');
-
-        $now = Carbon::now();
-        $dueDate = $now->copy()->addDays(15)->toDateString();
-
-        $activeMappings = StallMapping::with('stall')
+        $activeLeases = StallMapping::with(['stall', 'user'])
             ->where('is_active', true)
-            ->where('start_date', '<=', $now->toDateString())
-            ->where('end_date', '>=', $now->toDateString())
             ->get();
 
         $generatedCount = 0;
+        $currentMonthStart = now()->startOfMonth()->toDateString();
+        $currentMonthEnd = now()->endOfMonth()->toDateString();
 
-        foreach ($activeMappings as $mapping) {
-            $alreadyInvoiced = Payment::where('user_id', $mapping->user_id)
-                ->where('stall_id', $mapping->stall_id)
-                ->whereYear('created_at', $now->year)
-                ->whereMonth('created_at', $now->month)
+        foreach ($activeLeases as $lease) {
+            // Check if monthly rental invoice already generated for this stall & tenant for the current month
+            $alreadyInvoiced = Payment::where('user_id', $lease->user_id)
+                ->where('stall_id', $lease->stall_id)
+                ->whereBetween('created_at', [$currentMonthStart, $currentMonthEnd])
+                ->where('payment_notes', 'like', '%Monthly Stall Rental%')
                 ->exists();
 
             if (!$alreadyInvoiced) {
                 Payment::create([
-                    'user_id' => $mapping->user_id,
-                    'stall_id' => $mapping->stall_id,
-                    'amount' => $mapping->stall->price,
+                    'user_id' => $lease->user_id,
+                    'stall_id' => $lease->stall_id,
+                    'amount' => $lease->stall->price,
                     'status' => 'pending',
-                    'due_date' => $dueDate,
-                    'payment_notes' => 'Automated monthly stall lease invoice for ' . $now->format('F Y'),
+                    'due_date' => now()->startOfMonth()->addDays(5)->toDateString(),
+                    'payment_notes' => "Monthly Stall Rental - " . now()->format('F Y'),
                 ]);
+
                 $generatedCount++;
             }
         }
 
-        $this->info("Successfully generated {$generatedCount} monthly invoices.");
-        return Command::SUCCESS;
+        $this->info("Successfully generated {$generatedCount} monthly rental invoice(s).");
+        return 0;
     }
 }

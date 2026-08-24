@@ -52,14 +52,16 @@
 
         <!-- Filter Bar -->
         <div class="card bg-base-100 p-4 rounded-3xl border border-base-300 shadow-md flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <h2 class="text-sm font-black text-base-content uppercase tracking-wider">Stall Listings</h2>
-            <div class="flex flex-wrap gap-1.5">
-                <a href="{{ route('home') }}" wire:navigate class="btn btn-xs rounded-xl font-bold {{ !request('location_id') ? 'btn-primary' : 'btn-ghost text-base-content/70' }}">All Locations</a>
-                @foreach($locations as $loc)
-                    <a href="{{ route('home', ['location_id' => $loc->id]) }}" wire:navigate class="btn btn-xs rounded-xl font-bold {{ request('location_id') == $loc->id ? 'btn-primary' : 'btn-ghost text-base-content/70' }}">
-                        {{ $loc->name }}
-                    </a>
-                @endforeach
+            <h2 class="text-sm font-black text-base-content uppercase tracking-wider">Stall Listings & Inventory</h2>
+            <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+                <select onchange="window.location.href = this.value" class="select select-bordered select-sm rounded-2xl text-xs font-bold text-base-content w-full sm:w-auto">
+                    <option value="{{ route('home') }}" {{ !request('location_id') ? 'selected' : '' }}>All Floor Levels & Zones</option>
+                    @foreach($locations as $loc)
+                        <option value="{{ route('home', ['location_id' => $loc->id]) }}" {{ request('location_id') == $loc->id ? 'selected' : '' }}>
+                            {{ $loc->name }}
+                        </option>
+                    @endforeach
+                </select>
             </div>
         </div>
 

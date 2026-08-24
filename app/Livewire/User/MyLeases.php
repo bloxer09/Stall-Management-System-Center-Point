@@ -4,12 +4,28 @@ namespace App\Livewire\User;
 
 use App\Models\StallMapping;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class MyLeases extends Component
 {
+    use WithPagination;
+
+    public $search = '';
+    public $statusFilter = '';
+
     public $showRenewalModal = false;
     public $selectedMappingId = null;
     public $requested_end_date = '';
+
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingStatusFilter()
+    {
+        $this->resetPage();
+    }
 
     public function openRenewalModal($mappingId)
     {
@@ -43,13 +59,26 @@ class MyLeases extends Component
 
     public function render()
     {
-        $leases = StallMapping::with(['stall.location'])
-            ->where('user_id', auth()->id())
-            ->latest()
-            ->get();
+        $query = StallMapping::with(['stall.location'])
+            ->where('user_id', auth()->id());
+
+        if ($this->search) {
+            $query->whereHas('stall', function ($q) {
+                $q->where('stall_number', 'like', "%{$this->search}%");
+            });
+        }
+
+        if ($this->statusFilter === 'active') {
+            $query->where('is_active', true);
+        } elseif ($this->statusFilter === 'requested') {
+            $query->where('renewal_status', 'requested');
+        } elseif ($this->statusFilter === 'terminated') {
+            $query->where('is_active', false);
+        }
 
         return view('livewire.user.my-leases', [
-            'leases' => $leases,
+            'leases' => $query->latest()->paginate(10),
+            'activeCount' => StallMapping::where('user_id', auth()->id())->where('is_active', true)->count(),
         ]);
     }
 }

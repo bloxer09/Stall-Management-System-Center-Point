@@ -14,8 +14,8 @@
             <div class="relative">
                 @if ($photo)
                     <img src="{{ $photo->temporaryUrl() }}" class="w-20 h-20 rounded-full object-cover border-2 border-indigo-600 shadow" />
-                @elseif ($currentPhoto)
-                    <img src="{{ $currentPhoto }}" class="w-20 h-20 rounded-full object-cover border-2 border-gray-200 shadow" />
+                @elseif (auth()->user()->profile_picture)
+                    <img src="{{ auth()->user()->avatar_url }}" class="w-20 h-20 rounded-full object-cover border-2 border-indigo-600 shadow" />
                 @else
                     <div class="w-20 h-20 rounded-full bg-indigo-600 text-white font-black text-2xl flex items-center justify-center border-2 border-indigo-700 shadow">
                         {{ strtoupper(substr($name ?: 'U', 0, 1)) }}

@@ -83,4 +83,18 @@ class User extends Authenticatable
     {
         return $this->hasMany(AuditLog::class);
     }
+
+    public function getAvatarUrlAttribute(): string
+    {
+        if ($this->profile_picture) {
+            if (filter_var($this->profile_picture, FILTER_VALIDATE_URL)) {
+                return $this->profile_picture;
+            }
+            $cleanPath = ltrim(str_replace('/storage/', '', $this->profile_picture), '/');
+            return asset('storage/' . $cleanPath);
+        }
+
+        $name = urlencode($this->name);
+        return "https://ui-avatars.com/api/?name={$name}&color=7F56D9&background=F9F5FF";
+    }
 }

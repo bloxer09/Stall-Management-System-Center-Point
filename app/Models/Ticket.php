@@ -12,6 +12,7 @@ class Ticket extends Model
     protected $fillable = [
         'user_id',
         'stall_id',
+        'assigned_to',
         'issue',
         'status',
     ];
@@ -24,6 +25,11 @@ class Ticket extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function handler()
+    {
+        return $this->belongsTo(User::class, 'assigned_to');
     }
 
     public function stall()

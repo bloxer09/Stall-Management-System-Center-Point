@@ -26,7 +26,7 @@
         @livewireStyles
     </head>
     <body class="font-sans antialiased bg-base-200 text-base-content min-h-screen">
-        <div class="drawer lg:drawer-open min-h-screen">
+        <div class="drawer {{ auth()->check() ? 'lg:drawer-open' : '' }} min-h-screen">
             <input id="app-drawer" type="checkbox" class="drawer-toggle" />
             
             <div class="drawer-content flex flex-col min-w-0 flex-1 bg-base-200">
@@ -51,6 +51,7 @@
                 </footer>
             </div> 
 
+            @auth
             <!-- Sidebar Drawer for Mobile & Desktop -->
             <div class="drawer-side z-40">
                 <label for="app-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
@@ -185,6 +186,7 @@
                     @endauth
                 </aside>
             </div>
+            @endauth
         </div>
 
         <!-- Global Interactive Auth Modals -->

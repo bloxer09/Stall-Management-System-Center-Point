@@ -37,4 +37,38 @@ class AuditLogViewer extends Component
             'logs' => $query->latest()->paginate(15),
         ]);
     }
+
+    public function exportCsv()
+    {
+        $logs = AuditLog::with('user')->latest()->get();
+        $filename = 'audit_logs_' . date('Y_m_d_His') . '.csv';
+
+        $headers = [
+            "Content-type" => "text/csv",
+            "Content-Disposition" => "attachment; filename={$filename}",
+            "Pragma" => "no-cache",
+            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
+            "Expires" => "0"
+        ];
+
+        $callback = function() use ($logs) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, ['ID', 'Timestamp', 'User', 'Action', 'Entity Type', 'Entity ID', 'IP Address']);
+
+            foreach ($logs as $log) {
+                fputcsv($file, [
+                    $log->id,
+                    $log->created_at->format('Y-m-d H:i:s'),
+                    $log->user->name ?? 'System',
+                    $log->action,
+                    $log->entity_type,
+                    $log->entity_id,
+                    $log->ip_address,
+                ]);
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
 }

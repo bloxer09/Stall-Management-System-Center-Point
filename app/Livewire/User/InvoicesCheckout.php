@@ -5,10 +5,25 @@ namespace App\Livewire\User;
 use App\Models\Payment;
 use App\Services\PayMongoService;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class InvoicesCheckout extends Component
 {
+    use WithPagination;
+
+    public $search = '';
+    public $statusFilter = '';
     public array $selectedInvoiceIds = [];
+
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingStatusFilter()
+    {
+        $this->resetPage();
+    }
 
     public function toggleInvoice($id)
     {
@@ -67,7 +82,6 @@ class InvoicesCheckout extends Component
         $result = $payMongoService->createCheckoutSession($lineItems, $successUrl, $cancelUrl);
 
         if ($result['success'] && !empty($result['checkout_url'])) {
-            // Save PayMongo Checkout Session ID to pending payments belonging to user
             Payment::where('user_id', auth()->id())
                 ->where('status', 'pending')
                 ->whereIn('id', $this->selectedInvoiceIds)
@@ -83,17 +97,26 @@ class InvoicesCheckout extends Component
 
     public function render()
     {
-        $pendingInvoices = Payment::with('stall')
-            ->where('user_id', auth()->id())
-            ->where('status', 'pending')
-            ->latest('due_date')
-            ->get();
+        $query = Payment::with('stall')
+            ->where('user_id', auth()->id());
 
-        $paidInvoices = Payment::with('stall')
-            ->where('user_id', auth()->id())
-            ->where('status', 'paid')
-            ->latest('paid_at')
-            ->get();
+        if ($this->search) {
+            $query->where(function ($q) {
+                $q->where('id', 'like', "%{$this->search}%")
+                    ->orWhere('payment_notes', 'like', "%{$this->search}%")
+                    ->orWhereHas('stall', function ($st) {
+                        $st->where('stall_number', 'like', "%{$this->search}%");
+                    });
+            });
+        }
+
+        if ($this->statusFilter) {
+            $query->where('status', $this->statusFilter);
+        }
+
+        $pendingCount = Payment::where('user_id', auth()->id())->where('status', 'pending')->count();
+        $pendingAmount = Payment::where('user_id', auth()->id())->where('status', 'pending')->sum('amount');
+        $paidCount = Payment::where('user_id', auth()->id())->where('status', 'paid')->count();
 
         $totalSelected = Payment::where('user_id', auth()->id())
             ->where('status', 'pending')
@@ -101,8 +124,10 @@ class InvoicesCheckout extends Component
             ->sum('amount');
 
         return view('livewire.user.invoices-checkout', [
-            'pendingInvoices' => $pendingInvoices,
-            'paidInvoices' => $paidInvoices,
+            'invoices' => $query->latest('due_date')->paginate(10),
+            'pendingCount' => $pendingCount,
+            'pendingAmount' => $pendingAmount,
+            'paidCount' => $paidCount,
             'totalSelected' => $totalSelected,
         ]);
     }

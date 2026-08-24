@@ -7,6 +7,7 @@ use App\Models\Notification;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\TicketParticipant;
+use App\Models\User;
 use App\Services\FileUploadService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
@@ -22,13 +23,23 @@ class TicketCenter extends Component
 
     // Selected Ticket Chat Widget State
     public $selectedTicketId = null;
-    public $showThreadModal = false; // kept for backwards compatibility or full view
+    public $showThreadModal = false;
     public $isWidgetMinimized = false;
 
     // Chat Message Inputs
     public $newMessage = '';
     public $attachment = null;
     public $replyToMessageId = null;
+
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingStatusFilter()
+    {
+        $this->resetPage();
+    }
 
     public function openThreadModal($id)
     {
@@ -52,6 +63,44 @@ class TicketCenter extends Component
         $this->reset(['newMessage', 'attachment', 'replyToMessageId']);
     }
 
+    public function claimTicket($id = null)
+    {
+        $targetId = $id ?: $this->selectedTicketId;
+        if (!$targetId) return;
+
+        $ticket = Ticket::find($targetId);
+        if ($ticket) {
+            $ticket->update(['assigned_to' => Auth::id()]);
+
+            AuditLog::log(
+                Auth::id(),
+                "Claimed support ticket #{$ticket->id} handler assignment",
+                'Ticket',
+                $ticket->id
+            );
+
+            session()->flash('message', "Support ticket #{$ticket->id} assigned to you.");
+        }
+    }
+
+    public function reassignTicket($ticketId, $newAdminId)
+    {
+        $ticket = Ticket::find($ticketId);
+        if ($ticket) {
+            $ticket->update(['assigned_to' => $newAdminId]);
+
+            $newAdmin = User::find($newAdminId);
+            AuditLog::log(
+                Auth::id(),
+                "Reassigned support ticket #{$ticket->id} to " . ($newAdmin->name ?? 'Admin'),
+                'Ticket',
+                $ticket->id
+            );
+
+            session()->flash('message', "Ticket reassigned to " . ($newAdmin->name ?? 'Admin'));
+        }
+    }
+
     public function markAsRead()
     {
         if (!$this->selectedTicketId) return;
@@ -71,6 +120,18 @@ class TicketCenter extends Component
     {
         if (!$this->selectedTicketId) return;
 
+        $ticket = Ticket::find($this->selectedTicketId);
+        if (!$ticket) return;
+
+        // Handler Lock Enforcement: Only assigned admin (or auto-claim if unassigned) can reply
+        if ($ticket->assigned_to === null) {
+            $ticket->update(['assigned_to' => Auth::id()]);
+        } elseif ($ticket->assigned_to !== Auth::id()) {
+            $handlerName = $ticket->handler->name ?? 'another staff member';
+            $this->addError('newMessage', "This support ticket is currently handled by {$handlerName}.");
+            return;
+        }
+
         $this->validate([
             'newMessage' => 'required|string',
             'attachment' => 'nullable|file|max:10240',
@@ -89,18 +150,15 @@ class TicketCenter extends Component
             'reply_to_message_id' => $this->replyToMessageId,
         ]);
 
-        $ticket = Ticket::find($this->selectedTicketId);
-        if ($ticket) {
-            $ticket->touch();
+        $ticket->touch();
 
-            Notification::create([
-                'user_id' => $ticket->user_id,
-                'title' => 'Support Ticket Reply',
-                'message' => "Management replied to your support ticket: {$ticket->subject}",
-                'type' => 'info',
-                'is_read' => false,
-            ]);
-        }
+        Notification::create([
+            'user_id' => $ticket->user_id,
+            'title' => 'Support Ticket Reply',
+            'message' => "Management replied to your support ticket: {$ticket->subject}",
+            'type' => 'info',
+            'is_read' => false,
+        ]);
 
         $this->reset(['newMessage', 'attachment', 'replyToMessageId']);
         $this->markAsRead();
@@ -109,22 +167,29 @@ class TicketCenter extends Component
     public function updateStatus($status)
     {
         if ($this->selectedTicketId) {
-            Ticket::where('id', $this->selectedTicketId)->update(['status' => $status]);
+            $ticket = Ticket::find($this->selectedTicketId);
+            if ($ticket) {
+                if ($ticket->assigned_to === null) {
+                    $ticket->update(['assigned_to' => Auth::id(), 'status' => $status]);
+                } else {
+                    $ticket->update(['status' => $status]);
+                }
 
-            AuditLog::log(
-                Auth::id(),
-                "Updated support ticket #{$this->selectedTicketId} status to {$status}",
-                'Ticket',
-                $this->selectedTicketId
-            );
+                AuditLog::log(
+                    Auth::id(),
+                    "Updated support ticket #{$this->selectedTicketId} status to {$status}",
+                    'Ticket',
+                    $this->selectedTicketId
+                );
 
-            session()->flash('message', 'Ticket status updated to ' . strtoupper($status));
+                session()->flash('message', 'Ticket status updated to ' . strtoupper($status));
+            }
         }
     }
 
     public function render()
     {
-        $ticketsQuery = Ticket::with(['user', 'stall', 'messages']);
+        $ticketsQuery = Ticket::with(['user', 'handler', 'stall', 'messages']);
 
         if ($this->search) {
             $ticketsQuery->where(function ($q) {
@@ -141,13 +206,24 @@ class TicketCenter extends Component
         }
 
         $selectedTicket = null;
+        $otherParticipant = null;
+
         if ($this->selectedTicketId) {
-            $selectedTicket = Ticket::with(['user', 'stall', 'messages.user'])->find($this->selectedTicketId);
+            $selectedTicket = Ticket::with(['user', 'handler', 'stall', 'messages.user', 'participants'])->find($this->selectedTicketId);
+            if ($selectedTicket) {
+                $otherParticipant = TicketParticipant::where('ticket_id', $this->selectedTicketId)
+                    ->where('user_id', '!=', Auth::id())
+                    ->first();
+            }
         }
+
+        $staffUsers = User::whereIn('role', ['admin', 'staff'])->get();
 
         return view('livewire.admin.ticket-center', [
             'tickets' => $ticketsQuery->latest()->paginate(10),
             'selectedTicket' => $selectedTicket,
+            'otherParticipant' => $otherParticipant,
+            'staffUsers' => $staffUsers,
         ]);
     }
 }
