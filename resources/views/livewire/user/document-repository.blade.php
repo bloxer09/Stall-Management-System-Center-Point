@@ -1,45 +1,60 @@
-<div class="space-y-8">
+<div class="space-y-6">
+    <!-- Header -->
     <div>
-        <h2 class="text-2xl font-bold text-gray-800 mb-2">My Document Repository</h2>
-        <p class="text-gray-600 text-sm">Secure access to all your official lease contracts, payment receipts, and billing documents.</p>
+        <h1 class="text-2xl font-black tracking-tight text-base-content">My Document Repository</h1>
+        <p class="text-xs text-base-content/60 mt-1">Secure access to all your official lease contracts, payment receipts, and billing documents.</p>
     </div>
 
     <!-- Section 1: Lease Contracts -->
-    <div class="bg-white rounded-xl shadow p-6">
-        <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-            Lease Contracts
-        </h3>
+    <div class="card bg-base-100 border border-base-300 shadow-md rounded-3xl overflow-hidden">
+        <div class="p-5 border-b border-base-300 bg-base-200/30 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </div>
+            <div>
+                <h2 class="text-sm font-black text-base-content uppercase tracking-wider">Lease Contracts</h2>
+                <p class="text-[10px] text-base-content/50">Signed lease agreements for your allocated stall units</p>
+            </div>
+        </div>
         <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 text-sm">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-3 text-left font-semibold text-gray-600">Stall</th>
-                        <th class="px-4 py-3 text-left font-semibold text-gray-600">Contract Period</th>
-                        <th class="px-4 py-3 text-left font-semibold text-gray-600">Status</th>
-                        <th class="px-4 py-3 text-right font-semibold text-gray-600">Document</th>
+            <table class="table w-full text-sm">
+                <thead>
+                    <tr class="bg-base-200/40 text-base-content/70 text-xs font-bold uppercase tracking-wider">
+                        <th>Stall</th>
+                        <th>Contract Period</th>
+                        <th>Status</th>
+                        <th class="text-right">Document</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200">
+                <tbody class="divide-y divide-base-200">
                     @forelse($leaseContracts as $contract)
-                        <tr>
-                            <td class="px-4 py-3 font-medium text-gray-900">Stall {{ $contract->stall->stall_number }}</td>
-                            <td class="px-4 py-3 text-gray-600">{{ $contract->start_date }} to {{ $contract->end_date }}</td>
-                            <td class="px-4 py-3">
-                                <span class="px-2 py-1 rounded text-xs font-bold {{ $contract->is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
-                                    {{ $contract->is_active ? 'ACTIVE' : 'EXPIRED' }}
+                        <tr class="hover:bg-base-200/40 transition">
+                            <td class="font-extrabold text-base-content">Stall {{ $contract->stall->stall_number }}</td>
+                            <td class="text-xs font-mono text-base-content/70">{{ $contract->start_date }} to {{ $contract->end_date }}</td>
+                            <td>
+                                <span class="badge badge-sm font-extrabold uppercase {{ $contract->is_active ? 'badge-success text-white' : 'badge-neutral' }}">
+                                    {{ $contract->is_active ? 'Active' : 'Expired' }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3 text-right">
-                                <a href="{{ route('file.contract', $contract->id) }}" target="_blank" class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-900 font-semibold text-xs">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                                    Download Contract PDF
+                            <td class="text-right">
+                                <a href="{{ route('file.contract', $contract->id) }}" target="_blank"
+                                   class="btn btn-xs btn-outline rounded-xl font-bold gap-1">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                    Download PDF
                                 </a>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="px-4 py-4 text-center text-gray-500">No contract documents uploaded yet.</td>
+                            <td colspan="4" class="py-16 text-center">
+                                <div class="flex flex-col items-center gap-3 text-base-content/40">
+                                    <svg class="w-12 h-12 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    <div>
+                                        <p class="font-extrabold text-sm">No contracts found</p>
+                                        <p class="text-xs mt-0.5">Your lease contract documents will appear here once uploaded by management.</p>
+                                    </div>
+                                </div>
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -48,39 +63,53 @@
     </div>
 
     <!-- Section 2: Official Receipts -->
-    <div class="bg-white rounded-xl shadow p-6">
-        <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-            Payment Receipts
-        </h3>
+    <div class="card bg-base-100 border border-base-300 shadow-md rounded-3xl overflow-hidden">
+        <div class="p-5 border-b border-base-300 bg-base-200/30 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-success/10 flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            </div>
+            <div>
+                <h2 class="text-sm font-black text-base-content uppercase tracking-wider">Payment Receipts</h2>
+                <p class="text-[10px] text-base-content/50">Official PDF receipts for all confirmed payments</p>
+            </div>
+        </div>
         <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 text-sm">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-3 text-left font-semibold text-gray-600">Receipt Ref</th>
-                        <th class="px-4 py-3 text-left font-semibold text-gray-600">Stall</th>
-                        <th class="px-4 py-3 text-left font-semibold text-gray-600">Amount Paid</th>
-                        <th class="px-4 py-3 text-left font-semibold text-gray-600">Date Paid</th>
-                        <th class="px-4 py-3 text-right font-semibold text-gray-600">Download Receipt</th>
+            <table class="table w-full text-sm">
+                <thead>
+                    <tr class="bg-base-200/40 text-base-content/70 text-xs font-bold uppercase tracking-wider">
+                        <th>Receipt Ref</th>
+                        <th>Stall</th>
+                        <th>Amount Paid</th>
+                        <th>Date Paid</th>
+                        <th class="text-right">Download</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200">
+                <tbody class="divide-y divide-base-200">
                     @forelse($paidReceipts as $receipt)
-                        <tr>
-                            <td class="px-4 py-3 font-mono font-medium text-gray-900">#REC-{{ str_pad($receipt->id, 6, '0', STR_PAD_LEFT) }}</td>
-                            <td class="px-4 py-3 font-medium text-gray-900">Stall {{ $receipt->stall->stall_number }}</td>
-                            <td class="px-4 py-3 font-bold text-green-700">₱{{ number_format($receipt->amount, 2) }}</td>
-                            <td class="px-4 py-3 text-gray-600">{{ $receipt->paid_at ? \Carbon\Carbon::parse($receipt->paid_at)->format('M d, Y') : '-' }}</td>
-                            <td class="px-4 py-3 text-right">
-                                <a href="{{ route('receipt.pdf', $receipt->id) }}" target="_blank" class="inline-flex items-center gap-1 text-green-600 hover:text-green-900 font-semibold text-xs">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                                    Download PDF Receipt
+                        <tr class="hover:bg-base-200/40 transition">
+                            <td class="font-mono font-bold text-primary">#REC-{{ str_pad($receipt->id, 6, '0', STR_PAD_LEFT) }}</td>
+                            <td class="font-extrabold text-base-content">Stall {{ $receipt->stall->stall_number }}</td>
+                            <td class="font-black text-success">₱{{ number_format($receipt->amount, 2) }}</td>
+                            <td class="text-xs font-mono text-base-content/70">{{ $receipt->paid_at ? \Carbon\Carbon::parse($receipt->paid_at)->format('M d, Y') : '—' }}</td>
+                            <td class="text-right">
+                                <a href="{{ route('receipt.pdf', $receipt->id) }}" target="_blank"
+                                   class="btn btn-xs btn-outline btn-success rounded-xl font-bold gap-1">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    PDF Receipt
                                 </a>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-4 py-4 text-center text-gray-500">No paid receipts found.</td>
+                            <td colspan="5" class="py-16 text-center">
+                                <div class="flex flex-col items-center gap-3 text-base-content/40">
+                                    <svg class="w-12 h-12 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <div>
+                                        <p class="font-extrabold text-sm">No receipts yet</p>
+                                        <p class="text-xs mt-0.5">Your official payment receipts will appear here once payments are confirmed.</p>
+                                    </div>
+                                </div>
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>

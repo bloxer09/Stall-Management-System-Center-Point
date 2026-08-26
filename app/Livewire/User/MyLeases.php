@@ -51,19 +51,16 @@ class MyLeases extends Component
         $this->showRenewalModal = false;
     }
 
-    public function submitRenewalRequest()
+    public function submitRenewalRequest(\App\Services\LeaseService $leaseService)
     {
         $this->validate([
             'requested_end_date' => 'required|date|after:today',
         ]);
 
         $mapping = StallMapping::where('user_id', auth()->id())->findOrFail($this->selectedMappingId);
-        $mapping->update([
-            'renewal_status' => 'requested',
-            'requested_end_date' => $this->requested_end_date,
-        ]);
+        $leaseService->requestRenewal($mapping, $this->requested_end_date);
 
-        session()->flash('message', 'Lease renewal request submitted to administrator.');
+        $this->dispatch('notify', type: 'success', message: 'Lease renewal request submitted to administrator.');
         $this->closeRenewalModal();
     }
 
@@ -103,7 +100,7 @@ class MyLeases extends Component
             ->first();
 
         if (!$mapping) {
-            session()->flash('message', 'Unauthorized stall photo update request.');
+            $this->dispatch('notify', type: 'success', message: 'Unauthorized stall photo update request.');
             return;
         }
 
@@ -121,7 +118,7 @@ class MyLeases extends Component
             $mapping->stall->id
         );
 
-        session()->flash('message', "Stall #{$mapping->stall->stall_number} cover photo updated successfully!");
+        $this->dispatch('notify', type: 'success', message: "Stall #{$mapping->stall->stall_number} cover photo updated successfully!");
         $this->closeImageModal();
     }
 

@@ -66,7 +66,7 @@
             </h3>
             <div class="max-h-80 overflow-y-auto pr-2 text-xs space-y-3 leading-relaxed text-base-content/80 border-t border-b border-base-300 py-4">
                 <p class="font-bold text-sm text-base-content">1. Lease & Facility Agreement</p>
-                <p>All stall leases and occupancies managed through the STALLM platform are subject to facility verification and management regulations.</p>
+                <p>All stall leases and occupancies managed through the {{ \App\Models\Setting::get('platform_name', 'STALLM') }} platform are subject to facility verification and management regulations.</p>
                 <p class="font-bold text-sm text-base-content">2. Payment & Monthly Invoicing Terms</p>
                 <p>Invoices for stall monthly rental must be settled on or before the designated due date via supported channels (PayMongo, Cash, or Direct Transfer). Failure to pay on time may result in late penalties or lease suspension.</p>
                 <p class="font-bold text-sm text-base-content">3. Acceptable Use & Conduct</p>

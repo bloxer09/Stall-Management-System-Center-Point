@@ -14,8 +14,8 @@ class FileController extends Controller
     {
         $mapping = StallMapping::findOrFail($mappingId);
 
-        // IDOR check: Only admin/staff or the assigned tenant can download
-        if (!auth()->user()->isStaff() && auth()->id() !== $mapping->user_id) {
+        // IDOR check: Only admin or the assigned tenant can download
+        if (!auth()->user()->isAdmin() && auth()->id() !== $mapping->user_id) {
             abort(403, 'Unauthorized access to contract document.');
         }
 
@@ -30,8 +30,8 @@ class FileController extends Controller
     {
         $message = TicketMessage::with('ticket')->findOrFail($messageId);
 
-        // IDOR check: Only admin/staff or the ticket owner can download
-        if (!auth()->user()->isStaff() && auth()->id() !== $message->ticket->user_id) {
+        // IDOR check: Only admin or the ticket owner can download
+        if (!auth()->user()->isAdmin() && auth()->id() !== $message->ticket->user_id) {
             abort(403, 'Unauthorized access to ticket attachment.');
         }
 

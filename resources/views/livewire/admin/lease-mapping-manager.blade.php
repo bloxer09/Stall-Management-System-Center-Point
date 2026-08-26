@@ -1,17 +1,13 @@
 <div class="space-y-6">
-    @if(session()->has('message'))
-    <div class="alert alert-success shadow-xs rounded-2xl text-xs font-semibold">
-        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-4 w-4" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-        <span>{{ session('message') }}</span>
-    </div>
-    @endif
 
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 card bg-base-100 p-6 rounded-3xl border border-base-300 shadow-md">
         <div>
             <h2 class="text-xl font-black tracking-tight text-base-content">Tenant Lease Allocations</h2>
             <p class="text-xs text-base-content/60 mt-1">Assign tenants to stalls, upload lease contracts, and review extension requests.</p>
         </div>
-        <button wire:click="openModal" class="btn btn-primary btn-sm rounded-xl font-bold gap-1 shadow-xs">
+        <button wire:click="openModal"
+            wire:loading.attr="disabled" wire:loading.class="opacity-60 cursor-wait" wire:target="openModal"
+            class="btn btn-primary btn-sm rounded-xl font-bold gap-1 shadow-xs">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
             Assign Lease
         </button>
@@ -99,7 +95,18 @@
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="6" class="p-8 text-center text-base-content/40 text-xs font-semibold">No active leases found.</td></tr>
+                    <tr>
+                        <td colspan="6" class="py-16 text-center">
+                            <div class="flex flex-col items-center gap-3 text-base-content/40">
+                                <svg class="w-12 h-12 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                <div>
+                                    <p class="font-extrabold text-sm">No leases found</p>
+                                    <p class="text-xs mt-0.5">Try adjusting your filters or assign a new tenant lease.</p>
+                                </div>
+                                <button wire:click="openModal" class="btn btn-primary btn-xs rounded-xl font-bold mt-1">+ Assign First Lease</button>
+                            </div>
+                        </td>
+                    </tr>
                     @endforelse
                 </tbody>
             </table>
@@ -150,7 +157,13 @@
 
             <div class="flex justify-end gap-2 pt-3 border-t border-base-200">
                 <button wire:click="closeModal" class="btn btn-ghost rounded-xl font-bold">Cancel</button>
-                <button wire:click="saveMapping" class="btn btn-primary rounded-xl font-bold">Create Lease</button>
+                <button wire:click="saveMapping"
+                    wire:loading.attr="disabled" wire:loading.class="opacity-60"
+                    wire:target="saveMapping"
+                    class="btn btn-primary rounded-xl font-bold gap-2">
+                    <span wire:loading wire:target="saveMapping" class="loading loading-spinner loading-xs"></span>
+                    Create Lease
+                </button>
             </div>
         </div>
         <form method="dialog" class="modal-backdrop"><button wire:click="closeModal">close</button></form>

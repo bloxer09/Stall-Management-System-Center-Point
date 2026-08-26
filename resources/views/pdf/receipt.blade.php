@@ -18,7 +18,7 @@
 </head>
 <body>
     <div class="header">
-        <div class="title">STALLM OFFICIAL RECEIPT</div>
+        <div class="title">{{ strtoupper(\App\Models\Setting::get('platform_name', 'STALLM')) }} OFFICIAL RECEIPT</div>
         <div class="sub">Receipt #{{ $payment->invoice_number }} | Date: {{ $payment->paid_at ? $payment->paid_at->format('M d, Y') : now()->format('M d, Y') }}</div>
     </div>
 

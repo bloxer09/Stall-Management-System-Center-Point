@@ -21,7 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->redirectTo(
-            guests: '/login',
+            guests: fn () => route('home', ['login' => 1]),
             users: function () {
                 $user = auth()->user();
                 if ($user && $user->isAdmin()) {

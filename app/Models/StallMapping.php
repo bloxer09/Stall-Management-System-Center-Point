@@ -36,4 +36,41 @@ class StallMapping extends Model
     {
         return $this->belongsTo(Stall::class);
     }
+
+    // Scopes
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function scopeInactive($query)
+    {
+        return $query->where('is_active', false);
+    }
+
+    public function scopePendingRenewal($query)
+    {
+        return $query->where('renewal_status', 'requested');
+    }
+
+    // Helpers
+    public function isActive(): bool
+    {
+        return (bool) $this->is_active;
+    }
+
+    public function hasPendingRenewal(): bool
+    {
+        return $this->renewal_status === 'requested';
+    }
+
+    public function daysRemaining(): int
+    {
+        if (!$this->end_date) {
+            return 0;
+        }
+
+        return (int) now()->diffInDays($this->end_date, false);
+    }
 }
+

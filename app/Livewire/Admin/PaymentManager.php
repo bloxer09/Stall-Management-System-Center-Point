@@ -71,64 +71,28 @@ class PaymentManager extends Component
         $this->reset(['user_id', 'stall_id', 'amount', 'payment_reference', 'payment_notes']);
     }
 
-    public function recordManualPayment()
+    public function recordManualPayment(\App\Services\InvoiceService $invoiceService)
     {
         $this->validate();
 
-        $invoiceNumber = 'INV-CASH-' . time();
+        $invoiceService->recordManualCashPayment(
+            (int) $this->user_id,
+            (int) $this->stall_id,
+            (float) $this->amount,
+            $this->payment_reference,
+            $this->payment_notes
+        );
 
-        $invoice = Invoice::create([
-            'invoice_number' => $invoiceNumber,
-            'user_id' => $this->user_id,
-            'stall_id' => $this->stall_id,
-            'total_amount' => $this->amount,
-            'status' => 'paid',
-            'paid_at' => now(),
-            'due_date' => now()->toDateString(),
-            'billing_period' => now()->format('Y-m'),
-            'notes' => $this->payment_notes,
-        ]);
-
-        InvoiceItem::create([
-            'invoice_id' => $invoice->id,
-            'description' => $this->payment_notes ?: 'Office Cash Payment',
-            'amount' => $this->amount,
-            'item_type' => 'rent',
-        ]);
-
-        PaymentTransaction::create([
-            'invoice_id' => $invoice->id,
-            'user_id' => $this->user_id,
-            'gateway' => 'cash',
-            'gateway_transaction_id' => $this->payment_reference,
-            'amount' => $this->amount,
-            'status' => 'successful',
-            'paid_at' => now(),
-        ]);
-
-        session()->flash('message', 'Manual cash payment recorded successfully!');
+        $this->dispatch('notify', type: 'success', message: 'Manual cash payment recorded successfully!');
         $this->closeModal();
     }
 
-    public function markAsPaid($invoiceId)
+    public function markAsPaid($invoiceId, \App\Services\InvoiceService $invoiceService)
     {
         $invoice = Invoice::findOrFail($invoiceId);
-        $invoice->update([
-            'status' => 'paid',
-            'paid_at' => now(),
-        ]);
+        $invoiceService->markAsPaid($invoice);
 
-        PaymentTransaction::create([
-            'invoice_id' => $invoice->id,
-            'user_id' => $invoice->user_id,
-            'gateway' => 'office_cash',
-            'gateway_transaction_id' => 'OFFICE-' . time(),
-            'amount' => $invoice->total_amount,
-            'status' => 'successful',
-            'paid_at' => now(),
-        ]);
-
-        session()->flash('message', 'Invoice marked as paid.');
+        $this->dispatch('notify', type: 'success', message: 'Invoice marked as paid.');
     }
 
     public function exportXlsx(XlsxExportService $exporter)

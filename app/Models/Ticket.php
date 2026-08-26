@@ -47,15 +47,32 @@ class Ticket extends Model
         return $this->hasMany(TicketParticipant::class);
     }
 
-    public function getUnreadCountForUser($userId): int
+    public function getUnreadCountForUser(?int $userId = null): int
     {
-        $participant = $this->participants()->where('user_id', $userId)->first();
-        if (!$participant || !$participant->last_read_message_id) {
-            return $this->messages()->count();
+        $userId = $userId ?? auth()->id();
+        if (!$userId) return 0;
+
+        $participant = $this->relationLoaded('participants')
+            ? $this->participants->firstWhere('user_id', $userId)
+            : $this->participants()->where('user_id', $userId)->first();
+
+        $lastReadId = $participant?->last_read_message_id ?? 0;
+
+        if ($this->relationLoaded('messages')) {
+            return $this->messages
+                ->where('id', '>', $lastReadId)
+                ->where('user_id', '!=', $userId)
+                ->count();
         }
 
         return $this->messages()
-            ->where('id', '>', $participant->last_read_message_id)
+            ->where('id', '>', $lastReadId)
+            ->where('user_id', '!=', $userId)
             ->count();
+    }
+
+    public function getUnreadCountAttribute(): int
+    {
+        return $this->getUnreadCountForUser(auth()->id());
     }
 }

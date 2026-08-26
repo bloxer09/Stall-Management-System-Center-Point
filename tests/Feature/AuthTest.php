@@ -10,18 +10,18 @@ class AuthTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_login_screen_can_be_rendered(): void
+    public function test_login_screen_redirects_to_homepage_with_login_modal(): void
     {
         $response = $this->get('/login');
 
-        $response->assertStatus(200);
+        $response->assertRedirect('/?login=1');
     }
 
-    public function test_register_screen_can_be_rendered(): void
+    public function test_register_screen_redirects_to_homepage_with_register_modal(): void
     {
         $response = $this->get('/register');
 
-        $response->assertStatus(200);
+        $response->assertRedirect('/?register=1');
     }
 
     public function test_authenticated_user_redirected_from_login(): void

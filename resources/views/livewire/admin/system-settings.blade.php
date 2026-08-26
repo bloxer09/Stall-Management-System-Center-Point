@@ -6,13 +6,6 @@
         </div>
     </div>
 
-    @if (session()->has('message'))
-        <div class="alert alert-success shadow-xs rounded-2xl text-xs font-semibold">
-            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-4 w-4" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            <span>{{ session('message') }}</span>
-        </div>
-    @endif
-
     <form wire:submit.prevent="saveSettings" class="space-y-6">
         <!-- General Portal Configuration -->
         <div class="card bg-base-100 rounded-3xl border border-base-300 shadow-md p-6 space-y-4">

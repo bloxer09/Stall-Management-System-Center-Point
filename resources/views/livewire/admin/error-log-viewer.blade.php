@@ -5,23 +5,21 @@
             <p class="text-xs text-base-content/60 mt-1">Structured error exception tracking, categorized diagnostic logs, and stack trace inspection.</p>
         </div>
         <div class="flex items-center gap-2">
-            <button wire:click="exportXlsx" class="btn btn-outline btn-sm rounded-xl font-bold gap-1 shadow-xs">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <button wire:click="exportXlsx"
+                wire:loading.attr="disabled" wire:loading.class="opacity-60 cursor-wait" wire:target="exportXlsx"
+                class="btn btn-outline btn-sm rounded-xl font-bold gap-1 shadow-xs">
+                <span wire:loading wire:target="exportXlsx" class="loading loading-spinner loading-xs"></span>
+                <svg class="w-4 h-4" wire:loading.remove wire:target="exportXlsx" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                 Export Excel (.xlsx)
             </button>
-            <button wire:click="clearLogs" wire:confirm="Are you sure you want to clear all error logs?" class="btn btn-error btn-outline btn-sm rounded-xl font-bold gap-1">
+            <button wire:click="clearLogs" wire:confirm="Are you sure you want to clear all error logs?"
+                wire:loading.attr="disabled" wire:loading.class="opacity-60 cursor-wait" wire:target="clearLogs"
+                class="btn btn-error btn-outline btn-sm rounded-xl font-bold gap-1">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                 Clear Log File
             </button>
         </div>
     </div>
-
-    @if (session()->has('message'))
-        <div class="alert alert-success shadow-xs rounded-2xl text-xs font-semibold">
-            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-4 w-4" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            <span>{{ session('message') }}</span>
-        </div>
-    @endif
 
     <!-- Structured Error Logs Data Table Container -->
     <div class="card bg-base-100 rounded-3xl border border-base-300 overflow-hidden shadow-md">
@@ -88,8 +86,14 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" class="p-8 text-center text-base-content/40 text-xs font-semibold">
-                            No error logs recorded matching search criteria.
+                        <td colspan="5" class="py-16 text-center">
+                            <div class="flex flex-col items-center gap-3 text-base-content/40">
+                                <svg class="w-12 h-12 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <div>
+                                    <p class="font-extrabold text-sm">No error logs found</p>
+                                    <p class="text-xs mt-0.5">The system is clean — no exceptions match your search criteria.</p>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                     @endforelse

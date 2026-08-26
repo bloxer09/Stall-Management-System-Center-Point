@@ -23,7 +23,6 @@ class SettingAndUserTest extends TestCase
         $user = User::factory()->create(['role' => 'user']);
 
         $this->assertTrue($admin->isAdmin());
-        $this->assertTrue($admin->isStaff());
         $this->assertTrue($user->isUser());
         $this->assertFalse($user->isAdmin());
     }

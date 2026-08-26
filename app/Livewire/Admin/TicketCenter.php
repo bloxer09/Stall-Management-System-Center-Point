@@ -87,7 +87,7 @@ class TicketCenter extends Component
                 $ticket->id
             );
 
-            session()->flash('message', "Support ticket #{$ticket->id} assigned to you.");
+            $this->dispatch('notify', type: 'success', message: "Support ticket #{$ticket->id} assigned to you.");
         }
     }
 
@@ -105,7 +105,7 @@ class TicketCenter extends Component
                 $ticket->id
             );
 
-            session()->flash('message', "Ticket reassigned to " . ($newAdmin->name ?? 'Admin'));
+            $this->dispatch('notify', type: 'success', message: "Ticket reassigned to " . ($newAdmin->name ?? 'Admin'));
         }
     }
 
@@ -141,7 +141,7 @@ class TicketCenter extends Component
         }
 
         $this->validate([
-            'newMessage' => 'required|string',
+            'newMessage' => $this->attachment ? 'nullable|string' : 'required|string',
             'attachment' => 'nullable|file|max:10240',
         ]);
 
@@ -150,10 +150,12 @@ class TicketCenter extends Component
             $filePath = $uploader->uploadTicketAttachment($this->attachment);
         }
 
+        $messageContent = trim($this->newMessage) !== '' ? $this->newMessage : 'Sent an attachment';
+
         TicketMessage::create([
             'ticket_id' => $this->selectedTicketId,
             'user_id' => Auth::id(),
-            'message' => $this->newMessage,
+            'message' => $messageContent,
             'attachment_path' => $filePath,
             'reply_to_message_id' => $this->replyToMessageId,
         ]);
@@ -198,14 +200,14 @@ class TicketCenter extends Component
                     $this->selectedTicketId
                 );
 
-                session()->flash('message', 'Ticket status updated to ' . strtoupper($status));
+                $this->dispatch('notify', type: 'success', message: 'Ticket status updated to ' . strtoupper($status));
             }
         }
     }
 
     public function render()
     {
-        $ticketsQuery = Ticket::with(['user', 'handler', 'stall', 'messages']);
+        $ticketsQuery = Ticket::with(['user', 'handler', 'stall', 'messages', 'participants']);
 
         if ($this->search) {
             $ticketsQuery->where(function ($q) {

@@ -40,9 +40,15 @@
         </div>
 
         <div class="form-control">
-            <label class="label"><span class="label-text font-bold text-xs uppercase text-base-content/80">{{ __('Email') }}</span></label>
-            <input wire:model="email" type="email" required autocomplete="username" class="input input-bordered rounded-xl text-sm bg-base-100 text-base-content border-base-300" />
-            @error('email') <span class="text-xs text-error mt-1">{{ $message }}</span> @enderror
+            <div class="flex justify-between items-center px-1">
+                <label class="label"><span class="label-text font-bold text-xs uppercase text-base-content/80">{{ __('Email') }}</span></label>
+                <span class="badge badge-neutral text-[10px] font-bold gap-1 opacity-80">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    Locked
+                </span>
+            </div>
+            <input type="email" value="{{ $email }}" disabled readonly class="input input-bordered rounded-xl text-sm bg-base-200 text-base-content/60 border-base-300 cursor-not-allowed opacity-80" />
+            <span class="text-[10px] text-base-content/50 mt-1 px-1">Email address is permanent and cannot be modified.</span>
         </div>
 
         <div class="form-control">

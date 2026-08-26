@@ -1,6 +1,6 @@
 <div class="space-y-6">
     <div class="text-center">
-        <h2 class="text-3xl font-black text-base-content tracking-tight">Sign in to STALLM</h2>
+        <h2 class="text-3xl font-black text-base-content tracking-tight">Sign in to {{ \App\Models\Setting::get('platform_name', 'STALLM') }}</h2>
         <p class="text-xs text-base-content/60 mt-1 font-medium">Enter your credentials to access your account</p>
     </div>
 

@@ -34,7 +34,6 @@ class UpdateProfileInformationForm extends Component
 
         $validated = $this->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($user->id)],
             'phone' => ['nullable', 'string', 'max:20'],
             'photo' => ['nullable', 'image', 'max:2048'], // Max 2MB
         ]);
@@ -47,16 +46,11 @@ class UpdateProfileInformationForm extends Component
 
         $user->fill([
             'name' => $validated['name'],
-            'email' => $validated['email'],
             'phone' => $validated['phone'],
         ]);
 
         if (isset($validated['profile_picture'])) {
             $user->profile_picture = $validated['profile_picture'];
-        }
-
-        if ($user->isDirty('email')) {
-            $user->email_verified_at = null;
         }
 
         $user->save();

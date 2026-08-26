@@ -19,11 +19,11 @@ class InvoicesCheckout extends Component
     public function mount()
     {
         if (request()->has('success')) {
-            session()->flash('message', 'Payment submitted successfully! Your invoice status will update shortly once confirmed by PayMongo.');
+            $this->dispatch('notify', type: 'success', message: 'Payment submitted successfully! Your invoice status will update shortly once confirmed by PayMongo.');
         }
 
         if (request()->has('cancel')) {
-            session()->flash('error', 'Payment process was cancelled. Your invoices remain unpaid.');
+            $this->dispatch('notify', type: 'error', message: 'Payment process was cancelled. Your invoices remain unpaid.');
         }
     }
 
@@ -61,56 +61,23 @@ class InvoicesCheckout extends Component
             ->toArray();
     }
 
-    public function payWithPayMongo(PayMongoService $payMongoService)
+    public function payWithPayMongo(\App\Services\TransactionService $transactionService)
     {
-        if (empty($this->selectedInvoiceIds)) {
-            session()->flash('error', 'Please select at least one pending invoice to pay.');
-            return;
-        }
-
-        $invoices = Invoice::with(['stall', 'items'])
-            ->where('user_id', auth()->id())
-            ->where('status', 'pending')
-            ->whereIn('id', $this->selectedInvoiceIds)
-            ->get();
-
-        if ($invoices->isEmpty()) {
-            session()->flash('error', 'Selected invoices are invalid or already paid.');
-            return;
-        }
-
-        $lineItems = [];
-        foreach ($invoices as $inv) {
-            $desc = $inv->items->pluck('description')->join(', ') ?: ($inv->notes ?: 'Monthly Stall Rental');
-            $lineItems[] = [
-                'name' => "Stall {$inv->stall->stall_number} Invoice (#{$inv->invoice_number})",
-                'amount' => $inv->total_amount,
-                'description' => $desc,
-            ];
-        }
-
         $successUrl = route('user.payments') . '?success=1';
         $cancelUrl = route('user.payments') . '?cancel=1';
 
-        $result = $payMongoService->createCheckoutSession($lineItems, $successUrl, $cancelUrl);
+        $result = $transactionService->prepareCheckoutSession(
+            (int) auth()->id(),
+            $this->selectedInvoiceIds,
+            $successUrl,
+            $cancelUrl
+        );
 
         if ($result['success'] && !empty($result['checkout_url'])) {
-            foreach ($invoices as $inv) {
-                PaymentTransaction::create([
-                    'invoice_id' => $inv->id,
-                    'user_id' => auth()->id(),
-                    'gateway' => 'paymongo',
-                    'gateway_transaction_id' => $result['id'],
-                    'amount' => $inv->total_amount,
-                    'status' => 'pending',
-                    'payload' => $result['data'] ?? [],
-                ]);
-            }
-
             return redirect()->away($result['checkout_url']);
         }
 
-        session()->flash('error', 'Failed to initialize PayMongo payment gateway: ' . ($result['error'] ?? 'Unknown error'));
+        $this->dispatch('notify', type: 'error', message: $result['error'] ?? 'Failed to initialize payment gateway.');
     }
 
     public function render()

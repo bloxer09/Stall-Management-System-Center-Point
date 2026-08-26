@@ -1,13 +1,12 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Analytics Dashboard') }}
-        </h2>
-    </x-slot>
-
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            @livewire('admin.analytics-dashboard')
-        </div>
+    @push('page-title')Analytics — @endpush
+    @push('breadcrumb')
+    <div class="text-sm breadcrumbs text-base-content/60 font-semibold">
+        <ul>
+            <li><a href="{{ route('admin.dashboard') }}" wire:navigate class="hover:text-primary">Dashboard</a></li>
+            <li class="text-base-content/80">Analytics</li>
+        </ul>
     </div>
+    @endpush
+    <livewire:admin.analytics-dashboard />
 </x-app-layout>

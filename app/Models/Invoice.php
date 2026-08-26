@@ -46,4 +46,48 @@ class Invoice extends Model
     {
         return $this->hasMany(PaymentTransaction::class);
     }
+
+    // Scopes
+    public function scopePending($query)
+    {
+        return $query->where('status', 'pending');
+    }
+
+    public function scopePaid($query)
+    {
+        return $query->where('status', 'paid');
+    }
+
+    public function scopeOverdue($query)
+    {
+        return $query->where('status', 'pending')
+            ->where('due_date', '<', now()->toDateString());
+    }
+
+    public function scopeBillingPeriod($query, string $period)
+    {
+        return $query->where('billing_period', $period);
+    }
+
+    // Helpers
+    public function isPaid(): bool
+    {
+        return $this->status === 'paid';
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === 'pending';
+    }
+
+    public function isOverdue(): bool
+    {
+        return $this->isPending() && $this->due_date && $this->due_date->isPast();
+    }
+
+    public function latestTransaction(): ?PaymentTransaction
+    {
+        return $this->transactions()->latest()->first();
+    }
 }
+

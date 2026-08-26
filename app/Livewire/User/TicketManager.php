@@ -110,7 +110,7 @@ class TicketManager extends Component
             );
         }
 
-        session()->flash('message', 'Support ticket created successfully!');
+        $this->dispatch('notify', type: 'success', message: 'Support ticket created successfully!');
         $this->closeCreateModal();
         $this->openThreadModal($ticket->id);
     }
@@ -167,7 +167,7 @@ class TicketManager extends Component
         if (!$ticket) return;
 
         $this->validate([
-            'message' => 'required|string',
+            'message' => $this->attachment ? 'nullable|string' : 'required|string',
             'attachment' => 'nullable|file|max:10240',
         ]);
 
@@ -176,10 +176,12 @@ class TicketManager extends Component
             $filePath = $uploader->uploadTicketAttachment($this->attachment);
         }
 
+        $messageContent = trim($this->message) !== '' ? $this->message : 'Sent an attachment';
+
         TicketMessage::create([
             'ticket_id' => $this->activeTicketId,
             'user_id' => auth()->id(),
-            'message' => $this->message,
+            'message' => $messageContent,
             'attachment_path' => $filePath,
             'reply_to_message_id' => $this->replyToMessageId,
         ]);
@@ -213,7 +215,7 @@ class TicketManager extends Component
 
     public function render()
     {
-        $ticketsQuery = Ticket::with(['handler', 'stall', 'messages'])
+        $ticketsQuery = Ticket::with(['handler', 'stall', 'messages', 'participants'])
             ->where('user_id', auth()->id());
 
         if ($this->search) {

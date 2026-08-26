@@ -78,7 +78,7 @@ class FloorManager extends Component
             $floor->id
         );
 
-        session()->flash('message', $this->floorId ? 'Floor level updated successfully!' : "Floor level '{$this->name}' created successfully!");
+        $this->dispatch('notify', type: 'success', message: $this->floorId ? 'Floor level updated successfully!' : "Floor level '{$this->name}' created successfully!");
         $this->closeModal();
     }
 
@@ -89,7 +89,7 @@ class FloorManager extends Component
         $floor->delete();
 
         AuditLog::log(Auth::id(), "Deleted floor level '{$name}'", 'StallLocation', $id);
-        session()->flash('message', "Floor level '{$name}' deleted successfully!");
+        $this->dispatch('notify', type: 'success', message: "Floor level '{$name}' deleted successfully!");
     }
 
     public function render()

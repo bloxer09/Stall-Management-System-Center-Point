@@ -50,7 +50,7 @@ class ErrorLogViewer extends Component
         $logService->clearLogs();
         \Illuminate\Support\Facades\Cache::forget('error_logs_parsed');
         $this->resetPage();
-        session()->flash('message', 'Log file cleared successfully.');
+        $this->dispatch('notify', type: 'success', message: 'Log file cleared successfully.');
     }
 
     public function exportXlsx(ErrorLogService $logService, XlsxExportService $exporter)

@@ -48,6 +48,11 @@ class Stall extends Model
         return $this->hasMany(StallMapping::class);
     }
 
+    public function leases()
+    {
+        return $this->hasMany(StallMapping::class);
+    }
+
     public function activeMapping()
     {
         return $this->hasOne(StallMapping::class)->where('is_active', true);
@@ -63,9 +68,9 @@ class Stall extends Model
         return $this->hasMany(Invoice::class);
     }
 
-    public function payments()
+    public function transactions()
     {
-        return $this->hasMany(Invoice::class);
+        return $this->hasManyThrough(PaymentTransaction::class, Invoice::class);
     }
 
     public function tickets()

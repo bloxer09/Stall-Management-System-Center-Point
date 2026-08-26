@@ -48,6 +48,7 @@ class SystemSettings extends Component
         );
 
         session()->flash('message', 'System Settings, Privacy Policy, and Terms & Conditions updated successfully!');
+        $this->redirect(route('admin.settings'), navigate: false);
     }
 
     public function render()

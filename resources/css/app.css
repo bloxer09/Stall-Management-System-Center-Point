@@ -71,3 +71,62 @@
   z-index: 10;
   background-color: #f8fafc;
 }
+
+/* Global wire:loading cursor indicator */
+[wire\:loading],
+[wire\:loading\.delay] {
+  cursor: wait;
+}
+
+/* Smooth page content fade-in on wire:navigate */
+.drawer-content main {
+  animation: page-fade-in 0.15s ease-out;
+}
+
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Breadcrumb refinement */
+.breadcrumbs ul {
+  padding: 0;
+  flex-wrap: wrap;
+}
+.breadcrumbs li + li::before {
+  opacity: 0.4;
+}
+
+/* Table date cells */
+td.font-mono,
+th.font-mono {
+  letter-spacing: 0;
+  font-size: 0.75rem;
+}
+
+/* Focus ring consistency */
+.btn:focus-visible,
+.input:focus-visible,
+.select:focus-visible,
+.textarea:focus-visible {
+  outline: 2px solid hsl(var(--p));
+  outline-offset: 2px;
+}
+
+/* Card hover lift for interactive cards */
+.card-hover {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.10);
+}
+
+/* Sidebar nav link transition */
+nav a {
+  transition: background-color 0.12s ease, color 0.12s ease;
+}

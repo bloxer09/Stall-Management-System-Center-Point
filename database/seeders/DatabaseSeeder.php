@@ -37,17 +37,6 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        $staff = User::firstOrCreate(
-            ['email' => 'staff@stallm.com'],
-            [
-                'name' => 'Staff Maria Clara',
-                'phone' => '09172223344',
-                'password' => Hash::make('password'),
-                'role' => 'staff',
-                'email_verified_at' => now(),
-            ]
-        );
-
         $tenants = [];
         $tenantNames = [
             'Juan Dela Cruz' => 'Cruz Grocery & General Merchandise',

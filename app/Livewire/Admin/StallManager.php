@@ -93,7 +93,7 @@ class StallManager extends Component
             Auth::id()
         );
 
-        session()->flash('message', $this->stallId ? 'Stall updated successfully!' : 'Stall created successfully!');
+        $this->dispatch('notify', type: 'success', message: $this->stallId ? 'Stall updated successfully!' : 'Stall created successfully!');
         $this->closeModal();
     }
 
@@ -104,7 +104,7 @@ class StallManager extends Component
         $stall->delete();
 
         AuditLog::record("Deleted stall {$number}", 'Stall', $id, null, Auth::id());
-        session()->flash('message', 'Stall deleted successfully!');
+        $this->dispatch('notify', type: 'success', message: 'Stall deleted successfully!');
     }
 
     public function render()

@@ -11,8 +11,11 @@ use Illuminate\Support\Facades\Log;
 
 class PayMongoWebhookController extends Controller
 {
-    public function handleWebhook(Request $request, PayMongoService $payMongoService): JsonResponse
-    {
+    public function handleWebhook(
+        Request $request,
+        PayMongoService $payMongoService,
+        \App\Services\TransactionService $transactionService
+    ): JsonResponse {
         $payload = $request->getContent();
         $signatureHeader = $request->header('Paymongo-Signature', '');
         $webhookSecret = config('services.paymongo.webhook_secret') ?? env('PAYMONGO_WEBHOOK_TOKEN', '');
@@ -37,21 +40,7 @@ class PayMongoWebhookController extends Controller
             $paymentMethod = $session['attributes']['payment_method_used'] ?? 'paymongo';
 
             if ($sessionId) {
-                $transactions = PaymentTransaction::where('gateway_transaction_id', $sessionId)->get();
-
-                foreach ($transactions as $txn) {
-                    $txn->update([
-                        'status' => 'successful',
-                        'gateway' => $paymentMethod,
-                        'paid_at' => now(),
-                        'payload' => $session,
-                    ]);
-
-                    Invoice::where('id', $txn->invoice_id)->update([
-                        'status' => 'paid',
-                        'paid_at' => now(),
-                    ]);
-                }
+                $transactionService->handleSuccessfulCheckout($sessionId, $paymentMethod, $session);
             }
         }
 

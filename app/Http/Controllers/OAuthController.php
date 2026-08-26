@@ -13,19 +13,13 @@ class OAuthController extends Controller
 {
     public function redirectToGoogle(): RedirectResponse
     {
-        $redirectUrl = config('services.google.redirect') ?: url('/auth/google/callback');
-        return Socialite::driver('google')
-            ->redirectUrl($redirectUrl)
-            ->redirect();
+        return Socialite::driver('google')->redirect();
     }
 
     public function handleGoogleCallback(): RedirectResponse
     {
         try {
-            $redirectUrl = config('services.google.redirect') ?: url('/auth/google/callback');
-            $googleUser = Socialite::driver('google')
-                ->redirectUrl($redirectUrl)
-                ->user();
+            $googleUser = Socialite::driver('google')->user();
 
             $user = User::where('google_id', $googleUser->getId())
                 ->orWhere('email', $googleUser->getEmail())
@@ -57,25 +51,19 @@ class OAuthController extends Controller
 
             return redirect()->route('user.dashboard');
         } catch (\Exception $e) {
-            return redirect()->route('login')->with('error', 'Google authentication failed: ' . $e->getMessage());
+            return redirect()->route('home', ['login' => 1])->with('error', 'Google authentication failed: ' . $e->getMessage());
         }
     }
 
     public function redirectToFacebook(): RedirectResponse
     {
-        $redirectUrl = config('services.facebook.redirect') ?: url('/auth/facebook/callback');
-        return Socialite::driver('facebook')
-            ->redirectUrl($redirectUrl)
-            ->redirect();
+        return Socialite::driver('facebook')->redirect();
     }
 
     public function handleFacebookCallback(): RedirectResponse
     {
         try {
-            $redirectUrl = config('services.facebook.redirect') ?: url('/auth/facebook/callback');
-            $facebookUser = Socialite::driver('facebook')
-                ->redirectUrl($redirectUrl)
-                ->user();
+            $facebookUser = Socialite::driver('facebook')->user();
 
             $user = User::where('facebook_id', $facebookUser->getId())
                 ->orWhere('email', $facebookUser->getEmail())
@@ -107,7 +95,7 @@ class OAuthController extends Controller
 
             return redirect()->route('user.dashboard');
         } catch (\Exception $e) {
-            return redirect()->route('login')->with('error', 'Facebook authentication failed: ' . $e->getMessage());
+            return redirect()->route('home', ['login' => 1])->with('error', 'Facebook authentication failed: ' . $e->getMessage());
         }
     }
 }

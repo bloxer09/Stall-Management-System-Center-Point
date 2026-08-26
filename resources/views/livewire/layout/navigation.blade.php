@@ -61,10 +61,9 @@ new class extends Component
                             </button>
                         </x-slot>
 
-                        <x-slot name="content">
-                            <x-dropdown-link :href="route('profile')">
+                            <button type="button" onclick="Livewire.dispatch('open-profile-modal')" class="w-full text-start block px-4 py-2 text-sm leading-5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
                                 Profile Settings
-                            </x-dropdown-link>
+                            </button>
 
                             <button wire:click="logout" class="w-full text-start">
                                 <x-dropdown-link>

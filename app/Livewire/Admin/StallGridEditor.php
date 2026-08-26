@@ -50,7 +50,7 @@ class StallGridEditor extends Component
             ->exists();
 
         if ($occupiedByAnother) {
-            session()->flash('error', "Cell (Row {$row}, Col {$col}) is already occupied by another stall.");
+            $this->dispatch('notify', type: 'error', message: "Cell (Row {$row}, Col {$col}) is already occupied by another stall.");
             return;
         }
 
@@ -62,7 +62,7 @@ class StallGridEditor extends Component
                 'grid_col' => $col,
             ]);
 
-            session()->flash('message', "Assigned Stall {$stall->stall_number} to Row {$row}, Col {$col}");
+            $this->dispatch('notify', type: 'success', message: "Assigned Stall {$stall->stall_number} to Row {$row}, Col {$col}");
             $this->selectedStallId = null;
             $this->updatedSelectedLocationId($this->selectedLocationId);
         }
@@ -76,7 +76,7 @@ class StallGridEditor extends Component
                 'grid_row' => null,
                 'grid_col' => null,
             ]);
-            session()->flash('message', "Unassigned Stall {$stall->stall_number} from grid");
+            $this->dispatch('notify', type: 'success', message: "Unassigned Stall {$stall->stall_number} from grid");
             $this->updatedSelectedLocationId($this->selectedLocationId);
         }
     }

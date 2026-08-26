@@ -21,8 +21,8 @@ class ReceiptVerificationController extends Controller
     {
         $invoice = Invoice::findOrFail($id);
         
-        // Authorization check: Admin/Staff or the owner of the invoice
-        if (!auth()->user()->isStaff() && auth()->id() !== $invoice->user_id) {
+        // Authorization check: Admin or the owner of the invoice
+        if (!auth()->user()->isAdmin() && auth()->id() !== $invoice->user_id) {
             abort(403, 'Unauthorized access to payment receipt.');
         }
 

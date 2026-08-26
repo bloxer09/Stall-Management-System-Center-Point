@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'STALLM') }}</title>
+        <title>{{ \App\Models\Setting::get('platform_name', config('app.name', 'STALLM')) }}</title>
 
         <!-- Local Bundled Assets (Vite) -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])

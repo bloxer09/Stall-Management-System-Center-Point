@@ -79,10 +79,10 @@ Route::middleware(['auth', 'role:user'])->prefix('user')->name('user.')->group(f
 
 /*
 |--------------------------------------------------------------------------
-| Admin & Staff Routes
+| Admin Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'role:admin,staff'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', function () {
         return view('pages.admin.dashboard');
     })->name('dashboard');

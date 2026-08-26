@@ -90,8 +90,8 @@
         </div>
     </div>
 
-    <!-- Include Chart.js CDN for visual rendering -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Include Local Chart.js for visual rendering -->
+    <script src="{{ asset('assets/js/chart.min.js') }}"></script>
     <script>
         document.addEventListener('livewire:navigated', initCharts);
         document.addEventListener('DOMContentLoaded', initCharts);
