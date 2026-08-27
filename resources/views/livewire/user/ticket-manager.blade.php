@@ -198,29 +198,32 @@
                             <div
                                 class="chat-bubble text-xs font-medium {{ $msg->user_id === auth()->id() ? 'chat-bubble-primary text-primary-content' : 'bg-base-200 text-base-content' }}">
                                 <div>{{ $msg->message }}</div>
-                                @if($msg->attachment_path)
-                                    @php
-                                        $ext = strtolower(pathinfo($msg->attachment_path, PATHINFO_EXTENSION));
-                                        $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
-                                    @endphp
-                                    <div class="mt-2 pt-2 border-t border-current/20">
-                                        @if($isImage)
-                                            <div onclick="openImageLightbox('{{ route('file.ticket-attachment', $msg->id) }}')"
-                                                class="block group cursor-pointer">
-                                                <img src="{{ route('file.ticket-attachment', $msg->id) }}" alt="Attachment Preview"
-                                                    class="max-w-[200px] max-h-40 rounded-xl object-cover border border-base-300 shadow-xs group-hover:scale-105 transition cursor-pointer"
-                                                    title="Click to view full photo">
-                                            </div>
-                                        @else
-                                            <a href="{{ route('file.ticket-attachment', $msg->id) }}" target="_blank"
-                                                class="flex items-center gap-1.5 p-2 rounded-xl bg-base-100/30 border border-current/20 text-xs font-bold underline">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                                                </svg>
-                                                Attachment ({{ strtoupper($ext) }})
-                                            </a>
-                                        @endif
+                                @if(!empty($msg->attachments_list))
+                                    <div class="mt-2 pt-2 border-t border-current/20 flex flex-wrap gap-2">
+                                        @foreach($msg->attachments_list as $attIndex => $attPath)
+                                            @php
+                                                $ext = strtolower(pathinfo($attPath, PATHINFO_EXTENSION));
+                                                $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+                                                $attUrl = route('file.ticket-attachment', ['id' => $msg->id, 'index' => $attIndex]);
+                                            @endphp
+                                            @if($isImage)
+                                                <div onclick="openImageLightbox('{{ $attUrl }}')"
+                                                    class="block group cursor-pointer">
+                                                    <img src="{{ $attUrl }}" alt="Attachment Preview"
+                                                        class="max-w-[180px] max-h-36 rounded-xl object-cover border border-base-300 shadow-xs group-hover:scale-105 transition cursor-pointer"
+                                                        title="Click to view full photo">
+                                                </div>
+                                            @else
+                                                <a href="{{ $attUrl }}" target="_blank"
+                                                    class="flex items-center gap-1.5 p-2 rounded-xl bg-base-100/30 border border-current/20 text-xs font-bold underline">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                            d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                                    </svg>
+                                                    Attachment ({{ strtoupper($ext) }})
+                                                </a>
+                                            @endif
+                                        @endforeach
                                     </div>
                                 @endif
                             </div>
@@ -243,24 +246,29 @@
                             handleChatPaste(e) {
                                 const clipboard = e.clipboardData || window.clipboardData;
                                 if (!clipboard) return;
-                                const files = clipboard.files;
-                                if (files && files.length > 0) {
-                                    e.preventDefault();
-                                    @this.upload('attachment', files[0]);
-                                    return;
+
+                                const filesToUpload = [];
+
+                                if (clipboard.files && clipboard.files.length > 0) {
+                                    for (let i = 0; i < clipboard.files.length; i++) {
+                                        filesToUpload.push(clipboard.files[i]);
+                                    }
                                 }
-                                const items = clipboard.items;
-                                if (items) {
-                                    for (let i = 0; i < items.length; i++) {
-                                        if (items[i].kind === 'file') {
-                                            const file = items[i].getAsFile();
+
+                                if (filesToUpload.length === 0 && clipboard.items) {
+                                    for (let i = 0; i < clipboard.items.length; i++) {
+                                        if (clipboard.items[i].kind === 'file') {
+                                            const file = clipboard.items[i].getAsFile();
                                             if (file) {
-                                                e.preventDefault();
-                                                @this.upload('attachment', file);
-                                                return;
+                                                filesToUpload.push(file);
                                             }
                                         }
                                     }
+                                }
+
+                                if (filesToUpload.length > 0) {
+                                    e.preventDefault();
+                                    @this.uploadMultiple('incomingAttachments', filesToUpload);
                                 }
                             }
                         }"
@@ -268,29 +276,59 @@
                         class="p-3 bg-base-200/50 border-t border-base-300 flex flex-col gap-2">
 
                         <!-- Uploading Indicator -->
-                        <div wire:loading wire:target="attachment" class="flex items-center gap-2 text-[11px] text-primary bg-primary/10 px-3 py-1 rounded-xl border border-primary/20 animate-pulse">
+                        <div wire:loading wire:target="incomingAttachments" class="flex items-center gap-2 text-[11px] text-primary bg-primary/10 px-3 py-1.5 rounded-xl border border-primary/20 animate-pulse">
                             <span class="loading loading-spinner loading-xs"></span>
-                            <span class="font-bold">Attaching file...</span>
+                            <span class="font-bold">Attaching files...</span>
                         </div>
 
-                        @if($attachment)
-                            <div
-                                class="flex items-center justify-between text-[11px] bg-primary/10 text-primary px-3 py-1 rounded-xl border border-primary/20">
-                                <span class="truncate font-bold max-w-[220px]">📎 {{ $attachment->getClientOriginalName() }}</span>
-                                <button type="button" wire:click="$set('attachment', null)"
-                                    class="text-error font-bold hover:scale-110 ml-2">&times;</button>
+                        <!-- Rich Previews of Attached / Pasted Files -->
+                        @if(!empty($attachments))
+                            <div class="flex flex-wrap gap-2 p-2 bg-base-100 rounded-2xl border border-base-300 max-h-36 overflow-y-auto">
+                                @foreach($attachments as $index => $file)
+                                    @php
+                                        $isImg = str_starts_with($file->getMimeType() ?? '', 'image/') || in_array(strtolower($file->getClientOriginalExtension()), ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+                                    @endphp
+                                    <div class="relative group flex items-center gap-2 p-1.5 bg-base-200/60 rounded-xl border border-base-300 shadow-2xs pr-6">
+                                        @if($isImg)
+                                            <img src="{{ $file->temporaryUrl() }}" 
+                                                onclick="openImageLightbox(this.src)" 
+                                                class="w-10 h-10 rounded-lg object-cover cursor-pointer hover:opacity-90 transition border border-base-300" 
+                                                title="Click to preview full photo">
+                                        @else
+                                            <div class="w-10 h-10 rounded-lg bg-base-300 flex flex-col items-center justify-center text-base-content/70">
+                                                <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                                                <span class="text-[7px] font-mono font-bold uppercase">{{ $file->getClientOriginalExtension() }}</span>
+                                            </div>
+                                        @endif
+                                        <div class="max-w-[100px] min-w-0">
+                                            <p class="text-[10px] font-bold truncate text-base-content" title="{{ $file->getClientOriginalName() }}">
+                                                {{ $file->getClientOriginalName() }}
+                                            </p>
+                                            <p class="text-[9px] text-base-content/50">
+                                                {{ number_format($file->getSize() / 1024, 0) }} KB
+                                            </p>
+                                        </div>
+                                        <button type="button" 
+                                            wire:click="removeAttachment({{ $index }})" 
+                                            class="absolute top-1 right-1 btn btn-circle btn-ghost btn-2xs text-error hover:bg-error/20" 
+                                            title="Remove attachment">
+                                            &times;
+                                        </button>
+                                    </div>
+                                @endforeach
                             </div>
                         @endif
+
                         <div class="flex items-center gap-2">
                             <label class="btn btn-ghost btn-circle btn-xs text-base-content/70 hover:text-primary cursor-pointer"
-                                title="Attach File or Paste (Ctrl+V)">
+                                title="Attach File(s) or Paste (Ctrl+V)">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                                 </svg>
-                                <input type="file" wire:model="attachment" class="hidden">
+                                <input type="file" wire:model="incomingAttachments" multiple class="hidden">
                             </label>
-                            <input type="text" wire:model="message" placeholder="Type response or paste file (Ctrl+V)..."
+                            <input type="text" wire:model="message" placeholder="Type response or paste file(s) (Ctrl+V)..."
                                 class="input input-sm input-bordered flex-1 rounded-xl text-xs" />
                             <button type="submit" class="btn btn-primary btn-sm rounded-xl font-bold px-3">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

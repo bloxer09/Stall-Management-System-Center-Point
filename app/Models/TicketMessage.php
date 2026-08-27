@@ -17,6 +17,20 @@ class TicketMessage extends Model
         'reply_to_message_id',
     ];
 
+    public function getAttachmentsListAttribute(): array
+    {
+        if (empty($this->attachment_path)) {
+            return [];
+        }
+
+        $decoded = json_decode($this->attachment_path, true);
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+
+        return [$this->attachment_path];
+    }
+
     public function ticket()
     {
         return $this->belongsTo(Ticket::class);

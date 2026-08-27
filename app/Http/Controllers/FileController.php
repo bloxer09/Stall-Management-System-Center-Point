@@ -26,7 +26,7 @@ class FileController extends Controller
         return response()->download(storage_path('app/' . $mapping->contract_document));
     }
 
-    public function downloadTicketAttachment(int $messageId): BinaryFileResponse
+    public function downloadTicketAttachment(Request $request, int $messageId): BinaryFileResponse
     {
         $message = TicketMessage::with('ticket')->findOrFail($messageId);
 
@@ -35,10 +35,14 @@ class FileController extends Controller
             abort(403, 'Unauthorized access to ticket attachment.');
         }
 
-        if (!$message->attachment_path || !Storage::disk('local')->exists($message->attachment_path)) {
+        $attachments = $message->attachments_list;
+        $index = (int) $request->query('index', 0);
+        $filePath = $attachments[$index] ?? $attachments[0] ?? null;
+
+        if (!$filePath || !Storage::disk('local')->exists($filePath)) {
             abort(404, 'Attachment file not found.');
         }
 
-        return response()->download(storage_path('app/' . $message->attachment_path));
+        return response()->download(storage_path('app/' . $filePath));
     }
 }

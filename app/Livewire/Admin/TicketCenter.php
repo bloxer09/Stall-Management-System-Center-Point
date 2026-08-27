@@ -28,8 +28,25 @@ class TicketCenter extends Component
 
     // Chat Message Inputs
     public $newMessage = '';
-    public $attachment = null;
+    public $attachments = [];
+    public $incomingAttachments = [];
     public $replyToMessageId = null;
+
+    public function updatedIncomingAttachments()
+    {
+        foreach ($this->incomingAttachments as $file) {
+            $this->attachments[] = $file;
+        }
+        $this->incomingAttachments = [];
+    }
+
+    public function removeAttachment($index)
+    {
+        if (isset($this->attachments[$index])) {
+            unset($this->attachments[$index]);
+            $this->attachments = array_values($this->attachments);
+        }
+    }
 
     public function updatingSearch()
     {
@@ -60,7 +77,7 @@ class TicketCenter extends Component
         $this->showThreadModal = false;
         $this->selectedTicketId = null;
         $this->isWidgetMinimized = false;
-        $this->reset(['newMessage', 'attachment', 'replyToMessageId']);
+        $this->reset(['newMessage', 'attachments', 'incomingAttachments', 'replyToMessageId']);
     }
 
     public function claimTicket($id = null)
@@ -141,22 +158,31 @@ class TicketCenter extends Component
         }
 
         $this->validate([
-            'newMessage' => $this->attachment ? 'nullable|string' : 'required|string',
-            'attachment' => 'nullable|file|max:10240',
+            'newMessage' => !empty($this->attachments) ? 'nullable|string' : 'required|string',
+            'attachments.*' => 'nullable|file|max:10240',
         ]);
 
-        $filePath = null;
-        if ($this->attachment) {
-            $filePath = $uploader->uploadTicketAttachment($this->attachment);
+        $savedPaths = [];
+        if (!empty($this->attachments)) {
+            $savedPaths = $uploader->uploadTicketAttachments($this->attachments);
         }
 
-        $messageContent = trim($this->newMessage) !== '' ? $this->newMessage : 'Sent an attachment';
+        $attachmentPathValue = null;
+        if (count($savedPaths) === 1) {
+            $attachmentPathValue = $savedPaths[0];
+        } elseif (count($savedPaths) > 1) {
+            $attachmentPathValue = json_encode($savedPaths);
+        }
+
+        $messageContent = trim($this->newMessage) !== ''
+            ? $this->newMessage
+            : (count($savedPaths) > 1 ? 'Sent ' . count($savedPaths) . ' attachments' : 'Sent an attachment');
 
         TicketMessage::create([
             'ticket_id' => $this->selectedTicketId,
             'user_id' => Auth::id(),
             'message' => $messageContent,
-            'attachment_path' => $filePath,
+            'attachment_path' => $attachmentPathValue,
             'reply_to_message_id' => $this->replyToMessageId,
         ]);
 
@@ -166,11 +192,11 @@ class TicketCenter extends Component
             $ticket->user_id,
             'ticket_message',
             "Support Ticket Reply (#TKT-" . str_pad($ticket->id, 5, '0', STR_PAD_LEFT) . ")",
-            Auth::user()->name . ": " . \Illuminate\Support\Str::limit($this->newMessage, 60),
+            Auth::user()->name . ": " . \Illuminate\Support\Str::limit($messageContent, 60),
             route('user.tickets')
         );
 
-        $this->reset(['newMessage', 'attachment', 'replyToMessageId']);
+        $this->reset(['newMessage', 'attachments', 'incomingAttachments', 'replyToMessageId']);
         $this->markAsRead();
     }
 

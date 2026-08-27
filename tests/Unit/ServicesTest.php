@@ -25,4 +25,25 @@ class ServicesTest extends TestCase
         $result = $service->sendSms('09123456789', 'Test message');
         $this->assertFalse($result);
     }
+
+    public function test_upload_multiple_ticket_attachments_and_accessor()
+    {
+        \Illuminate\Support\Facades\Storage::fake('local');
+
+        $uploader = new \App\Services\FileUploadService();
+        $file1 = \Illuminate\Http\UploadedFile::fake()->create('screenshot1.png', 100);
+        $file2 = \Illuminate\Http\UploadedFile::fake()->create('document.pdf', 100);
+
+        $paths = $uploader->uploadTicketAttachments([$file1, $file2]);
+
+        $this->assertCount(2, $paths);
+        \Illuminate\Support\Facades\Storage::disk('local')->assertExists($paths[0]);
+        \Illuminate\Support\Facades\Storage::disk('local')->assertExists($paths[1]);
+
+        $message = new \App\Models\TicketMessage([
+            'attachment_path' => json_encode($paths),
+        ]);
+
+        $this->assertEquals($paths, $message->attachments_list);
+    }
 }

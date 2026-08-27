@@ -28,8 +28,25 @@ class TicketManager extends Component
     public $isWidgetMinimized = false;
 
     public $message = '';
-    public $attachment = null;
+    public $attachments = [];
+    public $incomingAttachments = [];
     public $replyToMessageId = null;
+
+    public function updatedIncomingAttachments()
+    {
+        foreach ($this->incomingAttachments as $file) {
+            $this->attachments[] = $file;
+        }
+        $this->incomingAttachments = [];
+    }
+
+    public function removeAttachment($index)
+    {
+        if (isset($this->attachments[$index])) {
+            unset($this->attachments[$index]);
+            $this->attachments = array_values($this->attachments);
+        }
+    }
 
     protected $rules = [
         'stall_id' => 'nullable|exists:stalls,id',
@@ -138,7 +155,7 @@ class TicketManager extends Component
         $this->showThreadModal = false;
         $this->activeTicketId = null;
         $this->isWidgetMinimized = false;
-        $this->reset(['message', 'attachment', 'replyToMessageId']);
+        $this->reset(['message', 'attachments', 'incomingAttachments', 'replyToMessageId']);
     }
 
     public function markAsRead()
@@ -167,22 +184,31 @@ class TicketManager extends Component
         if (!$ticket) return;
 
         $this->validate([
-            'message' => $this->attachment ? 'nullable|string' : 'required|string',
-            'attachment' => 'nullable|file|max:10240',
+            'message' => !empty($this->attachments) ? 'nullable|string' : 'required|string',
+            'attachments.*' => 'nullable|file|max:10240',
         ]);
 
-        $filePath = null;
-        if ($this->attachment) {
-            $filePath = $uploader->uploadTicketAttachment($this->attachment);
+        $savedPaths = [];
+        if (!empty($this->attachments)) {
+            $savedPaths = $uploader->uploadTicketAttachments($this->attachments);
         }
 
-        $messageContent = trim($this->message) !== '' ? $this->message : 'Sent an attachment';
+        $attachmentPathValue = null;
+        if (count($savedPaths) === 1) {
+            $attachmentPathValue = $savedPaths[0];
+        } elseif (count($savedPaths) > 1) {
+            $attachmentPathValue = json_encode($savedPaths);
+        }
+
+        $messageContent = trim($this->message) !== ''
+            ? $this->message
+            : (count($savedPaths) > 1 ? 'Sent ' . count($savedPaths) . ' attachments' : 'Sent an attachment');
 
         TicketMessage::create([
             'ticket_id' => $this->activeTicketId,
             'user_id' => auth()->id(),
             'message' => $messageContent,
-            'attachment_path' => $filePath,
+            'attachment_path' => $attachmentPathValue,
             'reply_to_message_id' => $this->replyToMessageId,
         ]);
 
@@ -193,7 +219,7 @@ class TicketManager extends Component
                 $ticket->assigned_to,
                 'ticket_message',
                 "New reply on Ticket #TKT-" . str_pad($ticket->id, 5, '0', STR_PAD_LEFT),
-                auth()->user()->name . ": " . \Illuminate\Support\Str::limit($this->message, 60),
+                auth()->user()->name . ": " . \Illuminate\Support\Str::limit($messageContent, 60),
                 route('admin.tickets')
             );
         } else {
@@ -203,13 +229,13 @@ class TicketManager extends Component
                     $adm->id,
                     'ticket_message',
                     "New message on Ticket #TKT-" . str_pad($ticket->id, 5, '0', STR_PAD_LEFT),
-                    auth()->user()->name . ": " . \Illuminate\Support\Str::limit($this->message, 60),
+                    auth()->user()->name . ": " . \Illuminate\Support\Str::limit($messageContent, 60),
                     route('admin.tickets')
                 );
             }
         }
 
-        $this->reset(['message', 'attachment', 'replyToMessageId']);
+        $this->reset(['message', 'attachments', 'incomingAttachments', 'replyToMessageId']);
         $this->markAsRead();
     }
 

@@ -20,6 +20,17 @@ class FileUploadService
         return $file->storeAs('ticket_attachments', $filename, 'local');
     }
 
+    public function uploadTicketAttachments(array $files): array
+    {
+        $paths = [];
+        foreach ($files as $file) {
+            if ($file instanceof UploadedFile) {
+                $paths[] = $this->uploadTicketAttachment($file);
+            }
+        }
+        return $paths;
+    }
+
     public function uploadProfilePicture(UploadedFile $file): string
     {
         $filename = 'avatar_' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
