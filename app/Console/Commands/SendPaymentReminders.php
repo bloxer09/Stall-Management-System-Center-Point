@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Invoice;
 use App\Models\Notification;
-use App\Services\MailjetMailer;
+use App\Services\MailService;
 use App\Services\SmsService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -14,7 +14,7 @@ class SendPaymentReminders extends Command
     protected $signature = 'stallm:send-reminders';
     protected $description = 'Send multi-stage payment reminders (7 days, 3 days, today) via email and SMS';
 
-    public function handle(MailjetMailer $mailer, SmsService $smsService): int
+    public function handle(MailService $mailer, SmsService $smsService): int
     {
         $this->info('Processing payment reminders...');
 
@@ -25,7 +25,11 @@ class SendPaymentReminders extends Command
 
         $pendingInvoices = Invoice::with(['user', 'stall'])
             ->where('status', 'pending')
-            ->whereIn('due_date', [$days7, $days3, $todayStr])
+            ->where(function ($q) use ($days7, $days3, $todayStr) {
+                $q->whereDate('due_date', $days7)
+                  ->orWhereDate('due_date', $days3)
+                  ->orWhereDate('due_date', $todayStr);
+            })
             ->get();
 
         $sentCount = 0;

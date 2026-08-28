@@ -7,7 +7,7 @@ Laravel routes are intentionally thin: page routes return a Blade shell and the 
 ```text
 Browser -> web routes/middleware -> Blade layout -> Livewire action
                                               -> Eloquent models -> MySQL
-                                              -> Services -> PayMongo/Mailjet/Semaphore/QR API
+                                              -> Services -> PayMongo/Mailpit (SMTP)/Semaphore/QR API
 Scheduler -> artisan commands -> models/services -> notifications and external APIs
 ```
 
@@ -27,7 +27,7 @@ Staff create a `StallMapping`, mark its stall occupied, and may attach a contrac
 
 ## Integration boundaries and bottlenecks
 
-PayMongo, Mailjet, Semaphore, and a public QR-code endpoint are synchronous HTTP dependencies. Dompdf permits remote resources. Notification, email, SMS, invoice generation, and reports run in request/command processes instead of queued jobs. Monthly trend rendering makes 12 aggregate queries; invoice generation performs one existence query per mapping. Neither caches nor queues are used despite a database queue configuration.
+PayMongo, Mailpit / SMTP, Semaphore, and a public QR-code endpoint are synchronous service dependencies. Dompdf permits remote resources. Notification, email, SMS, invoice generation, and reports run in request/command processes instead of queued jobs. Monthly trend rendering makes 12 aggregate queries; invoice generation performs one existence query per mapping. Neither caches nor queues are used despite a database queue configuration.
 
 ## Architecture decisions needed
 

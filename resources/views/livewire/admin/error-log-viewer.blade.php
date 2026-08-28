@@ -1,7 +1,7 @@
 <div class="space-y-6">
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 card bg-base-100 p-6 rounded-3xl border border-base-300 shadow-md">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-            <h2 class="text-xl font-black tracking-tight text-base-content">System Error Logs & Diagnostics</h2>
+            <h1 class="text-2xl font-black tracking-tight text-base-content">System Error Logs & Diagnostics</h1>
             <p class="text-xs text-base-content/60 mt-1">Structured error exception tracking, categorized diagnostic logs, and stack trace inspection.</p>
         </div>
         <div class="flex items-center gap-2">

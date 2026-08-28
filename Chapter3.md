@@ -34,9 +34,9 @@ The functional requirements of the Web Based Stall Management System for Center 
 6. Provide an interactive floor plan grid editor for administrators to configure and update stall positions per floor level.
 7. Assign stalls to tenants through lease contracts with defined start and end dates and PDF contract document uploads.
 8. Support lease renewal requests by tenants with administrator approval or rejection workflows.
-9. Automatically notify administrators and tenants via Mailjet email and Semaphore SMS at 60 and 30 days before lease contract expiration dates.
+9. Automatically notify administrators and tenants via email (Mailpit in development, SMTP in production) and Semaphore SMS at 60 and 30 days before lease contract expiration dates.
 10. Generate monthly rental invoices automatically for all active leases using a scheduled Artisan console command.
-11. Dispatch multi-stage payment reminders via Mailjet email and Semaphore SMS at seven days, three days, and on the due date of each invoice.
+11. Dispatch multi-stage payment reminders via email and Semaphore SMS at seven days, three days, and on the due date of each invoice.
 12. Integrate online payment processing through the PayMongo API (GCash, Maya, credit cards, debit cards) with asynchronous webhook status verification.
 13. Support manual office payment recording by administrators with custom reference IDs.
 14. Generate official PDF payment receipts using Dompdf, featuring tenant details, billing information, and an embedded QR code for online authenticity verification.
@@ -101,7 +101,7 @@ flowchart TB
     subgraph ServiceLayer [Business Logic & Service Gateways]
         ArtisanCron[Laravel Artisan Scheduler]
         PayMongoGW[PayMongo Payment Gateway]
-        MailjetGW[Mailjet Email Service API]
+        MailpitGW[Mailpit / Laravel Mail SMTP]
         SemaphoreGW[Semaphore SMS Gateway API]
         DompdfGW[Dompdf PDF Engine & QR Generator]
     end
@@ -193,7 +193,7 @@ Tailwind CSS            | Responsive frontend UI design framework               
 Chart.js                | Interactive financial charts (revenue trends, occupancy)       | Chart.js 4.x
 Dompdf                  | PDF generation for receipts and financial reports              | Dompdf 3.1
 PayMongo API            | Online payment gateway (GCash, Maya, cards)                   | PayMongo REST API v1
-Mailjet API             | Transactional email dispatching                                | Mailjet API v3
+Mailpit / Laravel Mail  | Transactional email dispatching & local testing               | SMTP / Mailpit Inspector
 Semaphore SMS API       | SMS notifications, payment reminders, and 2FA OTP             | Semaphore REST API
 laravel/socialite       | Google and Facebook OAuth 2.0 social authentication           | Socialite 5.x
 PHPUnit                 | Automated unit and feature testing                             | PHPUnit 11
@@ -215,7 +215,7 @@ The system is composed of the following functional modules:
 
 5. Lease Mapping Module — Manages stall allocation to tenants. Records contract start and end dates, PDF contract document uploads, lease renewal request workflows, and active or inactive lease status.
 
-6. Lease Expiry Notification Module — A scheduled Artisan command (stallm:notify-expiring-leases) that runs daily, identifies leases expiring in exactly 60 and 30 days, and dispatches automated notifications to both the tenant and administrator via Mailjet email and Semaphore SMS.
+6. Lease Expiry Notification Module — A scheduled Artisan command (stallm:notify-expiring-leases) that runs daily, identifies leases expiring in exactly 60 and 30 days, and dispatches automated notifications to both the tenant and administrator via email and Semaphore SMS.
 
 7. Automated Billing Module — Generates monthly rental invoices for all active tenant leases through a scheduled Laravel Artisan command. Prevents duplicate invoice generation per billing period.
 
@@ -231,7 +231,7 @@ The system is composed of the following functional modules:
 
 13. Support Ticket and Chat Module — A structured helpdesk system powered by Livewire 3 where tenants submit support tickets and engage in real-time threaded chat with administrators or staff. Features include file attachments, read receipts, and typing indicators.
 
-14. Public Stall Reservation Module — A guest-accessible module allowing prospective tenants to view available stalls on a read-only floor plan, and submit a formal online rental application including business information, preferred stall selection, and an optional supporting document upload. Submissions are stored in the stall_applications table and trigger a confirmation email via Mailjet.
+14. Public Stall Reservation Module — A guest-accessible module allowing prospective tenants to view available stalls on a read-only floor plan, and submit a formal online rental application including business information, preferred stall selection, and an optional supporting document upload. Submissions are stored in the stall_applications table and trigger a confirmation email via Laravel Mail.
 
 15. Stall Application Management Module — Allows administrators and staff to review, approve, or reject submitted stall applications. Approved applications can be linked to an existing or newly created tenant account for lease assignment.
 
@@ -275,7 +275,7 @@ The process began with data gathering through site visits, interviews, and obser
 
 Following data collection, requirement analysis was conducted and formalized in the System Requirements Document. During the system design phase, the relational database schema was planned using Laravel migrations, the system architecture was organized into modular Livewire components, and the user interface was designed using the Blade templating engine with Tailwind CSS.
 
-The development phase involved implementing the system using Laravel 13.x, Livewire 3, MySQL, and all integrated third-party services including PayMongo, Mailjet, Semaphore, Dompdf, Chart.js, and laravel/socialite. All nineteen functional modules were developed and integrated during this phase.
+The development phase involved implementing the system using Laravel 13.x, Livewire 3, MySQL, and all integrated third-party services including PayMongo, Mailpit / Laravel Mail, Semaphore, Dompdf, Chart.js, and laravel/socialite. All nineteen functional modules were developed and integrated during this phase.
 
 Testing and refinement followed using PHPUnit 11 with Laravel's testing utilities. Automated tests were written to verify authentication flows, social login, 2FA, access control, billing generation, lease expiry notification, payment processing, reservation submission, document repository access, and ticket management.
 

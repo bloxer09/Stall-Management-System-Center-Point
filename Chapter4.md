@@ -82,7 +82,7 @@ The system architecture was organized into the following functional modules:
 
 5. Stall Mapping and Lease Contracts: Linking tenants to stalls with specific contract start and end dates, active lease status tracking, PDF contract document uploads, and a lease renewal request workflow with administrator approval or rejection.
 
-6. Lease Expiry Notification: A dedicated Artisan console command (stallm:notify-expiring-leases) registered in the Laravel scheduler to run daily. The command identifies leases expiring in exactly 60 days and 30 days and dispatches automated email notifications via Mailjet and SMS reminders via Semaphore to both the affected tenant and the administrator.
+6. Lease Expiry Notification: A dedicated Artisan console command (stallm:notify-expiring-leases) registered in the Laravel scheduler to run daily. The command identifies leases expiring in exactly 60 days and 30 days and dispatches automated email notifications via Laravel Mail (Mailpit in development, SMTP in production) and SMS reminders via Semaphore to both the affected tenant and the administrator.
 
 7. Automated Monthly Invoicing: Generating monthly rental invoices for all active tenant leases using a scheduled Laravel Artisan console command (stallm:generate-invoices). The command uses optimized Eloquent queries to avoid N+1 query problems and prevents duplicate invoice generation per billing period.
 
@@ -90,7 +90,7 @@ The system architecture was organized into the following functional modules:
 
 9. Utility Billing: Recording metered utility readings (electricity, water) per tenant stall and computing associated charges for inclusion in billing statements.
 
-10. Public Stall Reservation: A guest-accessible Livewire component displaying available stalls on a read-only floor plan grid. Prospective tenants can submit a formal rental application form including their name, contact details, business information, preferred stall, and an optional supporting document upload. Submissions are stored in the stall_applications table and trigger a confirmation email via Mailjet.
+10. Public Stall Reservation: A guest-accessible Livewire component displaying available stalls on a read-only floor plan grid. Prospective tenants can submit a formal rental application form including their name, contact details, business information, preferred stall, and an optional supporting document upload. Submissions are stored in the stall_applications table and trigger a confirmation email via Laravel Mail.
 
 11. Stall Application Management: An administrative interface for reviewing, approving, or rejecting submitted stall applications. Approved applications can be linked to an existing or newly created tenant account for direct lease assignment.
 
@@ -133,7 +133,6 @@ Dependency Management: Composer for managing the following key third-party libra
 - laravel/livewire: Provides the reactive Livewire 3 component layer.
 - laravel/socialite: Implements Google OAuth 2.0 and Facebook OAuth social authentication.
 - dompdf/dompdf: Generates official PDF payment receipts and exportable financial report documents with embedded QR codes.
-- mailjet/mailjet-apiv3-php: Sends transactional emails for billing reminders, payment confirmations, lease expiry notifications, application confirmations, and account events.
 
 Frontend Design: Blade templating engine with Tailwind CSS for a modern, responsive, and clean user interface. Chart.js 4.x for interactive financial charts in the advanced reporting module.
 
@@ -144,12 +143,12 @@ Automated Monthly Invoice Generation
 
 The system generates monthly rental invoices automatically through a dedicated Laravel Artisan console command registered in the application scheduler. The command (stallm:generate-invoices) retrieves all active stall mappings with their associated stall pricing and tenant information using a single optimized Eloquent query. For each active mapping, it checks whether an invoice already exists for the current calendar month. If none exists, a new invoice record is created with the billing amount, due date set to the last day of the current month, and a pending payment status.
 
-The Laravel Artisan scheduler is configured to run this command monthly and to dispatch multi-stage payment reminder notifications — via Mailjet email and Semaphore SMS — at seven days before the due date, three days before the due date, and on the due date itself.
+The Laravel Artisan scheduler is configured to run this command monthly and to dispatch multi-stage payment reminder notifications — via email and Semaphore SMS — at seven days before the due date, three days before the due date, and on the due date itself.
 
 
 Lease Expiry Automated Notification System
 
-The system dispatches automated lease expiry notifications through a separate scheduled Artisan command (stallm:notify-expiring-leases), registered to run daily. The command queries the stall_mappings table for active leases whose end_date falls exactly 60 days and 30 days from the current date. For each matching lease, the system dispatches a notification to both the tenant and the administrator via Mailjet email and Semaphore SMS, informing them of the approaching contract expiration and prompting the tenant to submit a renewal request if needed. This eliminates the risk of unmanaged lease expirations and reduces administrative oversight requirements.
+The system dispatches automated lease expiry notifications through a separate scheduled Artisan command (stallm:notify-expiring-leases), registered to run daily. The command queries the stall_mappings table for active leases whose end_date falls exactly 60 days and 30 days from the current date. For each matching lease, the system dispatches a notification to both the tenant and the administrator via email and Semaphore SMS, informing them of the approaching contract expiration and prompting the tenant to submit a renewal request if needed. This eliminates the risk of unmanaged lease expirations and reduces administrative oversight requirements.
 
 
 PayMongo Online Payment Gateway Integration
@@ -173,7 +172,7 @@ sequenceDiagram
     App->>App: Validates PayMongo Webhook Signature Header
     App->>DB: Updates invoice status to 'paid' & stores PayMongo Reference ID
     App->>DB: Triggers Dompdf official receipt & QR code generation
-    App-->>Tenant: Dispatches Mailjet email & Semaphore SMS receipt notification
+    App-->>Tenant: Dispatches email & Semaphore SMS receipt notification
 ```
 
 1. Session Creation: When a tenant selects unpaid invoices and clicks "Pay Online," the payment controller sends a request to the PayMongo API to create a Checkout Session populated with billing details, tenant information, and redirect URLs.
@@ -216,7 +215,7 @@ After successful password authentication, the system generates a cryptographical
 
 Public Stall Reservation Portal
 
-The public-facing stall reservation module is accessible to unauthenticated users. The module displays the available stalls on a read-only floor plan grid. Prospective tenants can select a preferred stall and complete an online application form providing their name, contact details, business name, business type, and an optional supporting document. Upon submission, a record is created in the stall_applications table, a confirmation email is dispatched to the applicant via Mailjet, and an in-app notification is sent to the administrator. Administrators and staff can then review, approve, or reject applications through the Stall Application Management interface.
+The public-facing stall reservation module is accessible to unauthenticated users. The module displays the available stalls on a read-only floor plan grid. Prospective tenants can select a preferred stall and complete an online application form providing their name, contact details, business name, business type, and an optional supporting document. Upon submission, a record is created in the stall_applications table, a confirmation email is dispatched to the applicant via Laravel Mail, and an in-app notification is sent to the administrator. Administrators and staff can then review, approve, or reject applications through the Stall Application Management interface.
 
 
 Tenant Document Repository
@@ -285,7 +284,7 @@ Installation Checklist
    - Database connection credentials (DB_HOST, DB_DATABASE, DB_USERNAME, DB_PASSWORD)
    - Application key (generated via artisan key:generate)
    - PayMongo API keys (PAYMONGO_PUBLIC_KEY, PAYMONGO_SECRET_KEY, PAYMONGO_WEBHOOK_SECRET)
-   - Mailjet API credentials (MAILJET_APIKEY, MAILJET_APISECRET)
+   - Mail configuration / Mailpit SMTP (MAIL_MAILER, MAIL_HOST, MAIL_PORT, MAIL_FROM_ADDRESS)
    - Semaphore SMS API key (SEMAPHORE_API_KEY)
    - Google OAuth credentials (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET)
    - Facebook OAuth credentials (FACEBOOK_CLIENT_ID, FACEBOOK_CLIENT_SECRET, FACEBOOK_REDIRECT_URI)
@@ -340,9 +339,9 @@ To ensure the long-term reliability, security, and performance of the system, th
 
 Database Backups: The MySQL database should be backed up at minimum weekly using automated backup tools to prevent data loss.
 
-Software and Dependency Updates: The PHP environment, Laravel framework, and Composer-managed packages (including Dompdf, laravel/socialite, Chart.js, and the Mailjet SDK) should be periodically reviewed and updated to address security vulnerabilities.
+Software and Dependency Updates: The PHP environment, Laravel framework, and Composer-managed packages (including Dompdf, laravel/socialite, and Chart.js) should be periodically reviewed and updated to address security vulnerabilities.
 
-API Key Rotation: PayMongo, Mailjet, Semaphore, Google OAuth, and Facebook OAuth credentials should be rotated annually or immediately if suspected to be compromised.
+API Key Rotation: PayMongo, Semaphore, Google OAuth, and Facebook OAuth credentials should be rotated annually or immediately if suspected to be compromised.
 
 Log Management: Administrators should review system error logs (storage/logs/laravel.log) and audit log records monthly to identify anomalies or unauthorized access attempts.
 

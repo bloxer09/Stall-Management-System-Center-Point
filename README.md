@@ -52,12 +52,28 @@
 | **Database** | MySQL / MariaDB (InnoDB, Foreign Keys & Migrations) |
 | **Authentication** | Laravel Breeze + Socialite |
 | **Payment Gateway** | PayMongo API (Checkout Sessions & Webhooks) |
-| **Transactional Email** | Mailjet API v3 |
+| **Transactional Email** | Mailpit (Dev SMTP) / Laravel Mail |
 | **SMS Gateway** | Semaphore SMS API |
 | **PDF Renderer** | Dompdf 3.1 |
 | **Testing Framework** | PHPUnit 11 / Laravel Testing |
 
 ---
+
+## 📧 Email Testing with Mailpit
+
+In local development, the application sends emails via standard SMTP to **Mailpit**:
+- **SMTP Port**: `1025` (`127.0.0.1:1025`)
+- **Web UI**: `http://localhost:8025` (to view sent emails, OTPs, reminders, and alerts)
+
+To run Mailpit locally:
+```bash
+# Via Docker:
+docker run -d --name mailpit -p 1025:1025 -p 8025:8025 axllent/mailpit
+
+# Or download standalone binary / winget:
+winget install axllent.mailpit
+mailpit
+```
 
 ## 🚀 Quick Start Guide
 

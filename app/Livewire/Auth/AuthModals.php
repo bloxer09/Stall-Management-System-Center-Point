@@ -3,7 +3,7 @@
 namespace App\Livewire\Auth;
 
 use App\Models\User;
-use App\Services\MailjetMailer;
+use App\Services\MailService;
 use App\Services\SmsService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -79,7 +79,7 @@ class AuthModals extends Component
         $this->isOpen = true;
     }
 
-    public function processForgotPasswordRequest(MailjetMailer $mailer, SmsService $smsService)
+    public function processForgotPasswordRequest(MailService $mailer, SmsService $smsService)
     {
         $this->validate([
             'forgotEmail' => 'required|email|exists:users,email',

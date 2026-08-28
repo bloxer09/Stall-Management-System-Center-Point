@@ -13,13 +13,6 @@ return [
         'redirect' => env('FACEBOOK_REDIRECT_URI', env('APP_URL').'/auth/facebook/callback'),
     ],
 
-    'mailjet' => [
-        'key' => env('MAILJET_API_KEY'),
-        'secret' => env('MAILJET_API_SECRET'),
-        'from_email' => env('MAILJET_FROM_EMAIL', 'no-reply@stallm.com'),
-        'from_name' => env('MAILJET_FROM_NAME', 'STALLM System'),
-    ],
-
     'semaphore' => [
         'api_key' => env('SEMAPHORE_API_KEY'),
         'sender_name' => env('SEMAPHORE_SENDER_NAME', 'STALLM'),

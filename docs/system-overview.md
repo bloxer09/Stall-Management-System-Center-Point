@@ -8,7 +8,7 @@ The repository is mid-migration from a custom `src/` MVC application to Laravel:
 
 ## Product and modules
 
-STALLM manages commercial stalls, tenants, leases, invoices, PayMongo checkout, utility readings, support tickets, notifications, applications, reports, and staff administration. Laravel 11.55.0 is installed with Livewire 3.8.2, Tailwind/DaisyUI, MySQL/MariaDB, Dompdf, Socialite, Mailjet, Semaphore, and PayMongo.
+STALLM manages commercial stalls, tenants, leases, invoices, PayMongo checkout, utility readings, support tickets, notifications, applications, reports, and staff administration. Laravel is installed with Livewire 3.8.2, Tailwind/DaisyUI, MySQL/MariaDB, Dompdf, Socialite, Mailpit (Dev SMTP) / Laravel Mail, Semaphore, and PayMongo.
 
 | Area | Primary implementation |
 | --- | --- |

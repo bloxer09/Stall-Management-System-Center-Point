@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Notification;
 use App\Models\StallMapping;
 use App\Models\User;
-use App\Services\MailjetMailer;
+use App\Services\MailService;
 use App\Services\SmsService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
@@ -16,7 +16,7 @@ class NotifyExpiringLeases extends Command
     protected $signature = 'stallm:notify-expiring-leases';
     protected $description = 'Dispatch notifications via email, SMS, and in-app bell for leases expiring in 60 and 30 days.';
 
-    public function handle(MailjetMailer $mailjet, SmsService $smsService): int
+    public function handle(MailService $mailer, SmsService $smsService): int
     {
         $today = Carbon::today();
         $target60 = $today->copy()->addDays(60)->toDateString();
@@ -64,9 +64,9 @@ class NotifyExpiringLeases extends Command
                 ]);
             }
 
-            // 3. Email via Mailjet
+            // 3. Email via Mailpit / SMTP MailService
             try {
-                $mailjet->sendEmail($tenant->email, $tenant->name, $subject, "<p>{$messageText}</p>");
+                $mailer->sendEmail($tenant->email, $tenant->name, $subject, "<p>{$messageText}</p>");
             } catch (\Exception $e) {
                 Log::warning("Failed to send lease expiry email to {$tenant->email}: " . $e->getMessage());
             }

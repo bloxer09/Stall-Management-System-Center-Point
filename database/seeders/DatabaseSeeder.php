@@ -44,11 +44,6 @@ class DatabaseSeeder extends Seeder
             'Jose Rizal' => 'Rizal Bookshop & Printing',
             'Andres Bonifacio' => 'Katipunan Hardware & Supplies',
             'Melchora Aquino' => 'Tandang Sora Eatery & Refreshments',
-            'Emilio Aguinaldo' => 'Aguinaldo Mobile Accessories',
-            'Apolinario Mabini' => 'Mabini Pharmacy & Health',
-            'Gabriela Silang' => 'Gabriela Souvenirs & Crafts',
-            'Juan Luna' => 'Luna Art Studio & Framing',
-            'Antonio Luna' => 'Heneral Pharmacy & Express',
         ];
 
         $index = 1;

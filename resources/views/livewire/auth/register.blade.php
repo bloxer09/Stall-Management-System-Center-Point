@@ -93,7 +93,7 @@
                 <p class="font-bold text-sm text-base-content">2. Security & Encryption Standards</p>
                 <p>Your authentication credentials and sensitive data are encrypted using industry-standard security protocols for robust account protection.</p>
                 <p class="font-bold text-sm text-base-content">3. Third-Party Integrations</p>
-                <p>Payment details are securely handled via PayMongo gateways and SMS/Email notifications are sent via Semaphore & Mailjet. We never sell your personal information to third parties.</p>
+                <p>Payment details are securely handled via PayMongo gateways and SMS/Email notifications are sent via Semaphore & Mailpit / System Mailer. We never sell your personal information to third parties.</p>
             </div>
             <div class="modal-action flex justify-between items-center pt-2">
                 <form method="dialog"><button class="btn btn-sm btn-ghost rounded-xl">Close</button></form>

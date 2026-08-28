@@ -45,9 +45,9 @@ The system was built with three authenticated user roles — Administrator, Staf
 
 5. Lease Mapping and Contract Management — Linking tenants to stalls with defined contract periods, PDF contract document uploads, active lease tracking, and a lease renewal request workflow with administrator approval or rejection.
 
-6. Lease Expiry Automated Notification — A scheduled daily Artisan command (stallm:notify-expiring-leases) that identifies leases expiring in 60 and 30 days and dispatches automated alerts to both the tenant and administrator via Mailjet email and Semaphore SMS.
+6. Lease Expiry Automated Notification — A scheduled daily Artisan command (stallm:notify-expiring-leases) that identifies leases expiring in 60 and 30 days and dispatches automated alerts to both the tenant and administrator via email and Semaphore SMS.
 
-7. Automated Monthly Invoicing — A scheduled Artisan console command (stallm:generate-invoices) that automatically generates monthly rental invoices for all active leases without duplication, with multi-stage payment reminders dispatched via Mailjet email and Semaphore SMS at seven days, three days, and on the payment due date.
+7. Automated Monthly Invoicing — A scheduled Artisan console command (stallm:generate-invoices) that automatically generates monthly rental invoices for all active leases without duplication, with multi-stage payment reminders dispatched via email and Semaphore SMS at seven days, three days, and on the payment due date.
 
 8. Online Payment Processing — Integration of the PayMongo payment gateway supporting GCash, Maya, credit cards, and debit cards through checkout sessions and asynchronous webhook verification for real-time invoice status updates.
 
@@ -59,7 +59,7 @@ The system was built with three authenticated user roles — Administrator, Staf
 
 12. Utility Billing — Recording of metered utility readings (electricity, water) per tenant stall and computation of corresponding charges.
 
-13. Public Stall Reservation Portal — A guest-accessible module displaying available stalls on a read-only floor plan and providing a formal online rental application form for prospective tenants. Submissions are stored and trigger a Mailjet confirmation email.
+13. Public Stall Reservation Portal — A guest-accessible module displaying available stalls on a read-only floor plan and providing a formal online rental application form for prospective tenants. Submissions are stored and trigger an email confirmation.
 
 14. Stall Application Management — An administrative interface for reviewing, approving, or rejecting submitted stall applications, with the ability to link approved applications to tenant accounts for lease assignment.
 
@@ -84,7 +84,7 @@ Based on the results of the development, testing, and implementation of the Web 
 
 2. The interactive Livewire-powered floor plan grid editor provided administrators with an intuitive and efficient tool for configuring and updating stall layouts per floor level, significantly reducing the time required to manage physical stall assignments and visualize floor occupancy.
 
-3. The automated monthly invoicing system, driven by a scheduled Laravel Artisan command, reliably generated rental invoices for all active leases without duplication and dispatched multi-stage payment reminders through Mailjet email and Semaphore SMS. This automation reduced the administrative workload associated with manual invoice preparation and follow-up, and improved payment compliance among tenants.
+3. The automated monthly invoicing system, driven by a scheduled Laravel Artisan command, reliably generated rental invoices for all active leases without duplication and dispatched multi-stage payment reminders through email and Semaphore SMS. This automation reduced the administrative workload associated with manual invoice preparation and follow-up, and improved payment compliance among tenants.
 
 4. The lease expiry automated notification system, powered by a dedicated daily Artisan command, proactively informed both administrators and tenants of approaching lease contract expiration dates at 60 and 30 days in advance via email and SMS. This eliminated the risk of unmanaged contract expirations and gave tenants sufficient notice to submit renewal requests.
 

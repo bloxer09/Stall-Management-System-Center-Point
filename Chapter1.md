@@ -57,7 +57,7 @@ Tenants had no direct access to their own records. This lack of transparency led
 
 The reliance on manual payment collection, the lack of advance notifications for expiring leases, the absence of a public reservation channel for prospective tenants, and the lack of layered authentication security for administrative accounts were additional operational gaps that needed to be addressed.
 
-To address all of these problems, the proposed system introduces a comprehensive digital solution built on Laravel 13.x and Livewire 3. Beyond the core tenant portal and PayMongo payment integration, the system also incorporates advanced financial reporting tools with exportable summaries, automated lease expiry notifications dispatched via Mailjet email and Semaphore SMS at 60 and 30 days before contract end dates, Facebook OAuth social login in addition to Google OAuth, a public-facing stall reservation portal for prospective tenants, a tenant document repository providing secure on-demand access to lease contracts, receipts, and billing statements, and optional Two-Factor Authentication via SMS OTP for administrator and staff accounts.
+To address all of these problems, the proposed system introduces a comprehensive digital solution built on Laravel 13.x and Livewire 3. Beyond the core tenant portal and PayMongo payment integration, the system also incorporates advanced financial reporting tools with exportable summaries, automated lease expiry notifications dispatched via email (Mailpit in development, SMTP in production) and Semaphore SMS at 60 and 30 days before contract end dates, Facebook OAuth social login in addition to Google OAuth, a public-facing stall reservation portal for prospective tenants, a tenant document repository providing secure on-demand access to lease contracts, receipts, and billing statements, and optional Two-Factor Authentication via SMS OTP for administrator and staff accounts.
 
 By implementing these enhancements, the system transforms the manual operations at Center Point into a more efficient, transparent, secure, and user-centered management process.
 
@@ -76,7 +76,7 @@ To ensure the system is robust, secure, and user-friendly, the researchers utili
 
 - PayMongo API: Enables online rental payments via GCash, Maya, credit cards, and debit cards through checkout sessions and asynchronous webhook listeners.
 
-- Mailjet API: Dispatches transactional emails including payment confirmations, invoice reminders, lease expiry notifications, stall application confirmations, and account-related alerts.
+- Mailpit / Laravel Mail: Dispatches transactional emails including payment confirmations, invoice reminders, lease expiry notifications, stall application confirmations, and account-related alerts via standard SMTP.
 
 - Semaphore SMS API: Sends SMS notifications for billing reminders, lease expiry alerts, Two-Factor Authentication OTP codes, and other account events.
 
@@ -97,14 +97,14 @@ Development Environment:
 - Hardware Specification: Host workstation equipped with an Intel Core processor, 16GB RAM, and 512GB SSD running Windows 11 64-bit operating system.
 - Local Server Stack: Laragon local development environment providing an integrated, high-performance stack with Apache 2.4 web server, PHP 8.2+ runtime environment, and MySQL 8.0 relational database server.
 - Code Editor and IDE: Visual Studio Code equipped with PHP Intelephense, Laravel Extra Intellisense, Blade Snippets, Tailwind CSS IntelliSense, and Git integration for code editing, syntax verification, and version control.
-- Dependency Management: Composer 2.x for PHP backend dependency resolution (Laravel framework, Livewire 3, Socialite, Dompdf, Mailjet SDK) and NPM for frontend asset building.
+- Dependency Management: Composer 2.x for PHP backend dependency resolution (Laravel framework, Livewire 3, Socialite, Dompdf) and NPM for frontend asset building.
 - Version Control System: Git repository tracking system for source code change management, branch isolation, and feature tracking.
 
 Testing Environment:
 - Automated Testing Framework: PHPUnit 11 integrated with Laravel Test Bench for executing unit tests, feature tests, HTTP endpoint assertions, database state assertions, and mock API service responses.
 - API Testing & Webhook Sandbox: Postman and PayMongo Sandbox Environment for constructing and testing API requests, verifying JSON payloads, and simulating PayMongo webhook signature events (e.g., payment confirmation, checkout session completion).
 - Third-Party API Test Gateways: 
-  - Mailjet Test Mode for capturing and verifying transactional email dispatches.
+  - Mailpit SMTP Server & Web Inspector for capturing and verifying transactional email dispatches.
   - Semaphore Sandbox API for testing SMS notification dispatches and 2FA OTP code delivery.
 - Cross-Browser & Device Simulation: Google Chrome DevTools and Microsoft Edge for responsive UI testing across desktop, tablet, and mobile viewport dimensions, ensuring cross-browser compatibility and consistent rendering of Chart.js graphs and Livewire interactive components.
 
@@ -154,7 +154,7 @@ To realize this project, the following specific objectives were achieved:
 5. To create a tenant portal where users can view stall details, active lease contracts, payment history, and account status.
 6. To implement a tenant document repository providing secure, on-demand access to lease contracts, payment receipts, and billing statements.
 7. To develop an automated monthly invoicing system using a Laravel Artisan scheduler with multi-stage SMS and email payment reminders.
-8. To implement automated lease expiry notification dispatching via Mailjet email and Semaphore SMS at 60 and 30 days before contract end dates.
+8. To implement automated lease expiry notification dispatching via email and Semaphore SMS at 60 and 30 days before contract end dates.
 9. To generate official PDF receipts with embedded QR codes for online authenticity verification using Dompdf.
 10. To develop a support ticket module with real-time threaded chat, file attachments, and read receipts for structured tenant-management communication.
 11. To implement a utility billing module for recording metered utility readings and computing associated charges.
@@ -178,7 +178,7 @@ The development and implementation of the Web Based Stall Management System for 
 
 - Prospective Tenants and Applicants — Eliminates the requirement to physically visit the administrative office for stall rental inquiries. The public-facing stall reservation portal allows prospective vendors to view real-time stall availability across floor levels and submit formal online applications with supporting documents conveniently from any location.
 
-- Future Researchers and IT Practitioners — Serves as a comprehensive reference and foundation for academic research regarding modern web-based property and stall rental management systems. Demonstrates the practical integration of Laravel 13.x, Livewire 3, online payment gateways (PayMongo), multi-channel messaging (Mailjet email and Semaphore SMS), OAuth 2.0 social authentication, and Two-Factor Authentication (2FA) in local commercial establishments.
+- Future Researchers and IT Practitioners — Serves as a comprehensive reference and foundation for academic research regarding modern web-based property and stall rental management systems. Demonstrates the practical integration of Laravel 13.x, Livewire 3, online payment gateways (PayMongo), multi-channel messaging (Mailpit/SMTP email and Semaphore SMS), OAuth 2.0 social authentication, and Two-Factor Authentication (2FA) in local commercial establishments.
 
 
 Scope and Limitations
@@ -194,7 +194,7 @@ The system includes three types of users with distinct access levels:
 
 The system supports online payments through PayMongo (GCash, Maya, credit and debit cards), automated invoicing, multi-stage payment reminders, lease expiry alerts, social logins via Google and Facebook, optional SMS OTP-based 2FA for privileged accounts, and exportable financial reports in CSV and PDF formats.
 
-However, the system has certain limitations. It requires a stable internet connection for online payment processing, webhook handling, email and SMS dispatching, and real-time notification updates. Service disruptions from PayMongo, Mailjet, or Semaphore may temporarily affect the corresponding features. The system does not handle advanced accounting functions such as tax computation or multi-currency support. It is limited to stall rental management and does not include inventory tracking for individual tenant businesses. The floor plan grid editor is designed for structured grid-based layouts and may not accommodate highly irregular physical floor configurations. The 2FA feature requires tenants to have a registered and verified phone number and relies on SMS delivery by the Semaphore gateway.
+However, the system has certain limitations. It requires a stable internet connection for online payment processing, webhook handling, email and SMS dispatching, and real-time notification updates. Service disruptions from PayMongo or Semaphore may temporarily affect the corresponding features. The system does not handle advanced accounting functions such as tax computation or multi-currency support. It is limited to stall rental management and does not include inventory tracking for individual tenant businesses. The floor plan grid editor is designed for structured grid-based layouts and may not accommodate highly irregular physical floor configurations. The 2FA feature requires tenants to have a registered and verified phone number and relies on SMS delivery by the Semaphore gateway.
 
 
 Definition of Terms
@@ -210,7 +210,7 @@ The following terminology is used to conceptualize and operationalize the study:
 | **Tenant** | An individual or business entity that rents a stall and is registered in the system with access to the tenant portal. |
 | **Tenant Portal** | The system interface allowing tenants to access their stall details, lease information, payment history, document repository, and support tickets. |
 | **Stall Mapping (Lease Contract)** | A system record linking a tenant to a stall for a defined contract period with start and end dates and a PDF contract document. |
-| **Lease Expiry Notification** | An automated alert sent via Mailjet email and Semaphore SMS to both the tenant and administrator at 60 and 30 days before a lease contract's end date. |
+| **Lease Expiry Notification** | An automated alert sent via email and Semaphore SMS to both the tenant and administrator at 60 and 30 days before a lease contract's end date. |
 | **Online Stall Reservation** | A public-facing feature allowing prospective tenants to submit a formal rental application online, including business information and a preferred stall selection. |
 | **Stall Application** | A record in the system representing a formal online rental application submitted by a prospective tenant through the public reservation portal. |
 | **Tenant Document Repository** | A secure section of the tenant portal where tenants can access and download their lease contracts, payment receipts, billing statements, and other related documents. |
@@ -228,7 +228,7 @@ The following terminology is used to conceptualize and operationalize the study:
 | **Two-Factor Authentication (2FA)** | An optional additional security layer for administrator and staff accounts requiring a one-time SMS OTP code sent via Semaphore after the initial password login. |
 | **OTP (One-Time Password)** | A temporary, single-use numeric code sent to a user's registered mobile number via Semaphore SMS as part of the Two-Factor Authentication process. |
 | **Artisan Scheduler** | A Laravel feature automating the execution of console commands on a defined schedule, used for monthly invoice generation, payment reminders, and lease expiry notifications. |
-| **Mailjet** | A transactional email service used to send billing reminders, payment confirmations, lease expiry alerts, and stall application notifications. |
+| **Mailpit / Laravel Mail** | An email testing and SMTP dispatching service used to send billing reminders, payment confirmations, lease expiry alerts, and stall application notifications. |
 | **Semaphore SMS** | An SMS gateway used to send billing reminders, lease expiry alerts, and Two-Factor Authentication OTP codes. |
 | **Dompdf** | A PHP HTML-to-PDF library used to generate official payment receipts and exportable financial report documents. |
 | **Chart.js** | A JavaScript charting library used in the advanced financial reporting module to render interactive revenue trend and occupancy rate charts. |

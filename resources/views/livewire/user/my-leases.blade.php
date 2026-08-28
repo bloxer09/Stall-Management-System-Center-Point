@@ -1,9 +1,8 @@
 <div class="space-y-6">
 
-    <div
-        class="card bg-base-100 p-6 rounded-3xl border border-base-300 shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-            <h2 class="text-xl font-black tracking-tight text-base-content">My Active Lease Allocations</h2>
+            <h1 class="text-2xl font-black tracking-tight text-base-content">My Active Lease Allocations</h1>
             <p class="text-xs text-base-content/60 mt-1">View active contract details, upload stall cover photos,
                 download signed documents, and request lease extensions.</p>
         </div>
