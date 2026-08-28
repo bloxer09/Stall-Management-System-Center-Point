@@ -17,13 +17,45 @@ class ServicesTest extends TestCase
         $this->assertTrue(str_contains($output, '<svg') || str_contains($output, '<img'));
     }
 
-    public function test_sms_service_handles_missing_api_key_gracefully()
+    public function test_sms_service_captures_sms_locally()
     {
+        $service = new SmsService();
+        $this->assertTrue($service->isLocal());
+
+        $result = $service->sendSms('09123456789', 'Local test OTP code: 999888');
+        $this->assertTrue($result);
+
+        $logPath = config('sms-catcher.storage_path', storage_path('logs/sms-catcher.json'));
+        $this->assertFileExists($logPath);
+        $content = file_get_contents($logPath);
+        $this->assertStringContainsString('09123456789', $content);
+        $this->assertStringContainsString('999888', $content);
+    }
+
+    public function test_sms_service_handles_missing_api_key_in_production_gracefully()
+    {
+        // Simulate production environment
+        $this->app['env'] = 'production';
         config(['services.semaphore.api_key' => '']);
         $service = new SmsService();
 
         $result = $service->sendSms('09123456789', 'Test message');
         $this->assertFalse($result);
+    }
+
+    public function test_mail_service_detects_local_and_production_mailers()
+    {
+        $mailService = new \App\Services\MailService();
+        
+        // Local/testing environment
+        $this->assertTrue($mailService->isLocal());
+        $this->assertEquals('mailpit', $mailService->getActiveMailer());
+
+        // Production environment with Mailjet credentials
+        $this->app['env'] = 'production';
+        config(['services.mailjet.api_key' => 'test-api-key']);
+        $this->assertFalse($mailService->isLocal());
+        $this->assertEquals('mailjet', $mailService->getActiveMailer());
     }
 
     public function test_upload_multiple_ticket_attachments_and_accessor()

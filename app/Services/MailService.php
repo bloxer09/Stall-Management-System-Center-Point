@@ -9,18 +9,75 @@ use Illuminate\Support\Facades\Mail;
 class MailService
 {
     /**
+     * Determine if the current environment/request is local development.
+     */
+    public function isLocal(): bool
+    {
+        if (app()->environment('production')) {
+            return false;
+        }
+
+        if (app()->environment('local', 'testing')) {
+            return true;
+        }
+
+        $host = '';
+        if (app()->runningInConsole()) {
+            $appUrl = config('app.url', 'http://localhost');
+            $host = parse_url($appUrl, PHP_URL_HOST) ?? '';
+        } else {
+            $host = request()->getHost() ?? '';
+        }
+
+        return in_array($host, ['localhost', '127.0.0.1', '::1'])
+            || str_ends_with($host, '.test')
+            || str_ends_with($host, '.local');
+    }
+
+    /**
+     * Get the active mailer based on environment.
+     */
+    public function getActiveMailer(): string
+    {
+        if ($this->isLocal()) {
+            return 'mailpit';
+        }
+
+        // In Production: if Mailjet credentials exist, route via mailjet
+        if (!empty(config('services.mailjet.api_key')) || !empty(env('MAILJET_API_KEY'))) {
+            return 'mailjet';
+        }
+
+        return config('mail.default', 'smtp');
+    }
+
+    /**
      * Send a transactional HTML email with optional plain text alternative.
      */
     public function sendEmail(string $toEmail, string $toName, string $subject, string $htmlBody, string $textBody = ''): bool
     {
+        $mailer = $this->getActiveMailer();
+
         try {
-            Mail::to($toEmail, $toName)->send(new GenericNotificationMail($subject, $htmlBody, $textBody));
+            Mail::mailer($mailer)->to($toEmail, $toName)->send(new GenericNotificationMail($subject, $htmlBody, $textBody));
             return true;
         } catch (\Throwable $e) {
-            Log::error('MailService dispatch error to ' . $toEmail . ': ' . $e->getMessage(), [
+            Log::error("MailService dispatch error [Mailer: {$mailer}] to {$toEmail}: " . $e->getMessage(), [
                 'exception' => $e,
                 'subject' => $subject,
+                'mailer' => $mailer,
             ]);
+
+            // If Mailjet or Mailpit encounters a transport failure, attempt fallback to default SMTP
+            if ($mailer !== 'smtp') {
+                try {
+                    Mail::mailer('smtp')->to($toEmail, $toName)->send(new GenericNotificationMail($subject, $htmlBody, $textBody));
+                    return true;
+                } catch (\Throwable $fallbackEx) {
+                    Log::error("MailService fallback dispatch also failed to {$toEmail}: " . $fallbackEx->getMessage());
+                }
+            }
+
             return false;
         }
     }
