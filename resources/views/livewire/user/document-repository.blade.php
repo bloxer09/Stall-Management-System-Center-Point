@@ -1,8 +1,8 @@
 <div class="space-y-6">
     <!-- Header -->
     <div>
-        <h1 class="text-2xl font-black tracking-tight text-base-content">My Document Repository</h1>
-        <p class="text-xs text-base-content/60 mt-1">Secure access to all your official lease contracts, payment receipts, and billing documents.</p>
+        <h1 class="text-2xl font-black tracking-tight text-base-content">My Documents</h1>
+        <p class="text-xs text-base-content/60 mt-1">Download your lease contracts and payment receipts.</p>
     </div>
 
     <!-- Section 1: Lease Contracts -->
@@ -13,7 +13,7 @@
             </div>
             <div>
                 <h2 class="text-sm font-black text-base-content uppercase tracking-wider">Lease Contracts</h2>
-                <p class="text-[10px] text-base-content/50">Signed lease agreements for your allocated stall units</p>
+                <p class="text-[10px] text-base-content/50">Signed contracts for your stalls</p>
             </div>
         </div>
         <div class="overflow-x-auto">

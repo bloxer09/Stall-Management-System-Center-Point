@@ -1,8 +1,8 @@
 <div class="space-y-6">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-            <h1 class="text-2xl font-black tracking-tight text-base-content">System Audit Logs</h1>
-            <p class="text-xs text-base-content/60 mt-1">Chronological history of security events, allocations, and administrative actions.</p>
+            <h1 class="text-2xl font-black tracking-tight text-base-content">Audit Logs</h1>
+            <p class="text-xs text-base-content/60 mt-1">View recent system actions and activity history.</p>
         </div>
         <button wire:click="exportXlsx"
             wire:loading.attr="disabled" wire:loading.class="opacity-60 cursor-wait" wire:target="exportXlsx"

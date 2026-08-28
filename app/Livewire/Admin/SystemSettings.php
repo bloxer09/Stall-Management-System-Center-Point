@@ -42,12 +42,12 @@ class SystemSettings extends Component
 
         AuditLog::log(
             Auth::id(),
-            "Updated System Settings, Privacy Policy, and Terms & Conditions",
+            "Updated System Settings",
             'Setting',
             1
         );
 
-        session()->flash('message', 'System Settings, Privacy Policy, and Terms & Conditions updated successfully!');
+        session()->flash('message', 'Settings saved successfully.');
         $this->redirect(route('admin.settings'), navigate: false);
     }
 

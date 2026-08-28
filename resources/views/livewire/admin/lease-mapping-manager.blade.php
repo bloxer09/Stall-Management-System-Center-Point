@@ -2,8 +2,8 @@
 
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-            <h1 class="text-2xl font-black tracking-tight text-base-content">Tenant Lease Allocations</h1>
-            <p class="text-xs text-base-content/60 mt-1">Assign tenants to stalls, upload lease contracts, and review extension requests.</p>
+            <h1 class="text-2xl font-black tracking-tight text-base-content">Leases & Tenants</h1>
+            <p class="text-xs text-base-content/60 mt-1">Assign stalls to tenants, upload contracts, and manage renewals.</p>
         </div>
         <button wire:click="openModal"
             wire:loading.attr="disabled" wire:loading.class="opacity-60 cursor-wait" wire:target="openModal"
@@ -122,9 +122,9 @@
             
             <div class="space-y-3 text-sm">
                 <div class="form-control">
-                    <label class="label"><span class="label-text font-bold text-xs uppercase">Tenant User</span></label>
+                    <label class="label"><span class="label-text font-bold text-xs uppercase">Tenant</span></label>
                     <select wire:model="user_id" class="select select-bordered rounded-xl text-sm">
-                        <option value="">Select User</option>
+                        <option value="">Select Tenant</option>
                         @foreach($availableUsers as $u)
                         <option value="{{ $u->id }}">{{ $u->name }} ({{ $u->email }})</option>
                         @endforeach
@@ -133,7 +133,7 @@
                 <div class="form-control">
                     <label class="label"><span class="label-text font-bold text-xs uppercase">Stall</span></label>
                     <select wire:model="stall_id" class="select select-bordered rounded-xl text-sm">
-                        <option value="">Select Available Stall</option>
+                        <option value="">Select Stall</option>
                         @foreach($availableStalls as $st)
                         <option value="{{ $st->id }}">Stall {{ $st->stall_number }} (₱{{ number_format($st->price) }}/mo)</option>
                         @endforeach
@@ -162,7 +162,7 @@
                     wire:target="saveMapping"
                     class="btn btn-primary rounded-xl font-bold gap-2">
                     <span wire:loading wire:target="saveMapping" class="loading loading-spinner loading-xs"></span>
-                    Create Lease
+                    Assign Lease
                 </button>
             </div>
         </div>

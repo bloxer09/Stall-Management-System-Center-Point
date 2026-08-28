@@ -12,11 +12,11 @@
                 </div>
 
                 <h1 class="text-3xl sm:text-5xl font-black text-base-content tracking-tight leading-tight">
-                    Premier Commercial Space & Facility Management
+                    Commercial Space & Stall Management
                 </h1>
 
                 <p class="text-sm sm:text-base text-base-content/80 font-medium leading-relaxed max-w-2xl">
-                    Welcome to the official digital portal of Center Point Commercial Complex in Pagadian City. Providing streamlined tenant operations, digital invoicing, lease administration, and direct administrative support.
+                    Welcome to Center Point Commercial Complex in Pagadian City. Manage stall rentals, track payments, and get direct support.
                 </p>
 
                 <!-- Quick Action Buttons -->
@@ -28,12 +28,12 @@
                                 Admin Dashboard
                             </a>
                             <a href="{{ route('admin.stalls') }}" wire:navigate class="btn btn-outline rounded-2xl font-bold px-6 border-base-300 hover:bg-base-200">
-                                Stall Catalog
+                                Stalls
                             </a>
                         @else
                             <a href="{{ route('user.dashboard') }}" wire:navigate class="btn btn-primary rounded-2xl font-bold px-7 shadow-md">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 00-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                                My Tenant Portal
+                                My Account
                             </a>
                             <a href="{{ route('user.payments') }}" wire:navigate class="btn btn-outline rounded-2xl font-bold px-6 border-base-300 hover:bg-base-200">
                                 Invoices & Payments
@@ -41,10 +41,10 @@
                         @endif
                     @else
                         <button type="button" onclick="Livewire.dispatch('open-login-modal')" class="btn btn-primary rounded-2xl font-bold px-7 shadow-md">
-                            Sign In to Portal
+                            Sign In
                         </button>
                         <button type="button" onclick="Livewire.dispatch('open-register-modal')" class="btn btn-outline rounded-2xl font-bold px-6 border-base-300 hover:bg-base-200">
-                            Register Tenant Account
+                            Register Account
                         </button>
                     @endauth
                 </div>
@@ -57,16 +57,16 @@
                     <div class="text-xs font-bold text-base-content/70 mt-0.5">Commercial Floors</div>
                 </div>
                 <div class="p-4 rounded-2xl bg-base-100/70 backdrop-blur-sm border border-base-200">
-                    <div class="text-2xl font-black text-primary">Digital</div>
-                    <div class="text-xs font-bold text-base-content/70 mt-0.5">Lease Management</div>
+                    <div class="text-2xl font-black text-primary">Easy</div>
+                    <div class="text-xs font-bold text-base-content/70 mt-0.5">Online Leases</div>
                 </div>
                 <div class="p-4 rounded-2xl bg-base-100/70 backdrop-blur-sm border border-base-200">
                     <div class="text-2xl font-black text-primary">PayMongo</div>
-                    <div class="text-xs font-bold text-base-content/70 mt-0.5">Digital Checkout</div>
+                    <div class="text-xs font-bold text-base-content/70 mt-0.5">Online Checkout</div>
                 </div>
                 <div class="p-4 rounded-2xl bg-base-100/70 backdrop-blur-sm border border-base-200">
                     <div class="text-2xl font-black text-primary">24/7</div>
-                    <div class="text-xs font-bold text-base-content/70 mt-0.5">CCTV & Security</div>
+                    <div class="text-xs font-bold text-base-content/70 mt-0.5">Security</div>
                 </div>
             </div>
         </div>
@@ -74,8 +74,8 @@
         <!-- Commercial Zones / Floor Level Overview -->
         <div class="space-y-6">
             <div>
-                <h2 class="text-2xl font-black tracking-tight text-base-content">Complex Directory & Floor Zones</h2>
-                <p class="text-xs text-base-content/70 mt-1 font-medium">Explore the diverse commercial areas operating at Center Point Commercial Complex.</p>
+                <h2 class="text-2xl font-black tracking-tight text-base-content">Building Floors & Directory</h2>
+                <p class="text-xs text-base-content/70 mt-1 font-medium">Explore the commercial areas at Center Point Commercial Complex.</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">

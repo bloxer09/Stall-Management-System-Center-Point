@@ -1,15 +1,15 @@
 <div class="space-y-6">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-            <h1 class="text-2xl font-black tracking-tight text-base-content">System Settings & Portal Policies</h1>
-            <p class="text-xs text-base-content/60 mt-1">Manage global platform branding, contact details, Privacy Policy, and Terms & Conditions</p>
+            <h1 class="text-2xl font-black tracking-tight text-base-content">System Settings</h1>
+            <p class="text-xs text-base-content/60 mt-1">Manage platform details, contact info, and legal policies.</p>
         </div>
     </div>
 
     <form wire:submit.prevent="saveSettings" class="space-y-6">
-        <!-- General Portal Configuration -->
+        <!-- General Configuration -->
         <div class="card bg-base-100 rounded-3xl border border-base-300 shadow-md p-6 space-y-4">
-            <h2 class="text-base font-black text-base-content uppercase tracking-wider">General Platform Configuration</h2>
+            <h2 class="text-base font-black text-base-content uppercase tracking-wider">General Information</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="form-control">
                     <label class="label"><span class="label-text font-bold text-xs uppercase">Platform Name *</span></label>

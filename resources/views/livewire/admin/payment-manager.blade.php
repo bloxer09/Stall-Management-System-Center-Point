@@ -1,9 +1,8 @@
 <div class="space-y-6">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-            <h1 class="text-2xl font-black tracking-tight text-base-content">Payment Ledger & Transactions</h1>
-            <p class="text-xs text-base-content/60 mt-1">Track PayMongo online checkouts, office cash payments, and
-                billing status</p>
+            <h1 class="text-2xl font-black tracking-tight text-base-content">Payments & Invoices</h1>
+            <p class="text-xs text-base-content/60 mt-1">Track online payments, cash collections, and billing status.</p>
         </div>
         <div class="flex items-center gap-2">
             <button wire:click="exportXlsx" wire:loading.attr="disabled" wire:loading.class="opacity-60 cursor-wait"
@@ -20,7 +19,7 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
-                Record Office Cash Payment
+                Record Cash Payment
             </button>
         </div>
     </div>
@@ -134,7 +133,7 @@
     <!-- Manual Payment Modal -->
     @if($showManualModal)
         <dialog class="modal modal-open">
-            <div class="modal-box max-w-md p-6 bg-base-100 rounded-3xl border border-base-300 relative">
+            <div class="modal-box max-w-md p-6 bg-base-100 rounded-3xl border border-base-300 relative shadow-2xl">
                 <button wire:click="requestCloseModal" class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -143,18 +142,18 @@
 
                 @if($showConfirmClose)
                     <div class="p-4 bg-error/10 border border-error/30 rounded-2xl mb-4 text-center space-y-2">
-                        <h4 class="font-extrabold text-sm text-base-content">Discard Unrecorded Payment Record?</h4>
-                        <p class="text-xs text-base-content/70">The entered payment details will be cleared.</p>
+                        <h4 class="font-extrabold text-sm text-base-content">Discard Payment Entry?</h4>
+                        <p class="text-xs text-base-content/70">Your changes will be lost.</p>
                         <div class="flex gap-2 justify-center pt-2">
-                            <button wire:click="cancelConfirmClose" class="btn btn-xs btn-outline rounded-lg">Resume
-                                Record</button>
+                            <button wire:click="cancelConfirmClose" class="btn btn-xs btn-outline rounded-lg">Keep
+                                Editing</button>
                             <button wire:click="closeModal" class="btn btn-xs btn-error text-white rounded-lg">Yes,
                                 Discard</button>
                         </div>
                     </div>
                 @endif
 
-                <h3 class="font-extrabold text-lg text-base-content mb-4">Record Office Cash Payment</h3>
+                <h3 class="font-extrabold text-lg text-base-content mb-4">Record Cash Payment</h3>
                 <form wire:submit="recordManualPayment" class="space-y-4">
                     <div class="form-control">
                         <label class="label pb-1"><span class="label-text font-bold text-xs">Tenant Account</span></label>

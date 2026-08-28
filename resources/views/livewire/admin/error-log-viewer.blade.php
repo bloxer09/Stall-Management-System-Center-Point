@@ -1,8 +1,8 @@
 <div class="space-y-6">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-            <h1 class="text-2xl font-black tracking-tight text-base-content">System Error Logs & Diagnostics</h1>
-            <p class="text-xs text-base-content/60 mt-1">Structured error exception tracking, categorized diagnostic logs, and stack trace inspection.</p>
+            <h1 class="text-2xl font-black tracking-tight text-base-content">Error Logs</h1>
+            <p class="text-xs text-base-content/60 mt-1">View error logs and system diagnostics.</p>
         </div>
         <div class="flex items-center gap-2">
             <button wire:click="exportXlsx"

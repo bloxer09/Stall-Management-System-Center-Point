@@ -2,9 +2,8 @@
 
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-            <h1 class="text-2xl font-black tracking-tight text-base-content">My Active Lease Allocations</h1>
-            <p class="text-xs text-base-content/60 mt-1">View active contract details, upload stall cover photos,
-                download signed documents, and request lease extensions.</p>
+            <h1 class="text-2xl font-black tracking-tight text-base-content">My Leases</h1>
+            <p class="text-xs text-base-content/60 mt-1">View your rented stalls, contracts, and renewal requests.</p>
         </div>
         <div class="flex items-center gap-3">
             <div class="stat bg-base-200/60 py-2 px-4 rounded-2xl border border-base-300">
@@ -151,7 +150,7 @@
     @if($showRenewalModal)
         <dialog class="modal modal-open">
             <div class="modal-box max-w-md p-6 bg-base-100 rounded-3xl border border-base-300 space-y-4 shadow-2xl">
-                <h3 class="text-lg font-bold text-base-content">Request Lease Extension</h3>
+                <h3 class="text-lg font-bold text-base-content">Extend Lease</h3>
 
                 <div class="space-y-3 text-sm">
                     <div class="form-control">

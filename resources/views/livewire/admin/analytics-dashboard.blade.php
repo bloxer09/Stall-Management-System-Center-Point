@@ -2,8 +2,8 @@
     <!-- Header with Export Actions -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-            <h1 class="text-2xl font-black tracking-tight">Analytics & Performance Reports</h1>
-            <p class="text-xs text-base-content/60 mt-1">Real-time commercial stall occupancy, revenue trends, and operational metrics</p>
+            <h1 class="text-2xl font-black tracking-tight text-base-content">Analytics & Reports</h1>
+            <p class="text-xs text-base-content/60 mt-1">View occupancy, revenue, and collection trends.</p>
         </div>
         <div class="flex items-center gap-2">
             <button wire:click="exportXlsx" class="btn btn-outline btn-sm rounded-xl font-bold gap-1.5 shadow-xs">

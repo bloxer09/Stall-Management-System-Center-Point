@@ -11,9 +11,8 @@
 
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-            <h1 class="text-2xl font-black tracking-tight text-base-content">My Invoices & Online Payments</h1>
-            <p class="text-xs text-base-content/60 mt-1">Select pending invoices to pay via PayMongo online checkout or
-                download official PDF receipts.</p>
+            <h1 class="text-2xl font-black tracking-tight text-base-content">My Invoices</h1>
+            <p class="text-xs text-base-content/60 mt-1">Pay pending bills or download payment receipts.</p>
         </div>
         <div class="flex items-center gap-3">
             <div class="stat bg-base-200/60 py-2 px-4 rounded-2xl border border-base-300">
@@ -25,8 +24,7 @@
                     wire:loading.class="opacity-60 cursor-wait" wire:target="payWithPayMongo"
                     class="btn btn-primary rounded-xl font-bold text-xs shadow-md gap-2">
                     <span wire:loading wire:target="payWithPayMongo" class="loading loading-spinner loading-xs"></span>
-                    <span wire:loading.remove wire:target="payWithPayMongo">💳 Pay Selected Total:
-                        ₱{{ number_format($totalSelected, 2) }}</span>
+                    <span wire:loading.remove wire:target="payWithPayMongo">💳 Pay Selected (₱{{ number_format($totalSelected, 2) }})</span>
                     <span wire:loading wire:target="payWithPayMongo">Processing…</span>
                 </button>
             @endif

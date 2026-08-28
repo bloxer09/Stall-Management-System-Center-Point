@@ -2,8 +2,8 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-            <h1 class="text-2xl font-black tracking-tight text-base-content">Advanced Financial Reports</h1>
-            <p class="text-xs text-base-content/60 mt-1">Comprehensive financial insights, revenue trends, receivables aging, and export options.</p>
+            <h1 class="text-2xl font-black tracking-tight text-base-content">Financial Reports</h1>
+            <p class="text-xs text-base-content/60 mt-1">View revenue summaries, unpaid balances, and exports.</p>
         </div>
         <div class="flex items-center gap-2">
             <button wire:click="exportCsv"

@@ -2,11 +2,11 @@
 
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-            <h1 class="text-2xl font-black tracking-tight text-base-content">Visual Floor Plan Grid Editor</h1>
-            <p class="text-xs text-base-content/60 mt-1">Position stalls onto the interactive floor plan layout.</p>
+            <h1 class="text-2xl font-black tracking-tight text-base-content">Floor Map Editor</h1>
+            <p class="text-xs text-base-content/60 mt-1">Arrange stalls on the floor map.</p>
         </div>
         <div class="flex items-center gap-3">
-            <label class="text-xs font-bold uppercase tracking-wider text-base-content/60">Floor Location:</label>
+            <label class="text-xs font-bold uppercase tracking-wider text-base-content/60">Floor:</label>
             <select wire:model.live="selectedLocationId" class="select select-bordered rounded-2xl text-sm">
                 @foreach($locations as $loc)
                 <option value="{{ $loc->id }}">{{ $loc->name }} ({{ $loc->grid_rows }}x{{ $loc->grid_cols }})</option>

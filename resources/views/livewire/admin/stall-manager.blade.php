@@ -2,9 +2,8 @@
     <!-- Header -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-            <h2 class="text-2xl font-black tracking-tight">Stall Catalogue & Inventory</h2>
-            <p class="text-xs text-base-content/60 mt-1">Manage commercial stall units, occupancy status, pricing, and
-                details</p>
+            <h1 class="text-2xl font-black tracking-tight text-base-content">Stalls & Spaces</h1>
+            <p class="text-xs text-base-content/60 mt-1">View and manage stalls, pricing, and availability.</p>
         </div>
         <div class="flex flex-wrap gap-2">
             <button wire:click="openModal" wire:loading.attr="disabled" wire:loading.class="opacity-60 cursor-wait"
@@ -122,12 +121,11 @@
     <!-- Modal 1: Stall Add/Edit Modal -->
     @if($showModal)
         <dialog class="modal modal-open">
-            <div class="modal-box max-w-md p-6 bg-base-100 rounded-3xl border border-base-300 space-y-4">
-                <h3 class="text-lg font-bold text-base-content">{{ $stallId ? 'Edit Stall Details' : 'Add New Stall' }}</h3>
+            <div class="modal-box max-w-md p-6 bg-base-100 rounded-3xl border border-base-300 space-y-4 shadow-2xl">
+                <h3 class="text-lg font-bold text-base-content">{{ $stallId ? 'Edit Stall' : 'Add Stall' }}</h3>
                 <form wire:submit.prevent="saveStall" class="space-y-4">
                     <div class="form-control">
-                        <label class="label"><span class="label-text font-bold text-xs uppercase">Stall Photo / Cover
-                                Image</span></label>
+                        <label class="label"><span class="label-text font-bold text-xs uppercase">Stall Photo</span></label>
                         <input type="file" wire:model="image" accept="image/*"
                             class="file-input file-input-bordered file-input-sm rounded-xl text-xs">
                         @error('image') <span class="text-error text-xs mt-1">{{ $message }}</span> @enderror
@@ -158,10 +156,9 @@
                     </div>
 
                     <div class="form-control">
-                        <label class="label"><span class="label-text font-bold text-xs uppercase">Floor Location /
-                                Zone</span></label>
+                        <label class="label"><span class="label-text font-bold text-xs uppercase">Floor Location</span></label>
                         <select wire:model="location_id" class="select select-bordered rounded-xl text-sm">
-                            <option value="">-- Select Floor Level --</option>
+                            <option value="">-- Select Floor --</option>
                             @foreach($locations as $loc)
                                 <option value="{{ $loc->id }}">{{ $loc->name }}</option>
                             @endforeach

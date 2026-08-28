@@ -2,9 +2,8 @@
     <!-- Header -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-            <h1 class="text-2xl font-black tracking-tight text-base-content">Support Ticket Center</h1>
-            <p class="text-xs text-base-content/60 mt-1">Manage tenant support requests, ticket handler assignments, and
-                live messenger chat threads</p>
+            <h1 class="text-2xl font-black tracking-tight text-base-content">Support Tickets</h1>
+            <p class="text-xs text-base-content/60 mt-1">Answer tenant questions and manage support tickets.</p>
         </div>
     </div>
 
@@ -197,10 +196,10 @@
                     <div class="flex items-center gap-1">
                         @if($selectedTicket->status === 'open')
                             <button wire:click="updateStatus('closed')"
-                                class="btn btn-ghost btn-xs text-[10px] font-bold text-neutral" title="Close Ticket">Close</button>
+                                class="btn btn-error btn-xs text-[10px] font-bold text-white rounded-lg shadow-xs hover:opacity-90" title="Close Ticket">Close</button>
                         @else
                             <button wire:click="updateStatus('open')"
-                                class="btn btn-ghost btn-xs text-[10px] font-bold text-success"
+                                class="btn btn-success btn-xs text-[10px] font-bold text-white rounded-lg shadow-xs hover:opacity-90"
                                 title="Reopen Ticket">Reopen</button>
                         @endif
                         <button wire:click="toggleWidgetMinimize" class="btn btn-ghost btn-square btn-xs text-base-content/70"
@@ -282,11 +281,11 @@
                 @if($selectedTicket->status !== 'closed')
                     @if($selectedTicket->assigned_to === null)
                         <div class="p-4 bg-warning/10 border-t border-warning/30 text-center space-y-2">
-                            <div class="text-xs font-extrabold text-base-content">This support ticket is unassigned.</div>
-                            <p class="text-[11px] text-base-content/70">You must claim this ticket to send responses to the tenant.</p>
+                            <div class="text-xs font-extrabold text-base-content">This ticket is unassigned.</div>
+                            <p class="text-[11px] text-base-content/70">Claim this ticket to reply.</p>
                             <button wire:click="claimTicket({{ $selectedTicket->id }})"
                                 class="btn btn-xs btn-primary rounded-xl font-bold shadow-xs">
-                                + Claim Ticket Now
+                                Claim Ticket
                             </button>
                         </div>
                     @elseif($selectedTicket->assigned_to !== auth()->id())
@@ -294,10 +293,10 @@
                             <div class="text-xs font-extrabold text-base-content">Handled by
                                 {{ $selectedTicket->handler->name ?? 'Another Admin' }}
                             </div>
-                            <p class="text-[11px] text-base-content/60">Only the assigned admin can send responses.</p>
+                            <p class="text-[11px] text-base-content/60">Only the assigned admin can reply.</p>
                             <button wire:click="claimTicket({{ $selectedTicket->id }})"
                                 class="btn btn-xs btn-outline rounded-xl font-bold">
-                                Reassign / Transfer Ticket to Me
+                                Transfer to Me
                             </button>
                         </div>
                     @else
@@ -338,7 +337,7 @@
                             <!-- Uploading Indicator -->
                             <div wire:loading wire:target="incomingAttachments" class="flex items-center gap-2 text-[11px] text-primary bg-primary/10 px-3 py-1.5 rounded-xl border border-primary/20 animate-pulse">
                                 <span class="loading loading-spinner loading-xs"></span>
-                                <span class="font-bold">Attaching files...</span>
+                                <span class="font-bold">Uploading files...</span>
                             </div>
 
                             <!-- Rich Previews of Attached / Pasted Files -->
@@ -388,7 +387,7 @@
                                     </svg>
                                     <input type="file" wire:model="incomingAttachments" multiple class="hidden">
                                 </label>
-                                <input type="text" wire:model="newMessage" placeholder="Type response or paste file(s) (Ctrl+V)..."
+                                <input type="text" wire:model="newMessage" placeholder="Type a message or paste files..."
                                     class="input input-sm input-bordered flex-1 rounded-xl text-xs" />
                                 <button type="submit" class="btn btn-primary btn-sm rounded-xl font-bold px-3">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -401,7 +400,7 @@
                     @endif
                 @else
                     <div class="p-3 bg-base-200 text-center text-xs font-bold text-base-content/50 border-t border-base-300">
-                        This support ticket is closed.
+                        This ticket is closed.
                     </div>
                 @endif
             </div>

@@ -1,15 +1,15 @@
 <div class="space-y-6">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-            <h1 class="text-2xl font-black tracking-tight text-base-content">Tenant Helpdesk & Support Chat</h1>
-            <p class="text-xs text-base-content/60 mt-1">Communicate directly with assigned stall management staff</p>
+            <h1 class="text-2xl font-black tracking-tight text-base-content">Helpdesk & Support</h1>
+            <p class="text-xs text-base-content/60 mt-1">Send questions and message management for support.</p>
         </div>
         <button wire:click="openCreateModal"
             class="btn btn-primary btn-sm rounded-xl font-bold shadow-xs flex items-center gap-1">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
-            New Support Ticket
+            New Ticket
         </button>
     </div>
 
@@ -328,7 +328,7 @@
                                 </svg>
                                 <input type="file" wire:model="incomingAttachments" multiple class="hidden">
                             </label>
-                            <input type="text" wire:model="message" placeholder="Type response or paste file(s) (Ctrl+V)..."
+                            <input type="text" wire:model="message" placeholder="Type a message or paste files..."
                                 class="input input-sm input-bordered flex-1 rounded-xl text-xs" />
                             <button type="submit" class="btn btn-primary btn-sm rounded-xl font-bold px-3">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -340,7 +340,7 @@
                     </form>
                 @else
                     <div class="p-3 bg-base-200 text-center text-xs font-bold text-base-content/50 border-t border-base-300">
-                        This support ticket is closed.
+                        This ticket is closed.
                     </div>
                 @endif
             </div>
@@ -360,10 +360,10 @@
 
                 @if($showConfirmClose)
                     <div class="p-4 bg-error/10 border border-error/30 rounded-2xl text-center space-y-2">
-                        <h4 class="font-extrabold text-sm text-base-content">Discard Draft Support Ticket?</h4>
-                        <p class="text-xs text-base-content/70">Your typed ticket details will be lost.</p>
+                        <h4 class="font-extrabold text-sm text-base-content">Discard Ticket Draft?</h4>
+                        <p class="text-xs text-base-content/70">Your changes will be lost.</p>
                         <div class="flex gap-2 justify-center pt-2">
-                            <button wire:click="cancelConfirmClose" class="btn btn-xs btn-outline rounded-lg">Continue
+                            <button wire:click="cancelConfirmClose" class="btn btn-xs btn-outline rounded-lg">Keep
                                 Editing</button>
                             <button wire:click="closeCreateModal" class="btn btn-xs btn-error text-white rounded-lg">Yes,
                                 Discard</button>
@@ -371,7 +371,7 @@
                     </div>
                 @endif
 
-                <h3 class="font-black text-lg text-base-content">Create New Support Ticket</h3>
+                <h3 class="font-black text-lg text-base-content">Create Support Ticket</h3>
                 <form wire:submit.prevent="createTicket" class="space-y-4">
                     @if(count($myStalls) > 0)
                         <div class="form-control">

@@ -2,12 +2,12 @@
     <!-- Header & Action Button -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-            <h1 class="text-2xl font-black tracking-tight">Floor Level Management</h1>
-            <p class="text-xs text-base-content/60 mt-1">Configure commercial building floor levels, descriptions, sort orders, and grid plan dimensions</p>
+            <h1 class="text-2xl font-black tracking-tight text-base-content">Floors & Locations</h1>
+            <p class="text-xs text-base-content/60 mt-1">Manage building floor levels and layout grids.</p>
         </div>
         <button wire:click="openModal" class="btn btn-primary btn-sm rounded-xl font-bold gap-1.5 shadow-xs">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            Add Floor Level
+            Add Floor
         </button>
     </div>
 
@@ -83,7 +83,7 @@
     <!-- Create/Edit Modal Dialog -->
     @if($showModal)
         <dialog class="modal modal-open">
-            <div class="modal-box max-w-md p-6 bg-base-100 rounded-3xl border border-base-300 space-y-4">
+            <div class="modal-box max-w-md p-6 bg-base-100 rounded-3xl border border-base-300 space-y-4 shadow-2xl">
                 <div class="flex justify-between items-center pb-2 border-b border-base-200">
                     <h3 class="text-lg font-bold text-base-content">{{ $floorId ? 'Edit Floor Level' : 'Add New Floor Level' }}</h3>
                     <button wire:click="closeModal" class="btn btn-sm btn-circle btn-ghost">&times;</button>
