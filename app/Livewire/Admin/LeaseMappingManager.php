@@ -6,6 +6,7 @@ use App\Models\Stall;
 use App\Models\StallMapping;
 use App\Models\User;
 use App\Services\FileUploadService;
+use App\Services\InvoiceService;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
@@ -49,7 +50,7 @@ class LeaseMappingManager extends Component
 
     public function openDetailModal($id)
     {
-        $this->selectedLease = StallMapping::with(['user', 'stall.location'])->findOrFail($id);
+        $this->selectedLease = StallMapping::with(['user', 'stall.location', 'initialInvoice'])->findOrFail($id);
         $this->showDetailModal = true;
     }
 
@@ -63,6 +64,8 @@ class LeaseMappingManager extends Component
     {
         $this->resetValidation();
         $this->reset(['mappingId', 'user_id', 'stall_id', 'start_date', 'end_date', 'contract_file']);
+        $this->start_date = now()->format('Y-m-d');
+        $this->end_date = now()->addYear()->format('Y-m-d');
         $this->showDetailModal = false;
         $this->showModal = true;
     }
@@ -85,26 +88,22 @@ class LeaseMappingManager extends Component
                 $this->contract_file
             );
 
-            $this->dispatch('notify', type: 'success', message: 'Lease assigned successfully!');
+            $this->dispatch('notify', type: 'success', message: 'Stall assigned! Initial invoice generated. Stall is reserved awaiting tenant payment.');
             $this->closeModal();
         } catch (\InvalidArgumentException $e) {
             $this->addError('stall_id', $e->getMessage());
         }
     }
 
-    public function approveRenewal($mappingId, \App\Services\LeaseService $leaseService)
+    public function recordInitialCashPayment($mappingId, InvoiceService $invoiceService)
     {
-        $mapping = StallMapping::findOrFail($mappingId);
-        $leaseService->approveRenewal($mapping);
-        $this->dispatch('notify', type: 'success', message: 'Renewal request approved!');
-        $this->closeDetailModal();
-    }
+        $mapping = StallMapping::with('initialInvoice')->findOrFail($mappingId);
 
-    public function rejectRenewal($mappingId, \App\Services\LeaseService $leaseService)
-    {
-        $mapping = StallMapping::findOrFail($mappingId);
-        $leaseService->rejectRenewal($mapping);
-        $this->dispatch('notify', type: 'success', message: 'Renewal request rejected.');
+        if ($mapping->initialInvoice && $mapping->initialInvoice->status === 'pending') {
+            $invoiceService->markAsPaid($mapping->initialInvoice, 'office_cash', 'OTC-' . time());
+            $this->dispatch('notify', type: 'success', message: 'Office cash payment recorded! Lease is now Active in Good Standing and Stall is Occupied.');
+        }
+
         $this->closeDetailModal();
     }
 
@@ -112,13 +111,13 @@ class LeaseMappingManager extends Component
     {
         $mapping = StallMapping::findOrFail($mappingId);
         $leaseService->terminateLease($mapping);
-        $this->dispatch('notify', type: 'success', message: 'Lease terminated successfully.');
+        $this->dispatch('notify', type: 'success', message: 'Lease terminated successfully. Stall is now available.');
         $this->closeDetailModal();
     }
 
     public function render()
     {
-        $query = StallMapping::with(['user', 'stall.location']);
+        $query = StallMapping::with(['user', 'stall.location', 'initialInvoice']);
 
         if ($this->search) {
             $query->whereHas('user', function ($q) {
@@ -132,10 +131,10 @@ class LeaseMappingManager extends Component
         if ($this->statusFilter) {
             if ($this->statusFilter === 'active') {
                 $query->where('is_active', true);
+            } elseif ($this->statusFilter === 'pending') {
+                $query->where('payment_status', 'pending_initial');
             } elseif ($this->statusFilter === 'inactive') {
-                $query->where('is_active', false);
-            } elseif ($this->statusFilter === 'requested') {
-                $query->where('renewal_status', 'requested');
+                $query->where('is_active', false)->where('payment_status', '!=', 'pending_initial');
             }
         }
 

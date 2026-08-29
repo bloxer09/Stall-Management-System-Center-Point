@@ -133,6 +133,13 @@ class TransactionService
             }
         });
 
+        foreach ($transactions as $txn) {
+            $inv = Invoice::find($txn->invoice_id);
+            if ($inv && $inv->status === 'paid') {
+                app(InvoiceService::class)->onInvoicePaid($inv);
+            }
+        }
+
         return $updatedCount;
     }
 }

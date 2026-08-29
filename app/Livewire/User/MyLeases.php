@@ -20,11 +20,6 @@ class MyLeases extends Component
     public $selectedLease = null;
     public $showDetailModal = false;
 
-    // Lease Extension Modal State
-    public $showRenewalModal = false;
-    public $selectedMappingId = null;
-    public $requested_end_date = '';
-
     // Stall Photo Upload Modal State
     public $showImageModal = false;
     public $selectedStallId = null;
@@ -43,7 +38,7 @@ class MyLeases extends Component
 
     public function openDetailModal($id)
     {
-        $this->selectedLease = StallMapping::with(['stall.location'])
+        $this->selectedLease = StallMapping::with(['stall.location', 'initialInvoice'])
             ->where('user_id', auth()->id())
             ->findOrFail($id);
         $this->showDetailModal = true;
@@ -53,34 +48,6 @@ class MyLeases extends Component
     {
         $this->showDetailModal = false;
         $this->selectedLease = null;
-    }
-
-    public function openRenewalModal($mappingId)
-    {
-        $this->resetValidation();
-        $this->selectedMappingId = $mappingId;
-        $mapping = StallMapping::findOrFail($mappingId);
-        $this->requested_end_date = $mapping->end_date->addMonth()->format('Y-m-d');
-        $this->showDetailModal = false;
-        $this->showRenewalModal = true;
-    }
-
-    public function closeRenewalModal()
-    {
-        $this->showRenewalModal = false;
-    }
-
-    public function submitRenewalRequest(\App\Services\LeaseService $leaseService)
-    {
-        $this->validate([
-            'requested_end_date' => 'required|date|after:today',
-        ]);
-
-        $mapping = StallMapping::where('user_id', auth()->id())->findOrFail($this->selectedMappingId);
-        $leaseService->requestRenewal($mapping, $this->requested_end_date);
-
-        $this->dispatch('notify', type: 'success', message: 'Lease renewal request submitted to administrator.');
-        $this->closeRenewalModal();
     }
 
     public function openImageModal($stallId)
@@ -141,7 +108,7 @@ class MyLeases extends Component
 
     public function render()
     {
-        $query = StallMapping::with(['stall.location'])
+        $query = StallMapping::with(['stall.location', 'initialInvoice'])
             ->where('user_id', auth()->id());
 
         if ($this->search) {
@@ -153,10 +120,10 @@ class MyLeases extends Component
         if ($this->statusFilter) {
             if ($this->statusFilter === 'active') {
                 $query->where('is_active', true);
+            } elseif ($this->statusFilter === 'pending') {
+                $query->where('payment_status', 'pending_initial');
             } elseif ($this->statusFilter === 'inactive') {
-                $query->where('is_active', false);
-            } elseif ($this->statusFilter === 'requested') {
-                $query->where('renewal_status', 'requested');
+                $query->where('is_active', false)->where('payment_status', '!=', 'pending_initial');
             }
         }
 

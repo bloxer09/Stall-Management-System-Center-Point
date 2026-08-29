@@ -35,12 +35,12 @@
             @for($r = 1; $r <= $gridRows; $r++)
                 @for($c = 1; $c <= $gridCols; $c++)
                     @php $key = "{$r}_{$c}"; $stall = $gridStalls[$key] ?? null; @endphp
-                    <div wire:click="placeStallOnGrid({{ $r }}, {{ $c }})" class="h-24 p-2 rounded-2xl border-2 border-dashed flex flex-col justify-between items-center transition cursor-pointer relative group {{ $stall ? ($stall->status === 'occupied' ? 'bg-success/10 border-success' : ($stall->status === 'maintenance' ? 'bg-warning/10 border-warning' : 'bg-primary/10 border-primary')) : 'border-base-300 hover:border-primary bg-base-200/30' }}">
+                    <div wire:click="placeStallOnGrid({{ $r }}, {{ $c }})" class="h-24 p-2 rounded-2xl border-2 border-dashed flex flex-col justify-between items-center transition cursor-pointer relative group {{ $stall ? ($stall->status === 'occupied' ? 'bg-success/10 border-success' : ($stall->status === 'reserved' ? 'bg-warning/10 border-warning' : ($stall->status === 'maintenance' ? 'bg-error/10 border-error' : 'bg-primary/10 border-primary'))) : 'border-base-300 hover:border-primary bg-base-200/30' }}">
                         <!-- <span class="text-[10px] text-base-content/40 font-mono self-start">R{{ $r }}C{{ $c }}</span> -->
                         @if($stall)
                         <div class="text-center">
                             <span class="text-xs font-extrabold text-base-content block">Stall {{ $stall->stall_number }}</span>
-                            <span class="badge badge-xs font-bold uppercase mt-1 {{ $stall->status === 'occupied' ? 'badge-success text-white' : ($stall->status === 'maintenance' ? 'badge-warning' : 'badge-primary') }}">
+                            <span class="badge badge-xs font-bold uppercase mt-1 {{ $stall->status === 'occupied' ? 'badge-success text-white' : ($stall->status === 'reserved' ? 'badge-warning text-slate-900' : ($stall->status === 'maintenance' ? 'badge-error text-white' : 'badge-primary')) }}">
                                 {{ $stall->status }}
                             </span>
                         </div>

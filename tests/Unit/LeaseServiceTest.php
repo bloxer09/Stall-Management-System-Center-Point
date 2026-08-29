@@ -2,12 +2,12 @@
 
 namespace Tests\Unit;
 
-use App\Models\AuditLog;
+use App\Models\Invoice;
 use App\Models\Stall;
 use App\Models\StallLocation;
 use App\Models\StallMapping;
 use App\Models\User;
-use App\Services\FileUploadService;
+use App\Services\InvoiceService;
 use App\Services\LeaseService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use InvalidArgumentException;
@@ -18,6 +18,7 @@ class LeaseServiceTest extends TestCase
     use RefreshDatabase;
 
     protected LeaseService $leaseService;
+    protected InvoiceService $invoiceService;
     protected User $tenant;
     protected Stall $stall;
 
@@ -26,6 +27,7 @@ class LeaseServiceTest extends TestCase
         parent::setUp();
 
         $this->leaseService = app(LeaseService::class);
+        $this->invoiceService = app(InvoiceService::class);
         $this->tenant = User::factory()->create(['role' => 'user']);
 
         $location = StallLocation::create([
@@ -41,7 +43,7 @@ class LeaseServiceTest extends TestCase
         ]);
     }
 
-    public function test_can_create_active_lease_and_update_stall_status()
+    public function test_can_create_lease_in_pending_initial_status_and_reserve_stall()
     {
         $lease = $this->leaseService->createLease(
             $this->tenant->id,
@@ -50,17 +52,65 @@ class LeaseServiceTest extends TestCase
             now()->addYear()->toDateString()
         );
 
-        $this->assertTrue($lease->is_active);
-        $this->assertEquals('occupied', $this->stall->fresh()->status);
-        $this->assertDatabaseHas('stall_mappings', [
-            'id' => $lease->id,
+        $this->assertFalse($lease->is_active);
+        $this->assertEquals('pending_initial', $lease->payment_status);
+        $this->assertEquals('reserved', $this->stall->fresh()->status);
+        $this->assertNotNull($lease->initial_invoice_id);
+
+        $this->assertDatabaseHas('invoices', [
+            'id' => $lease->initial_invoice_id,
             'user_id' => $this->tenant->id,
             'stall_id' => $this->stall->id,
-            'is_active' => true,
+            'status' => 'pending',
+            'total_amount' => 5000.00,
         ]);
     }
 
-    public function test_cannot_create_lease_on_already_active_stall()
+    public function test_paying_initial_invoice_activates_lease_and_occupies_stall()
+    {
+        $lease = $this->leaseService->createLease(
+            $this->tenant->id,
+            $this->stall->id,
+            now()->toDateString(),
+            now()->addYear()->toDateString()
+        );
+
+        $invoice = Invoice::findOrFail($lease->initial_invoice_id);
+        $this->invoiceService->markAsPaid($invoice, 'office_cash');
+
+        $updatedLease = $lease->fresh();
+        $this->assertTrue($updatedLease->is_active);
+        $this->assertEquals('good_standing', $updatedLease->payment_status);
+        $this->assertEquals('occupied', $this->stall->fresh()->status);
+    }
+
+    public function test_paying_monthly_rental_invoice_renews_and_maintains_good_standing()
+    {
+        $lease = $this->leaseService->createLease(
+            $this->tenant->id,
+            $this->stall->id,
+            now()->toDateString(),
+            now()->addMonths(1)->toDateString()
+        );
+
+        $initialInvoice = Invoice::findOrFail($lease->initial_invoice_id);
+        $this->invoiceService->markAsPaid($initialInvoice, 'office_cash');
+
+        // Generate next monthly invoice
+        $monthlyInvoice = $this->invoiceService->generateMonthlyRentalInvoice($lease->fresh(), now()->addMonths(1)->format('Y-m'));
+        $this->assertNotNull($monthlyInvoice);
+
+        $oldEndDate = $lease->fresh()->end_date;
+
+        // Tenant pays monthly invoice
+        $this->invoiceService->markAsPaid($monthlyInvoice, 'paymongo');
+
+        $renewedLease = $lease->fresh();
+        $this->assertEquals('good_standing', $renewedLease->payment_status);
+        $this->assertTrue($renewedLease->end_date->gt($oldEndDate));
+    }
+
+    public function test_cannot_create_lease_on_already_assigned_stall()
     {
         $this->leaseService->createLease(
             $this->tenant->id,
@@ -80,48 +130,6 @@ class LeaseServiceTest extends TestCase
         );
     }
 
-    public function test_can_request_and_approve_renewal()
-    {
-        $lease = $this->leaseService->createLease(
-            $this->tenant->id,
-            $this->stall->id,
-            now()->toDateString(),
-            now()->addMonths(6)->toDateString()
-        );
-
-        $requestedDate = now()->addMonths(12)->toDateString();
-        $this->leaseService->requestRenewal($lease, $requestedDate);
-
-        $this->assertEquals('requested', $lease->fresh()->renewal_status);
-        $this->assertEquals($requestedDate, $lease->fresh()->requested_end_date->toDateString());
-
-        $this->leaseService->approveRenewal($lease->fresh());
-
-        $updated = $lease->fresh();
-        $this->assertEquals('approved', $updated->renewal_status);
-        $this->assertEquals($requestedDate, $updated->end_date->toDateString());
-        $this->assertNull($updated->requested_end_date);
-    }
-
-    public function test_can_reject_renewal()
-    {
-        $lease = $this->leaseService->createLease(
-            $this->tenant->id,
-            $this->stall->id,
-            now()->toDateString(),
-            now()->addMonths(6)->toDateString()
-        );
-
-        $originalEndDate = $lease->end_date->toDateString();
-        $this->leaseService->requestRenewal($lease, now()->addMonths(12)->toDateString());
-        $this->leaseService->rejectRenewal($lease->fresh());
-
-        $updated = $lease->fresh();
-        $this->assertEquals('rejected', $updated->renewal_status);
-        $this->assertEquals($originalEndDate, $updated->end_date->toDateString());
-        $this->assertNull($updated->requested_end_date);
-    }
-
     public function test_can_terminate_lease_and_free_stall()
     {
         $lease = $this->leaseService->createLease(
@@ -131,7 +139,7 @@ class LeaseServiceTest extends TestCase
             now()->addYear()->toDateString()
         );
 
-        $this->assertEquals('occupied', $this->stall->fresh()->status);
+        $this->assertEquals('reserved', $this->stall->fresh()->status);
 
         $this->leaseService->terminateLease($lease);
 

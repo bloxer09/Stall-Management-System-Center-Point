@@ -92,7 +92,7 @@
                             </td>
                             <td>
                                 <span
-                                    class="badge badge-sm font-bold uppercase {{ $stall->status === 'available' ? 'badge-success text-white' : ($stall->status === 'occupied' ? 'badge-info text-white' : 'badge-warning') }}">
+                                    class="badge badge-sm font-bold uppercase {{ $stall->status === 'available' ? 'badge-success text-white' : ($stall->status === 'occupied' ? 'badge-info text-white' : ($stall->status === 'reserved' ? 'badge-warning text-slate-900' : 'badge-error text-white')) }}">
                                     {{ $stall->status }}
                                 </span>
                             </td>

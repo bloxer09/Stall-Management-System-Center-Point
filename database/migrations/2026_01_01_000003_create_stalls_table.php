@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('stall_number', 50)->unique();
             $table->foreignId('location_id')->nullable()->constrained('stall_locations')->nullOnDelete();
-            $table->enum('status', ['available', 'occupied', 'maintenance'])->default('available');
+            $table->enum('status', ['available', 'reserved', 'occupied', 'maintenance'])->default('available');
             $table->decimal('price', 10, 2);
             $table->text('description')->nullable();
             $table->string('image')->nullable();

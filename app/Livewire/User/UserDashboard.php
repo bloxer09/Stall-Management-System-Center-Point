@@ -14,14 +14,18 @@ class UserDashboard extends Component
     {
         $userId = auth()->id();
 
-        // 1. Active Leases
-        $activeLeases = StallMapping::with(['stall.location'])
+        // 1. Assigned & Active Leases
+        $assignedLeases = StallMapping::with(['stall.location', 'initialInvoice'])
             ->where('user_id', $userId)
-            ->where('is_active', true)
+            ->where(function ($q) {
+                $q->where('is_active', true)
+                  ->orWhere('payment_status', 'pending_initial');
+            })
             ->get();
 
-        $activeLeasesCount = $activeLeases->count();
-        $totalMonthlyRent = $activeLeases->sum(fn ($l) => $l->stall->price ?? 0);
+        $activeLeasesCount = $assignedLeases->where('is_active', true)->count();
+        $pendingLeasesCount = $assignedLeases->where('payment_status', 'pending_initial')->count();
+        $totalMonthlyRent = $assignedLeases->where('is_active', true)->sum(fn ($l) => $l->stall->price ?? 0);
 
         // 2. Billing & Invoices
         $pendingInvoices = Invoice::with(['stall.location'])
@@ -56,8 +60,9 @@ class UserDashboard extends Component
         $totalTicketsCount = Ticket::where('user_id', $userId)->count();
 
         return view('livewire.user.user-dashboard', [
-            'activeLeases' => $activeLeases,
+            'assignedLeases' => $assignedLeases,
             'activeLeasesCount' => $activeLeasesCount,
+            'pendingLeasesCount' => $pendingLeasesCount,
             'totalMonthlyRent' => $totalMonthlyRent,
             'pendingAmount' => $pendingAmount,
             'pendingCount' => $pendingCount,

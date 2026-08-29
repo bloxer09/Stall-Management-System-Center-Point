@@ -80,6 +80,25 @@ class InvoiceService
     }
 
     /**
+     * Trigger automatic lease activation or renewal upon invoice payment confirmation.
+     */
+    public function onInvoicePaid(Invoice $invoice): void
+    {
+        // 1. If this invoice is the initial invoice of a pending lease, activate it
+        $pendingLease = StallMapping::where('initial_invoice_id', $invoice->id)
+            ->where('payment_status', 'pending_initial')
+            ->first();
+
+        if ($pendingLease) {
+            app(LeaseService::class)->activateLeaseOnPayment($pendingLease);
+            return;
+        }
+
+        // 2. If it's a recurring monthly invoice for an active lease, maintain/renew good standing
+        app(LeaseService::class)->renewLeaseOnPayment($invoice);
+    }
+
+    /**
      * Record a manual cash payment received at the office.
      */
     public function recordManualCashPayment(
@@ -89,10 +108,10 @@ class InvoiceService
         string $reference,
         ?string $notes = null
     ): Invoice {
-        return DB::transaction(function () use ($userId, $stallId, $amount, $reference, $notes) {
+        $invoice = DB::transaction(function () use ($userId, $stallId, $amount, $reference, $notes) {
             $invoiceNumber = 'INV-CASH-' . time();
 
-            $invoice = Invoice::create([
+            $inv = Invoice::create([
                 'invoice_number' => $invoiceNumber,
                 'user_id' => $userId,
                 'stall_id' => $stallId,
@@ -105,14 +124,14 @@ class InvoiceService
             ]);
 
             InvoiceItem::create([
-                'invoice_id' => $invoice->id,
+                'invoice_id' => $inv->id,
                 'description' => $notes ?: 'Office Cash Payment',
                 'amount' => $amount,
                 'item_type' => 'rent',
             ]);
 
             PaymentTransaction::create([
-                'invoice_id' => $invoice->id,
+                'invoice_id' => $inv->id,
                 'user_id' => $userId,
                 'gateway' => 'cash',
                 'gateway_transaction_id' => $reference,
@@ -122,13 +141,17 @@ class InvoiceService
             ]);
 
             AuditLog::record(
-                "Recorded manual cash payment of ₱" . number_format($amount, 2) . " for Invoice #{$invoice->invoice_number}",
+                "Recorded manual cash payment of ₱" . number_format($amount, 2) . " for Invoice #{$inv->invoice_number}",
                 'Invoice',
-                $invoice->id
+                $inv->id
             );
 
-            return $invoice;
+            return $inv;
         });
+
+        $this->onInvoicePaid($invoice);
+
+        return $invoice;
     }
 
     /**
@@ -136,7 +159,7 @@ class InvoiceService
      */
     public function markAsPaid(Invoice $invoice, string $gateway = 'office_cash', ?string $reference = null): Invoice
     {
-        return DB::transaction(function () use ($invoice, $gateway, $reference) {
+        DB::transaction(function () use ($invoice, $gateway, $reference) {
             $invoice->update([
                 'status' => 'paid',
                 'paid_at' => Carbon::now(),
@@ -157,9 +180,12 @@ class InvoiceService
                 'Invoice',
                 $invoice->id
             );
-
-            return $invoice;
         });
+
+        $fresh = $invoice->fresh();
+        $this->onInvoicePaid($fresh);
+
+        return $fresh;
     }
 
     /**

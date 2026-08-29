@@ -47,9 +47,15 @@
             </div>
             <div class="mt-3">
                 <div class="text-2xl font-black text-base-content">{{ $activeLeasesCount }} <span class="text-xs font-bold text-base-content/60 font-sans">Active Space{{ $activeLeasesCount === 1 ? '' : 's' }}</span></div>
-                <div class="text-xs text-primary font-bold mt-1">
-                    ₱{{ number_format($totalMonthlyRent, 2) }} / month
-                </div>
+                @if($pendingLeasesCount > 0)
+                    <div class="text-[11px] text-warning font-extrabold mt-1">
+                        +{{ $pendingLeasesCount }} Pending Initial Payment
+                    </div>
+                @else
+                    <div class="text-xs text-primary font-bold mt-1">
+                        ₱{{ number_format($totalMonthlyRent, 2) }} / month
+                    </div>
+                @endif
             </div>
         </div>
 
@@ -104,12 +110,12 @@
         </div>
     </div>
 
-    <!-- Active Commercial Leases Overview -->
+    <!-- Commercial Leases Overview -->
     <div class="space-y-4">
         <div class="flex justify-between items-center">
             <div>
-                <h2 class="text-xl font-black tracking-tight text-base-content">My Active Stalls</h2>
-                <p class="text-xs text-base-content/60 mt-0.5">Commercial retail spaces currently assigned to your account.</p>
+                <h2 class="text-xl font-black tracking-tight text-base-content">My Commercial Stalls</h2>
+                <p class="text-xs text-base-content/60 mt-0.5">Commercial retail spaces assigned to your account.</p>
             </div>
             <a href="{{ route('user.leases') }}" wire:navigate class="text-xs text-primary font-bold hover:underline">
                 Manage Leases &rarr;
@@ -117,9 +123,9 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            @forelse($activeLeases as $lease)
+            @forelse($assignedLeases as $lease)
                 @php
-                    $daysRemaining = (int) now()->diffInDays($lease->end_date, false);
+                    $isPending = $lease->payment_status === 'pending_initial';
                 @endphp
                 <div class="card bg-base-100 border border-base-300 rounded-3xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between space-y-4">
                     <div class="flex items-start gap-4">
@@ -129,7 +135,11 @@
                         <div class="space-y-1 min-w-0 flex-1">
                             <div class="flex items-center justify-between gap-1">
                                 <h3 class="text-base font-extrabold text-base-content truncate">Stall #{{ $lease->stall->stall_number }}</h3>
-                                <span class="badge badge-success text-white badge-xs font-bold uppercase">Active</span>
+                                @if($isPending)
+                                    <span class="badge badge-warning text-slate-900 badge-xs font-extrabold uppercase">Pending Payment</span>
+                                @else
+                                    <span class="badge badge-success text-white badge-xs font-bold uppercase">Good Standing</span>
+                                @endif
                             </div>
                             <p class="text-xs font-bold text-primary">{{ $lease->stall->location->name ?? 'Main Floor' }}</p>
                             <p class="text-xs font-black text-base-content">₱{{ number_format($lease->stall->price, 2) }} <span class="font-normal text-[11px] text-base-content/60">/ month</span></p>
@@ -142,21 +152,27 @@
                             <span class="font-mono text-base-content/90">{{ $lease->start_date->format('M d') }} - {{ $lease->end_date->format('M d, Y') }}</span>
                         </div>
                         <div class="flex justify-between items-center">
-                            <span class="text-base-content/60">Expiration Status:</span>
-                            <span class="badge badge-xs font-bold {{ $daysRemaining <= 30 ? 'badge-warning' : 'badge-ghost' }}">
-                                {{ $daysRemaining }} days remaining
-                            </span>
+                            <span class="text-base-content/60">Lease Status:</span>
+                            @if($isPending)
+                                <span class="text-warning font-bold text-[11px]">Reserved &bull; Awaiting Initial Payment</span>
+                            @else
+                                <span class="text-success font-bold text-[11px]">Active &bull; Continuous Good Standing</span>
+                            @endif
                         </div>
                     </div>
 
                     <div class="pt-2 border-t border-base-200 flex items-center justify-between">
-                        @if($lease->contract_document)
+                        @if($isPending)
+                            <a href="{{ route('user.payments') }}" wire:navigate class="btn btn-warning btn-xs rounded-xl font-extrabold text-slate-900 shadow-xs">
+                                Pay to Activate &rarr;
+                            </a>
+                        @elseif($lease->contract_document)
                             <a href="{{ route('file.contract', $lease->id) }}" target="_blank" class="text-xs text-primary font-bold hover:underline flex items-center gap-1">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                                 Contract PDF
                             </a>
                         @else
-                            <span class="text-xs text-base-content/40">Verified Lease</span>
+                            <span class="text-xs text-base-content/50 font-semibold">Active Unit</span>
                         @endif
 
                         <a href="{{ route('user.leases') }}" wire:navigate class="btn btn-ghost btn-xs text-primary font-bold rounded-xl">
@@ -171,7 +187,7 @@
                     </div>
                     <h4 class="font-extrabold text-sm text-base-content">No active stall leases found</h4>
                     <p class="text-xs text-base-content/60 max-w-sm mx-auto">
-                        You do not have any active stall space assigned yet. Contact the administration office to lease a commercial retail space.
+                        You do not have any stall space assigned yet. Contact the administration office to lease a commercial retail space.
                     </p>
                 </div>
             @endforelse

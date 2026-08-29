@@ -15,6 +15,8 @@ class StallMapping extends Model
         'start_date',
         'end_date',
         'is_active',
+        'payment_status',
+        'initial_invoice_id',
         'contract_document',
         'renewal_status',
         'requested_end_date',
@@ -37,6 +39,11 @@ class StallMapping extends Model
         return $this->belongsTo(Stall::class);
     }
 
+    public function initialInvoice()
+    {
+        return $this->belongsTo(Invoice::class, 'initial_invoice_id');
+    }
+
     // Scopes
     public function scopeActive($query)
     {
@@ -48,9 +55,14 @@ class StallMapping extends Model
         return $query->where('is_active', false);
     }
 
-    public function scopePendingRenewal($query)
+    public function scopePendingInitial($query)
     {
-        return $query->where('renewal_status', 'requested');
+        return $query->where('payment_status', 'pending_initial');
+    }
+
+    public function scopeGoodStanding($query)
+    {
+        return $query->where('is_active', true)->where('payment_status', 'good_standing');
     }
 
     // Helpers
@@ -59,9 +71,19 @@ class StallMapping extends Model
         return (bool) $this->is_active;
     }
 
-    public function hasPendingRenewal(): bool
+    public function isPendingInitial(): bool
     {
-        return $this->renewal_status === 'requested';
+        return $this->payment_status === 'pending_initial';
+    }
+
+    public function isGoodStanding(): bool
+    {
+        return $this->payment_status === 'good_standing';
+    }
+
+    public function isPastDue(): bool
+    {
+        return $this->payment_status === 'past_due';
     }
 
     public function daysRemaining(): int
@@ -73,4 +95,3 @@ class StallMapping extends Model
         return (int) now()->diffInDays($this->end_date, false);
     }
 }
-
