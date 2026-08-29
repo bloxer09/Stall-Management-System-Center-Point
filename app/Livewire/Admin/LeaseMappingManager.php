@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use App\Models\Stall;
+use App\Models\StallLocation;
 use App\Models\StallMapping;
 use App\Models\User;
 use App\Services\FileUploadService;
@@ -16,6 +17,7 @@ class LeaseMappingManager extends Component
     use WithPagination, WithFileUploads;
 
     public $search = '';
+    public $locationFilter = '';
     public $statusFilter = '';
     public $showModal = false;
 
@@ -24,6 +26,11 @@ class LeaseMappingManager extends Component
     public $showDetailModal = false;
 
     public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingLocationFilter()
     {
         $this->resetPage();
     }
@@ -128,6 +135,12 @@ class LeaseMappingManager extends Component
             });
         }
 
+        if ($this->locationFilter) {
+            $query->whereHas('stall', function ($q) {
+                $q->where('location_id', $this->locationFilter);
+            });
+        }
+
         if ($this->statusFilter) {
             if ($this->statusFilter === 'active') {
                 $query->where('is_active', true);
@@ -140,6 +153,7 @@ class LeaseMappingManager extends Component
 
         return view('livewire.admin.lease-mapping-manager', [
             'mappings' => $query->latest()->paginate(10),
+            'locations' => StallLocation::orderBy('sort_order')->get(),
             'users' => User::where('role', 'user')->orderBy('name')->get(),
             'availableStalls' => Stall::where('status', 'available')->orderBy('stall_number')->get(),
         ]);

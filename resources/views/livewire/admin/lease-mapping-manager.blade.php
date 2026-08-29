@@ -1,90 +1,119 @@
 <div class="space-y-6">
     <!-- Header -->
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
             <h1 class="text-2xl font-black tracking-tight text-base-content">Commercial Lease Contracts</h1>
             <p class="text-xs text-base-content/60 mt-1">Assign, track, and manage commercial stall lease agreements and standing.</p>
         </div>
-        <button wire:click="openModal" class="btn btn-primary btn-sm rounded-xl font-bold gap-1 shadow-sm">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            Assign Stall to Tenant
-        </button>
-    </div>
-
-    <!-- Filters -->
-    <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
-        <div class="w-full sm:w-80">
-            <input type="text" wire:model.live.debounce.300ms="search" placeholder="Search tenant or stall..." 
-                class="input input-bordered input-sm rounded-xl text-xs w-full focus:input-primary" />
-        </div>
-        <div class="flex items-center gap-2 w-full sm:w-auto">
-            <select wire:model.live="statusFilter" class="select select-bordered select-sm rounded-xl text-xs w-full sm:w-auto">
-                <option value="">All Statuses</option>
-                <option value="active">Good Standing (Active)</option>
-                <option value="pending">Pending Initial Payment</option>
-                <option value="inactive">Inactive / Terminated</option>
-            </select>
+        <div class="flex flex-wrap gap-2">
+            <button wire:click="openModal" wire:loading.attr="disabled" wire:loading.class="opacity-60 cursor-wait"
+                wire:target="openModal" class="btn btn-primary btn-sm rounded-xl font-bold gap-1 shadow-xs">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Assign Stall to Tenant
+            </button>
         </div>
     </div>
 
-    <!-- Leases Table -->
-    <div class="card bg-base-100 rounded-3xl border border-base-300 shadow-md overflow-hidden">
+    <!-- Leases Table with Integrated Search & Filters -->
+    <div class="card bg-base-100 shadow-md overflow-hidden border border-base-300 rounded-3xl">
+        <!-- Search & Filter Bar -->
+        <div class="p-4 bg-base-200/50 border-b border-base-300 flex flex-col md:flex-row gap-4 justify-between items-center">
+            <div class="w-full md:w-1/3 relative">
+                <input type="text" wire:model.live.debounce.300ms="search" placeholder="Search tenant or stall number..."
+                    class="input input-bordered w-full rounded-2xl text-sm pl-9">
+                <svg class="w-4 h-4 absolute left-3 top-3.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+            </div>
+            <div class="flex flex-wrap gap-2 w-full md:w-auto">
+                <select wire:model.live="locationFilter" class="select select-bordered rounded-2xl text-sm">
+                    <option value="">All Floor Levels</option>
+                    @foreach($locations as $loc)
+                        <option value="{{ $loc->id }}">{{ $loc->name }}</option>
+                    @endforeach
+                </select>
+                <select wire:model.live="statusFilter" class="select select-bordered rounded-2xl text-sm">
+                    <option value="">All Statuses</option>
+                    <option value="active">Good Standing (Active)</option>
+                    <option value="pending">Pending Initial Payment</option>
+                    <option value="inactive">Inactive / Terminated</option>
+                </select>
+            </div>
+        </div>
+
         <div class="overflow-x-auto">
-            <table class="table table-zebra w-full text-xs">
-                <thead class="bg-base-200/50 text-base-content/70 uppercase font-black text-[10px] tracking-wider">
-                    <tr>
-                        <th>Tenant</th>
-                        <th>Stall Space</th>
-                        <th>Monthly Rate</th>
-                        <th>Contract Active Dates</th>
-                        <th>Standing / Status</th>
-                        <th class="text-right">Actions</th>
+            <table class="table w-full text-sm">
+                <thead>
+                    <tr class="bg-base-200/40 text-base-content/70">
+                        <th class="font-bold">Tenant</th>
+                        <th class="font-bold">Stall Space</th>
+                        <th class="font-bold">Floor Level</th>
+                        <th class="font-bold">Monthly Rate</th>
+                        <th class="font-bold">Contract Active Dates</th>
+                        <th class="font-bold">Standing / Status</th>
+                        <th class="text-right font-bold">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-base-200">
                     @forelse($mappings as $map)
                         <tr class="hover:bg-base-200/40 transition">
                             <td>
-                                <div class="font-bold text-base-content">{{ $map->user->name ?? 'N/A' }}</div>
-                                <div class="text-[11px] text-base-content/60">{{ $map->user->email ?? 'N/A' }}</div>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-7 h-7 rounded-full overflow-hidden border border-primary/20 shrink-0">
+                                        <img src="{{ $map->user->avatar_url ?? 'https://ui-avatars.com/api/?name='.urlencode($map->user->name ?? 'User').'&color=7F9CF5&background=EBF4FF' }}" class="w-full h-full object-cover" alt="Tenant Avatar">
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-base-content">{{ $map->user->name ?? 'N/A' }}</div>
+                                        <div class="text-xs text-base-content/60">{{ $map->user->email ?? 'N/A' }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="font-extrabold text-base-content">
+                                Stall #{{ $map->stall->stall_number ?? 'N/A' }}
                             </td>
                             <td>
-                                <div class="font-extrabold text-sm text-base-content">Stall #{{ $map->stall->stall_number ?? 'N/A' }}</div>
-                                <div class="text-[11px] text-base-content/50">{{ $map->stall->location->name ?? 'Commercial Building' }}</div>
+                                @if($map->stall && $map->stall->location)
+                                    <span class="badge badge-primary font-bold text-xs">{{ $map->stall->location->name }}</span>
+                                @else
+                                    <span class="text-base-content/40 text-xs font-medium">Unassigned</span>
+                                @endif
                             </td>
-                            <td class="font-mono font-bold text-primary text-sm">
+                            <td class="font-bold text-base-content">
                                 ₱{{ number_format($map->stall->price ?? 0, 2) }}
                             </td>
-                            <td class="font-mono text-base-content/80">
+                            <td class="text-xs font-medium text-base-content/80">
                                 {{ $map->start_date->format('M d, Y') }} &rarr; {{ $map->end_date->format('M d, Y') }}
                             </td>
                             <td>
                                 @if($map->payment_status === 'pending_initial')
-                                    <span class="badge badge-warning text-slate-900 font-extrabold text-[10px] uppercase gap-1">
+                                    <span class="badge badge-sm font-bold uppercase badge-warning text-slate-900 gap-1">
                                         <span class="w-1.5 h-1.5 rounded-full bg-slate-900 animate-pulse"></span>
                                         Pending Initial Payment
                                     </span>
                                 @elseif($map->is_active)
-                                    <span class="badge badge-success text-white font-extrabold text-[10px] uppercase gap-1">
+                                    <span class="badge badge-sm font-bold uppercase badge-success text-white gap-1">
                                         <span>✓</span> Good Standing
                                     </span>
                                 @else
-                                    <span class="badge badge-ghost text-base-content/60 font-bold text-[10px] uppercase">
+                                    <span class="badge badge-sm font-bold uppercase badge-ghost text-base-content/60">
                                         Terminated
                                     </span>
                                 @endif
                             </td>
                             <td class="text-right">
-                                <button wire:click="openDetailModal({{ $map->id }})" class="btn btn-ghost btn-xs text-primary font-bold rounded-xl">
+                                <button wire:click="openDetailModal({{ $map->id }})" class="btn btn-ghost btn-xs text-primary font-bold rounded-lg border border-primary/20 hover:bg-primary hover:text-white transition">
                                     Manage
                                 </button>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center py-10 text-base-content/50">
-                                <div class="flex flex-col items-center justify-center space-y-2">
-                                    <svg class="w-8 h-8 text-base-content/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                            <td colspan="7" class="py-16 text-center">
+                                <div class="flex flex-col items-center gap-3 text-base-content/40">
+                                    <svg class="w-12 h-12 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                                     <p class="font-bold text-sm">No commercial lease agreements found.</p>
                                 </div>
                             </td>
