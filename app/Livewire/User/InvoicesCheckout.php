@@ -16,6 +16,10 @@ class InvoicesCheckout extends Component
     public $statusFilter = '';
     public array $selectedInvoiceIds = [];
 
+    // Invoice Detail & Actions Modal
+    public $selectedInvoice = null;
+    public $showDetailModal = false;
+
     public function mount()
     {
         if (request()->has('success')) {
@@ -35,6 +39,20 @@ class InvoicesCheckout extends Component
     public function updatingStatusFilter()
     {
         $this->resetPage();
+    }
+
+    public function openDetailModal($id)
+    {
+        $this->selectedInvoice = Invoice::with(['stall.location', 'items', 'transactions'])
+            ->where('user_id', auth()->id())
+            ->findOrFail($id);
+        $this->showDetailModal = true;
+    }
+
+    public function closeDetailModal()
+    {
+        $this->showDetailModal = false;
+        $this->selectedInvoice = null;
     }
 
     public function toggleInvoice($id)
@@ -61,8 +79,19 @@ class InvoicesCheckout extends Component
             ->toArray();
     }
 
+    public function paySingleInvoice($invoiceId, \App\Services\TransactionService $transactionService)
+    {
+        $this->selectedInvoiceIds = [$invoiceId];
+        return $this->payWithPayMongo($transactionService);
+    }
+
     public function payWithPayMongo(\App\Services\TransactionService $transactionService)
     {
+        if (empty($this->selectedInvoiceIds)) {
+            $this->dispatch('notify', type: 'error', message: 'Please select at least one pending invoice to pay.');
+            return;
+        }
+
         $successUrl = route('user.payments') . '?success=1';
         $cancelUrl = route('user.payments') . '?cancel=1';
 
@@ -82,13 +111,13 @@ class InvoicesCheckout extends Component
 
     public function render()
     {
-        $query = Invoice::with(['stall', 'items', 'transactions'])
+        $query = Invoice::with(['stall.location', 'items', 'transactions'])
             ->where('user_id', auth()->id());
 
         if ($this->search) {
             $query->where(function ($q) {
                 $q->where('invoice_number', 'like', "%{$this->search}%")
-                    ->orWhere('notes', 'like', "%{$this->search}%")
+                    ->orWhere('payment_notes', 'like', "%{$this->search}%")
                     ->orWhereHas('stall', function ($st) {
                         $st->where('stall_number', 'like', "%{$this->search}%");
                     })

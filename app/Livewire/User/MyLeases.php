@@ -16,6 +16,10 @@ class MyLeases extends Component
     public $search = '';
     public $statusFilter = '';
 
+    // Lease Detail Modal State
+    public $selectedLease = null;
+    public $showDetailModal = false;
+
     // Lease Extension Modal State
     public $showRenewalModal = false;
     public $selectedMappingId = null;
@@ -37,12 +41,27 @@ class MyLeases extends Component
         $this->resetPage();
     }
 
+    public function openDetailModal($id)
+    {
+        $this->selectedLease = StallMapping::with(['stall.location'])
+            ->where('user_id', auth()->id())
+            ->findOrFail($id);
+        $this->showDetailModal = true;
+    }
+
+    public function closeDetailModal()
+    {
+        $this->showDetailModal = false;
+        $this->selectedLease = null;
+    }
+
     public function openRenewalModal($mappingId)
     {
         $this->resetValidation();
         $this->selectedMappingId = $mappingId;
         $mapping = StallMapping::findOrFail($mappingId);
         $this->requested_end_date = $mapping->end_date->addMonth()->format('Y-m-d');
+        $this->showDetailModal = false;
         $this->showRenewalModal = true;
     }
 
@@ -78,6 +97,7 @@ class MyLeases extends Component
         $this->selectedStallId = $stallId;
         $this->existingStallImage = $mapping->stall->image;
         $this->newStallImage = null;
+        $this->showDetailModal = false;
         $this->showImageModal = true;
     }
 
@@ -99,26 +119,23 @@ class MyLeases extends Component
             ->where('is_active', true)
             ->first();
 
-        if (!$mapping) {
-            $this->dispatch('notify', type: 'success', message: 'Unauthorized stall photo update request.');
-            return;
-        }
+        if (!$mapping) return;
 
         $this->validate([
             'newStallImage' => 'required|image|max:5120',
         ]);
 
-        $filePath = $uploader->uploadStallImage($this->newStallImage);
-        $mapping->stall->update(['image' => $filePath]);
+        $imagePath = $uploader->uploadStallImage($this->newStallImage);
+        $mapping->stall->update(['image' => $imagePath]);
 
         AuditLog::log(
             auth()->id(),
-            "Updated cover photo for Stall #{$mapping->stall->stall_number}",
+            "Tenant updated photo for Stall {$mapping->stall->stall_number}",
             'Stall',
-            $mapping->stall->id
+            $mapping->stall_id
         );
 
-        $this->dispatch('notify', type: 'success', message: "Stall #{$mapping->stall->stall_number} cover photo updated successfully!");
+        $this->dispatch('notify', type: 'success', message: 'Stall storefront photo updated successfully!');
         $this->closeImageModal();
     }
 
@@ -133,17 +150,18 @@ class MyLeases extends Component
             });
         }
 
-        if ($this->statusFilter === 'active') {
-            $query->where('is_active', true);
-        } elseif ($this->statusFilter === 'requested') {
-            $query->where('renewal_status', 'requested');
-        } elseif ($this->statusFilter === 'terminated') {
-            $query->where('is_active', false);
+        if ($this->statusFilter) {
+            if ($this->statusFilter === 'active') {
+                $query->where('is_active', true);
+            } elseif ($this->statusFilter === 'inactive') {
+                $query->where('is_active', false);
+            } elseif ($this->statusFilter === 'requested') {
+                $query->where('renewal_status', 'requested');
+            }
         }
 
         return view('livewire.user.my-leases', [
-            'leases' => $query->latest()->paginate(10),
-            'activeCount' => StallMapping::where('user_id', auth()->id())->where('is_active', true)->count(),
+            'leases' => $query->latest()->paginate(8),
         ]);
     }
 }

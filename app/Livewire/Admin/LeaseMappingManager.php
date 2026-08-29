@@ -18,6 +18,10 @@ class LeaseMappingManager extends Component
     public $statusFilter = '';
     public $showModal = false;
 
+    // Lease Detail & Actions Modal
+    public $selectedLease = null;
+    public $showDetailModal = false;
+
     public function updatingSearch()
     {
         $this->resetPage();
@@ -43,10 +47,23 @@ class LeaseMappingManager extends Component
         'contract_file' => 'nullable|file|mimes:pdf,jpg,png|max:5120',
     ];
 
+    public function openDetailModal($id)
+    {
+        $this->selectedLease = StallMapping::with(['user', 'stall.location'])->findOrFail($id);
+        $this->showDetailModal = true;
+    }
+
+    public function closeDetailModal()
+    {
+        $this->showDetailModal = false;
+        $this->selectedLease = null;
+    }
+
     public function openModal()
     {
         $this->resetValidation();
         $this->reset(['mappingId', 'user_id', 'stall_id', 'start_date', 'end_date', 'contract_file']);
+        $this->showDetailModal = false;
         $this->showModal = true;
     }
 
@@ -68,7 +85,7 @@ class LeaseMappingManager extends Component
                 $this->contract_file
             );
 
-            $this->dispatch('notify', type: 'success', message: 'Lease mapping created successfully!');
+            $this->dispatch('notify', type: 'success', message: 'Lease assigned successfully!');
             $this->closeModal();
         } catch (\InvalidArgumentException $e) {
             $this->addError('stall_id', $e->getMessage());
@@ -80,6 +97,7 @@ class LeaseMappingManager extends Component
         $mapping = StallMapping::findOrFail($mappingId);
         $leaseService->approveRenewal($mapping);
         $this->dispatch('notify', type: 'success', message: 'Renewal request approved!');
+        $this->closeDetailModal();
     }
 
     public function rejectRenewal($mappingId, \App\Services\LeaseService $leaseService)
@@ -87,6 +105,7 @@ class LeaseMappingManager extends Component
         $mapping = StallMapping::findOrFail($mappingId);
         $leaseService->rejectRenewal($mapping);
         $this->dispatch('notify', type: 'success', message: 'Renewal request rejected.');
+        $this->closeDetailModal();
     }
 
     public function terminateLease($mappingId, \App\Services\LeaseService $leaseService)
@@ -94,34 +113,36 @@ class LeaseMappingManager extends Component
         $mapping = StallMapping::findOrFail($mappingId);
         $leaseService->terminateLease($mapping);
         $this->dispatch('notify', type: 'success', message: 'Lease terminated successfully.');
+        $this->closeDetailModal();
     }
 
     public function render()
     {
-        $query = StallMapping::with(['user', 'stall']);
+        $query = StallMapping::with(['user', 'stall.location']);
 
         if ($this->search) {
-            $query->where(function ($q) {
-                $q->whereHas('user', function ($u) {
-                    $u->where('name', 'like', "%{$this->search}%");
-                })->orWhereHas('stall', function ($s) {
-                    $s->where('stall_number', 'like', "%{$this->search}%");
-                });
+            $query->whereHas('user', function ($q) {
+                $q->where('name', 'like', "%{$this->search}%")
+                    ->orWhere('email', 'like', "%{$this->search}%");
+            })->orWhereHas('stall', function ($q) {
+                $q->where('stall_number', 'like', "%{$this->search}%");
             });
         }
 
-        if ($this->statusFilter === 'active') {
-            $query->where('is_active', true);
-        } elseif ($this->statusFilter === 'requested') {
-            $query->where('renewal_status', 'requested');
-        } elseif ($this->statusFilter === 'terminated') {
-            $query->where('is_active', false);
+        if ($this->statusFilter) {
+            if ($this->statusFilter === 'active') {
+                $query->where('is_active', true);
+            } elseif ($this->statusFilter === 'inactive') {
+                $query->where('is_active', false);
+            } elseif ($this->statusFilter === 'requested') {
+                $query->where('renewal_status', 'requested');
+            }
         }
 
         return view('livewire.admin.lease-mapping-manager', [
             'mappings' => $query->latest()->paginate(10),
-            'availableUsers' => User::where('role', 'user')->get(),
-            'availableStalls' => Stall::where('status', 'available')->get(),
+            'users' => User::where('role', 'user')->orderBy('name')->get(),
+            'availableStalls' => Stall::where('status', 'available')->orderBy('stall_number')->get(),
         ]);
     }
 }

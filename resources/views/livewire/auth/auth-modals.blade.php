@@ -88,13 +88,14 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div class="form-control">
                         <label class="label pb-1"><span class="label-text font-semibold text-xs text-base-content/80">Password <span class="text-error">*</span></span></label>
-                        <input type="password" wire:model="regPassword" required class="input input-bordered bg-base-200/50 text-base-content w-full rounded-xl text-sm focus:input-primary" />
+                        <input type="password" wire:model.live="regPassword" required class="input input-bordered bg-base-200/50 text-base-content w-full rounded-xl text-sm focus:input-primary" />
                     </div>
                     <div class="form-control">
                         <label class="label pb-1"><span class="label-text font-semibold text-xs text-base-content/80">Confirm Password <span class="text-error">*</span></span></label>
                         <input type="password" wire:model="regPasswordConfirmation" required class="input input-bordered bg-base-200/50 text-base-content w-full rounded-xl text-sm focus:input-primary" />
                     </div>
                 </div>
+                <x-password-strength model="regPassword" />
                 @error('regPassword') <span class="text-xs text-error block font-medium">{{ $message }}</span> @enderror
 
                 <div class="form-control">
@@ -155,13 +156,14 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div class="form-control">
                             <label class="label pb-1"><span class="label-text font-semibold text-xs text-base-content/80">New Password</span></label>
-                            <input type="password" wire:model="newPassword" required class="input input-bordered bg-base-200/50 text-base-content w-full rounded-xl text-sm focus:input-primary" />
+                            <input type="password" wire:model.live="newPassword" required class="input input-bordered bg-base-200/50 text-base-content w-full rounded-xl text-sm focus:input-primary" />
                         </div>
                         <div class="form-control">
                             <label class="label pb-1"><span class="label-text font-semibold text-xs text-base-content/80">Confirm Password</span></label>
                             <input type="password" wire:model="newPasswordConfirmation" required class="input input-bordered bg-base-200/50 text-base-content w-full rounded-xl text-sm focus:input-primary" />
                         </div>
                     </div>
+                    <x-password-strength model="newPassword" />
                     @error('newPassword') <span class="text-xs text-error block font-medium">{{ $message }}</span> @enderror
 
                     <button type="submit" class="btn btn-primary w-full rounded-xl font-bold text-sm shadow-sm" wire:loading.attr="disabled">

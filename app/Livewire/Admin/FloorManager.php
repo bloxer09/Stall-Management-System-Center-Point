@@ -23,6 +23,10 @@ class FloorManager extends Component
     public $grid_cols = 8;
     public $showModal = false;
 
+    // Floor Detail & Manage Modal
+    public $selectedFloor = null;
+    public $showDetailModal = false;
+
     protected $rules = [
         'name' => 'required|string|max:100',
         'description' => 'nullable|string|max:255',
@@ -31,9 +35,23 @@ class FloorManager extends Component
         'grid_cols' => 'required|integer|min:1|max:20',
     ];
 
+    public function openDetailModal($id)
+    {
+        $this->selectedFloor = StallLocation::withCount('stalls')->findOrFail($id);
+        $this->showDetailModal = true;
+    }
+
+    public function closeDetailModal()
+    {
+        $this->showDetailModal = false;
+        $this->selectedFloor = null;
+    }
+
     public function openModal($id = null)
     {
         $this->resetValidation();
+        $this->showDetailModal = false;
+
         if ($id) {
             $floor = StallLocation::findOrFail($id);
             $this->floorId = $floor->id;
@@ -88,6 +106,7 @@ class FloorManager extends Component
         $name = $floor->name;
         $floor->delete();
 
+        $this->closeDetailModal();
         AuditLog::log(Auth::id(), "Deleted floor level '{$name}'", 'StallLocation', $id);
         $this->dispatch('notify', type: 'success', message: "Floor level '{$name}' deleted successfully!");
     }
@@ -97,8 +116,7 @@ class FloorManager extends Component
         $query = StallLocation::withCount('stalls');
 
         if ($this->search) {
-            $query->where('name', 'like', "%{$this->search}%")
-                  ->orWhere('description', 'like', "%{$this->search}%");
+            $query->where('name', 'like', "%{$this->search}%");
         }
 
         return view('livewire.admin.floor-manager', [

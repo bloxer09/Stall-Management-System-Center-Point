@@ -3,11 +3,13 @@
     <div class="flex items-center gap-3">
         <!-- Mobile Sidebar Drawer Toggle Button -->
         @auth
-            <label for="app-drawer" class="btn btn-ghost btn-square btn-sm lg:hidden text-base-content/80">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-            </label>
+            @if(request()->routeIs('admin.*') || request()->routeIs('user.*'))
+                <label for="app-drawer" class="btn btn-ghost btn-square btn-sm lg:hidden text-base-content/80">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </label>
+            @endif
         @endauth
 
         <!-- Brand Identifier -->
@@ -28,6 +30,19 @@
 
     <!-- Right Top Header Controls -->
     <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Quick Dashboard Link when on public pages -->
+        @auth
+            @if(!request()->routeIs('admin.*') && !request()->routeIs('user.*'))
+                <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('user.dashboard') }}" wire:navigate
+                    class="btn btn-primary btn-sm rounded-xl font-bold gap-1.5 shadow-xs">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                    </svg>
+                    <span class="hidden sm:inline">Dashboard</span>
+                </a>
+            @endif
+        @endauth
+
         <!-- Light / Dark Mode Swap Toggle -->
         <label class="swap swap-rotate btn btn-ghost btn-circle btn-sm text-base-content/70"
             title="Toggle Light / Dark Mode">
@@ -104,6 +119,10 @@
                             class="text-[10px] text-primary uppercase tracking-wider font-extrabold block">{{ auth()->user()->role ?? 'Tenant' }}</span>
                     </li>
                     <div class="divider my-0 opacity-50"></div>
+                    <li>
+                        <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('user.dashboard') }}" wire:navigate
+                            class="rounded-xl w-full text-left font-medium">Dashboard</a>
+                    </li>
                     <li><button type="button" onclick="Livewire.dispatch('open-profile-modal')" class="rounded-xl w-full text-left font-medium">Profile Settings</button></li>
                     <div class="divider my-0 opacity-50"></div>
                     <li>

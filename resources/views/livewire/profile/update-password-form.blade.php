@@ -17,7 +17,8 @@
 
         <div class="form-control">
             <label class="label"><span class="label-text font-bold text-xs uppercase">{{ __('New Password') }}</span></label>
-            <input wire:model="password" type="password" required autocomplete="new-password" class="input input-bordered rounded-xl text-sm" />
+            <input wire:model.live="password" type="password" required autocomplete="new-password" class="input input-bordered rounded-xl text-sm" />
+            <x-password-strength model="password" />
             @error('password') <span class="text-xs text-error mt-1">{{ $message }}</span> @enderror
         </div>
 

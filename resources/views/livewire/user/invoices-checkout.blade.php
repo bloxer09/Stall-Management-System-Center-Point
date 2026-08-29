@@ -1,61 +1,48 @@
 <div class="space-y-6">
-    @if(session()->has('error'))
-        <div class="alert alert-error shadow-xs rounded-2xl text-xs font-semibold text-white">
-            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-4 w-4" fill="none" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>{{ session('error') }}</span>
-        </div>
-    @endif
-
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <!-- Header with Stats -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
             <h1 class="text-2xl font-black tracking-tight text-base-content">My Invoices</h1>
-            <p class="text-xs text-base-content/60 mt-1">Pay pending bills or download payment receipts.</p>
+            <p class="text-xs text-base-content/60 mt-1">Review pending bills, pay rent online, and download receipts.</p>
         </div>
-        <div class="flex items-center gap-3">
-            <div class="stat bg-base-200/60 py-2 px-4 rounded-2xl border border-base-300">
-                <div class="stat-title text-[10px] font-extrabold uppercase text-base-content/60">Pending Balance</div>
-                <div class="stat-value text-lg font-black text-warning">₱{{ number_format($pendingAmount, 2) }}</div>
-            </div>
-            @if(count($selectedInvoiceIds) > 0)
-                <button wire:click="payWithPayMongo" wire:loading.attr="disabled"
-                    wire:loading.class="opacity-60 cursor-wait" wire:target="payWithPayMongo"
-                    class="btn btn-primary rounded-xl font-bold text-xs shadow-md gap-2">
-                    <span wire:loading wire:target="payWithPayMongo" class="loading loading-spinner loading-xs"></span>
-                    <span wire:loading.remove wire:target="payWithPayMongo">💳 Pay Selected (₱{{ number_format($totalSelected, 2) }})</span>
-                    <span wire:loading wire:target="payWithPayMongo">Processing…</span>
+
+        @if($pendingAmount > 0)
+            <div class="flex flex-wrap items-center gap-3">
+                <button wire:click="selectAllPending" class="btn btn-sm btn-outline rounded-xl font-bold">
+                    Select All Pending ({{ $pendingCount }})
                 </button>
-            @endif
-        </div>
+                <button wire:click="payWithPayMongo" wire:loading.attr="disabled"
+                    {{ empty($selectedInvoiceIds) ? 'disabled' : '' }}
+                    class="btn btn-sm btn-primary rounded-xl font-bold shadow-xs gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V8a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    Pay Selected (₱{{ number_format($totalSelected, 2) }})
+                </button>
+            </div>
+        @endif
     </div>
 
-    <!-- Invoices Data Table Container -->
-    <div class="card bg-base-100 rounded-3xl border border-base-300 shadow-md overflow-hidden">
-        <!-- Search & Filter Bar -->
+    <!-- Data Table Container -->
+    <div class="card bg-base-100 shadow-md overflow-hidden border border-base-300 rounded-3xl">
         <div
             class="p-4 bg-base-200/50 border-b border-base-300 flex flex-col md:flex-row gap-4 justify-between items-center">
             <div class="w-full md:w-1/3 relative">
-                <input type="text" wire:model.live.debounce.300ms="search"
-                    placeholder="Search invoice #, stall or notes..."
-                    class="input input-bordered w-full rounded-2xl text-sm pl-9" />
+                <input type="text" wire:model.live="search" placeholder="Search invoice, stall, notes..."
+                    class="input input-bordered w-full rounded-2xl text-sm pl-9">
                 <svg class="w-4 h-4 absolute left-3 top-3.5 opacity-50" fill="none" stroke="currentColor"
                     viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
             </div>
-            <div class="flex flex-wrap gap-2 w-full md:w-auto">
-                <button wire:click="selectAllPending" class="btn btn-ghost btn-xs text-primary font-bold">Select All
-                    Pending</button>
-                <select wire:model.live="statusFilter" class="select select-bordered rounded-2xl text-sm">
-                    <option value="">All</option>
-                    <option value="pending">Pending Invoices</option>
-                    <option value="paid">Paid History</option>
-                    <option value="overdue">Overdue</option>
-                </select>
-            </div>
+            <select wire:model.live="statusFilter" class="select select-bordered rounded-2xl text-sm w-full md:w-auto">
+                <option value="">All Invoices</option>
+                <option value="pending">Pending</option>
+                <option value="paid">Paid</option>
+                <option value="overdue">Overdue</option>
+            </select>
         </div>
 
         <div class="overflow-x-auto">
@@ -63,11 +50,10 @@
                 <thead>
                     <tr class="bg-base-200/40 text-base-content/70">
                         <th class="w-12 text-center">Select</th>
-                        <th class="font-bold">Invoice #</th>
+                        <th class="font-bold">Invoice Code</th>
                         <th class="font-bold">Stall</th>
-                        <th class="font-bold">Description / Notes</th>
-                        <th class="font-bold">Due / Paid Date</th>
-                        <th class="font-bold">Amount</th>
+                        <th class="font-bold">Date</th>
+                        <th class="font-bold">Total Amount</th>
                         <th class="font-bold">Status</th>
                         <th class="text-right font-bold">Actions</th>
                     </tr>
@@ -85,41 +71,32 @@
                                 @endif
                             </td>
                             <td class="font-mono text-sm font-bold text-primary">
-                                #INV-{{ str_pad($inv->id, 5, '0', STR_PAD_LEFT) }}</td>
-                            <td class="font-extrabold text-base-content">Stall #{{ $inv->stall->stall_number ?? 'N/A' }}
+                                {{ $inv->invoice_number }}
                             </td>
-                            <td class="text-xs text-base-content/80 font-medium max-w-xs truncate">
-                                {{ $inv->payment_notes ?: 'Monthly Stall Rental' }}</td>
+                            <td class="font-extrabold text-base-content">
+                                Stall #{{ $inv->stall->stall_number ?? 'N/A' }}
+                                <span class="block text-xs font-normal text-base-content/60">{{ $inv->stall->location->name ?? 'Main Floor' }}</span>
+                            </td>
                             <td class="text-xs font-mono text-base-content/70">
                                 {{ $inv->status === 'paid' ? ($inv->paid_at ? $inv->paid_at->format('M d, Y') : 'Paid') : ($inv->due_date ? $inv->due_date->format('M d, Y') : 'N/A') }}
                             </td>
-                            <td class="font-bold text-primary">₱{{ number_format($inv->amount, 2) }}</td>
+                            <td class="font-bold text-primary">₱{{ number_format($inv->total_amount, 2) }}</td>
                             <td>
                                 <span
-                                    class="badge badge-md font-bold uppercase {{ $inv->status === 'paid' ? 'badge-success text-white' : ($inv->status === 'pending' ? 'badge-warning' : 'badge-error text-white') }}">
+                                    class="badge badge-sm font-bold uppercase {{ $inv->status === 'paid' ? 'badge-success text-white' : ($inv->status === 'pending' ? 'badge-warning' : 'badge-error text-white') }}">
                                     {{ $inv->status }}
                                 </span>
                             </td>
                             <td class="text-right">
-                                @if($inv->status === 'paid')
-                                    <a href="{{ route('receipt.pdf', $inv->id) }}" target="_blank"
-                                        class="btn btn-xs btn-outline rounded-xl font-bold gap-1">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M7 21h10a2 2 0 002-2V7.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 1H7a2 2 0 00-2 2v16a2 2 0 002 2z" />
-                                        </svg> Receipt PDF
-                                    </a>
-                                @else
-                                    <button wire:click="toggleInvoice({{ $inv->id }})"
-                                        class="btn btn-xs {{ in_array($inv->id, $selectedInvoiceIds) ? 'btn-primary' : 'btn-ghost text-primary' }} rounded-xl font-bold">
-                                        {{ in_array($inv->id, $selectedInvoiceIds) ? 'Selected' : 'Select' }}
-                                    </button>
-                                @endif
+                                <button wire:click="openDetailModal({{ $inv->id }})"
+                                    class="btn btn-ghost btn-xs text-primary font-bold rounded-lg border border-primary/20 hover:bg-primary hover:text-white transition">
+                                    Manage
+                                </button>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="py-16 text-center">
+                            <td colspan="7" class="py-16 text-center">
                                 <div class="flex flex-col items-center gap-3 text-base-content/40">
                                     <svg class="w-12 h-12 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
@@ -127,8 +104,7 @@
                                     </svg>
                                     <div>
                                         <p class="font-extrabold text-sm">No invoices found</p>
-                                        <p class="text-xs mt-0.5">Your billing invoices will appear here once they are
-                                            generated each month.</p>
+                                        <p class="text-xs mt-0.5">Your monthly billing invoices will appear here once generated.</p>
                                     </div>
                                 </div>
                             </td>
@@ -141,4 +117,72 @@
             {{ $invoices->links() }}
         </div>
     </div>
+
+    <!-- Modal 1: Invoice Detail & Payment Modal -->
+    @if($showDetailModal && $selectedInvoice)
+        <dialog class="modal modal-open">
+            <div class="modal-box max-w-lg p-6 bg-base-100 rounded-3xl border border-base-300 relative space-y-5 shadow-2xl">
+                <button wire:click="closeDetailModal" class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+
+                <div class="flex items-start justify-between">
+                    <div>
+                        <span class="text-[10px] font-extrabold uppercase text-base-content/60 block">Invoice Details</span>
+                        <h3 class="text-xl font-black text-base-content font-mono">{{ $selectedInvoice->invoice_number }}</h3>
+                        <p class="text-xs text-base-content/60">Issued on {{ $selectedInvoice->created_at->format('F d, Y') }}</p>
+                    </div>
+                    <span class="badge badge-md font-bold uppercase {{ $selectedInvoice->status === 'paid' ? 'badge-success text-white' : ($selectedInvoice->status === 'pending' ? 'badge-warning' : 'badge-error text-white') }}">
+                        {{ $selectedInvoice->status }}
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 p-4 bg-base-200/60 rounded-2xl border border-base-300 text-xs">
+                    <div>
+                        <span class="text-[10px] font-extrabold uppercase text-base-content/60 block">Assigned Space</span>
+                        <span class="font-extrabold text-sm text-base-content mt-0.5 block">Stall #{{ $selectedInvoice->stall->stall_number ?? 'N/A' }}</span>
+                        <span class="text-[11px] text-base-content/60">{{ $selectedInvoice->stall->location->name ?? 'Main Floor' }}</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] font-extrabold uppercase text-base-content/60 block">Payment Due</span>
+                        <span class="font-mono text-xs font-bold text-base-content mt-0.5 block">{{ $selectedInvoice->due_date ? $selectedInvoice->due_date->format('F d, Y') : 'N/A' }}</span>
+                        @if($selectedInvoice->paid_at)
+                            <span class="text-[11px] text-success font-bold">Paid on {{ $selectedInvoice->paid_at->format('M d, Y') }}</span>
+                        @endif
+                    </div>
+                    <div class="col-span-2 pt-2 border-t border-base-300 flex items-center justify-between">
+                        <div>
+                            <span class="text-[10px] font-extrabold uppercase text-base-content/60 block">Description</span>
+                            <span class="text-xs text-base-content/80 mt-0.5 block">{{ $selectedInvoice->payment_notes ?: 'Monthly Stall Lease Rental' }}</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-[10px] font-extrabold uppercase text-base-content/60 block">Total Due</span>
+                            <span class="text-lg font-black text-primary block">₱{{ number_format($selectedInvoice->total_amount, 2) }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Actions -->
+                <div class="flex items-center justify-between pt-3 border-t border-base-200">
+                    <div>
+                        @if($selectedInvoice->status === 'paid')
+                            <a href="{{ route('receipt.pdf', $selectedInvoice->id) }}" target="_blank" class="btn btn-primary btn-outline btn-sm rounded-xl font-bold gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                Download Receipt PDF
+                            </a>
+                        @elseif($selectedInvoice->status === 'pending')
+                            <button wire:click="paySingleInvoice({{ $selectedInvoice->id }})" wire:loading.attr="disabled" class="btn btn-primary btn-sm rounded-xl font-bold gap-1 shadow-xs">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V8a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                                Pay with PayMongo / GCash
+                            </button>
+                        @endif
+                    </div>
+                    <button wire:click="closeDetailModal" class="btn btn-ghost btn-sm rounded-xl font-bold">Close</button>
+                </div>
+            </div>
+            <form method="dialog" class="modal-backdrop"><button wire:click="closeDetailModal">close</button></form>
+        </dialog>
+    @endif
 </div>

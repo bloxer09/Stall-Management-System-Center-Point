@@ -4,14 +4,23 @@ namespace App\Livewire\Admin;
 
 use App\Models\AuditLog;
 use App\Models\Invoice;
+use App\Models\PaymentTransaction;
 use App\Models\Stall;
 use App\Models\StallLocation;
+use App\Models\StallMapping;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
 class AnalyticsDashboard extends Component
 {
+    public $timeframe = '12m'; // '30d', '6m', '12m', 'ytd'
+
+    public function setTimeframe($tf)
+    {
+        $this->timeframe = in_array($tf, ['30d', '6m', '12m', 'ytd']) ? $tf : '12m';
+    }
+
     public function exportXlsx(\App\Services\XlsxExportService $exporter)
     {
         AuditLog::record('Exported Analytics XLSX Report', 'Analytics', 1);
@@ -48,46 +57,129 @@ class AnalyticsDashboard extends Component
 
     public function render()
     {
+        // 1. Core Stall & Occupancy Metrics
         $totalStalls = Stall::count();
         $occupiedStalls = Stall::where('status', 'occupied')->count();
         $availableStalls = Stall::where('status', 'available')->count();
         $maintenanceStalls = Stall::where('status', 'maintenance')->count();
         $occupancyRate = $totalStalls > 0 ? round(($occupiedStalls / $totalStalls) * 100, 1) : 0;
 
-        $totalRevenue = Invoice::where('status', 'paid')->sum('total_amount');
-        $monthlyRevenue = Invoice::where('status', 'paid')
+        // 2. Financial Metrics
+        $totalRevenue = (float) Invoice::where('status', 'paid')->sum('total_amount');
+        $totalPaidInvoicesCount = Invoice::where('status', 'paid')->count();
+
+        $monthlyRevenue = (float) Invoice::where('status', 'paid')
             ->whereMonth('paid_at', Carbon::now()->month)
             ->whereYear('paid_at', Carbon::now()->year)
             ->sum('total_amount');
 
-        // Aggregated 12-month revenue query (DB-agnostic for MySQL and SQLite)
-        $driver = \Illuminate\Support\Facades\DB::connection()->getDriverName();
+        $monthlyPaidCount = Invoice::where('status', 'paid')
+            ->whereMonth('paid_at', Carbon::now()->month)
+            ->whereYear('paid_at', Carbon::now()->year)
+            ->count();
+
+        // Monthly Target (Sum of prices of currently occupied stalls)
+        $monthlyTarget = (float) Stall::where('status', 'occupied')->sum('price');
+        $collectionRate = $monthlyTarget > 0 ? min(100, round(($monthlyRevenue / $monthlyTarget) * 100, 1)) : 100;
+
+        // Pending & Overdue Receivables
+        $pendingReceivables = (float) Invoice::where('status', 'pending')->sum('total_amount');
+        $pendingInvoicesCount = Invoice::where('status', 'pending')->count();
+
+        // 3. Lease Health
+        $activeLeasesCount = StallMapping::where('is_active', true)->count();
+        $expiringSoonCount = StallMapping::where('is_active', true)
+            ->whereBetween('end_date', [Carbon::now(), Carbon::now()->addDays(30)])
+            ->count();
+
+        // 4. Revenue Trend by Selected Timeframe
+        $driver = DB::connection()->getDriverName();
         $dateFormat = $driver === 'sqlite' ? "strftime('%Y-%m', paid_at)" : "DATE_FORMAT(paid_at, '%Y-%m')";
 
-        $rawRevenue = Invoice::selectRaw("{$dateFormat} as month_key, SUM(total_amount) as revenue")
+        $numMonths = match ($this->timeframe) {
+            '30d' => 1,
+            '6m' => 6,
+            'ytd' => Carbon::now()->month,
+            default => 12,
+        };
+
+        $rawRevenue = Invoice::selectRaw("{$dateFormat} as month_key, SUM(total_amount) as revenue, COUNT(id) as invoice_count")
             ->where('status', 'paid')
-            ->where('paid_at', '>=', now()->subMonths(11)->startOfMonth())
+            ->where('paid_at', '>=', now()->subMonths($numMonths - 1)->startOfMonth())
             ->groupByRaw($dateFormat)
-            ->pluck('revenue', 'month_key')
-            ->toArray();
+            ->get()
+            ->keyBy('month_key');
 
         $monthsLabels = [];
         $revenueData = [];
-        for ($i = 11; $i >= 0; $i--) {
+        $invoiceCountData = [];
+
+        for ($i = $numMonths - 1; $i >= 0; $i--) {
             $month = Carbon::now()->subMonths($i);
             $key = $month->format('Y-m');
             $monthsLabels[] = $month->format('M Y');
-            $revenueData[] = (float) ($rawRevenue[$key] ?? 0);
+            $revenueData[] = (float) ($rawRevenue[$key]->revenue ?? 0);
+            $invoiceCountData[] = (int) ($rawRevenue[$key]->invoice_count ?? 0);
         }
 
-        // Occupancy breakdown by Floor Location
-        $locations = StallLocation::withCount(['stalls', 'stalls as occupied_stalls_count' => function ($q) {
-            $q->where('status', 'occupied');
-        }])->get();
+        // 5. Payment Gateway / Method Split
+        $gatewayCounts = PaymentTransaction::where('status', 'paid')
+            ->selectRaw('gateway, COUNT(*) as count, SUM(amount) as total')
+            ->groupBy('gateway')
+            ->get();
 
-        $locationLabels = $locations->pluck('name')->toArray();
-        $locationTotal = $locations->pluck('stalls_count')->toArray();
-        $locationOccupied = $locations->pluck('occupied_stalls_count')->toArray();
+        $cashTotal = 0;
+        $onlineTotal = 0;
+        foreach ($gatewayCounts as $gw) {
+            if (strtolower($gw->gateway ?? '') === 'cash') {
+                $cashTotal += (float) $gw->total;
+            } else {
+                $onlineTotal += (float) $gw->total;
+            }
+        }
+        $paymentMethodsData = [$onlineTotal, $cashTotal];
+
+        // 6. Floor Performance Breakdown
+        $locations = StallLocation::with(['stalls'])->orderBy('sort_order')->get();
+        $floorPerformance = $locations->map(function ($loc) {
+            $total = $loc->stalls->count();
+            $occupied = $loc->stalls->where('status', 'occupied')->count();
+            $available = $loc->stalls->where('status', 'available')->count();
+            $potentialRent = $loc->stalls->sum('price');
+            $activeRent = $loc->stalls->where('status', 'occupied')->sum('price');
+            $occupancyPct = $total > 0 ? round(($occupied / $total) * 100, 1) : 0;
+
+            return [
+                'id' => $loc->id,
+                'name' => $loc->name,
+                'total_stalls' => $total,
+                'occupied_stalls' => $occupied,
+                'available_stalls' => $available,
+                'potential_rent' => $potentialRent,
+                'active_rent' => $activeRent,
+                'occupancy_pct' => $occupancyPct,
+            ];
+        });
+
+        $locationLabels = $floorPerformance->pluck('name')->toArray();
+        $locationTotal = $floorPerformance->pluck('total_stalls')->toArray();
+        $locationOccupied = $floorPerformance->pluck('occupied_stalls')->toArray();
+
+        // 7. Upcoming Lease Expirations (Next 60 Days)
+        $expiringLeases = StallMapping::with(['user', 'stall.location'])
+            ->where('is_active', true)
+            ->where('end_date', '>=', Carbon::now()->startOfDay())
+            ->where('end_date', '<=', Carbon::now()->addDays(60)->endOfDay())
+            ->orderBy('end_date')
+            ->limit(5)
+            ->get();
+
+        // 8. Recent Settled Invoices
+        $recentSettlements = Invoice::with(['user', 'stall.location', 'transactions'])
+            ->where('status', 'paid')
+            ->latest('paid_at')
+            ->limit(5)
+            ->get();
 
         return view('livewire.admin.analytics-dashboard', [
             'totalStalls' => $totalStalls,
@@ -96,12 +188,25 @@ class AnalyticsDashboard extends Component
             'maintenanceStalls' => $maintenanceStalls,
             'occupancyRate' => $occupancyRate,
             'totalRevenue' => $totalRevenue,
+            'totalPaidInvoicesCount' => $totalPaidInvoicesCount,
             'monthlyRevenue' => $monthlyRevenue,
+            'monthlyPaidCount' => $monthlyPaidCount,
+            'monthlyTarget' => $monthlyTarget,
+            'collectionRate' => $collectionRate,
+            'pendingReceivables' => $pendingReceivables,
+            'pendingInvoicesCount' => $pendingInvoicesCount,
+            'activeLeasesCount' => $activeLeasesCount,
+            'expiringSoonCount' => $expiringSoonCount,
             'monthsLabels' => $monthsLabels,
             'revenueData' => $revenueData,
+            'invoiceCountData' => $invoiceCountData,
+            'paymentMethodsData' => $paymentMethodsData,
             'locationLabels' => $locationLabels,
             'locationTotal' => $locationTotal,
             'locationOccupied' => $locationOccupied,
+            'floorPerformance' => $floorPerformance,
+            'expiringLeases' => $expiringLeases,
+            'recentSettlements' => $recentSettlements,
         ]);
     }
 }

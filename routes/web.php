@@ -112,7 +112,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     })->name('tickets');
 
     Route::get('/analytics', function () {
-        return view('pages.admin.analytics');
+        return redirect()->route('admin.dashboard');
     })->name('analytics');
 
     Route::get('/reports', function () {

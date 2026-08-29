@@ -30,6 +30,10 @@ class StallManager extends Component
     public $existing_image = null;
     public $showModal = false;
 
+    // Stall Detail & Manage Modal
+    public $selectedStall = null;
+    public $showDetailModal = false;
+
     protected $rules = [
         'stall_number' => 'required|string|max:50',
         'location_id' => 'nullable|exists:stall_locations,id',
@@ -39,10 +43,24 @@ class StallManager extends Component
         'image' => 'nullable|image|max:5120',
     ];
 
+    public function openDetailModal($id)
+    {
+        $this->selectedStall = Stall::with(['location', 'currentLease.user'])->findOrFail($id);
+        $this->showDetailModal = true;
+    }
+
+    public function closeDetailModal()
+    {
+        $this->showDetailModal = false;
+        $this->selectedStall = null;
+    }
+
     public function openModal($id = null)
     {
         $this->resetValidation();
         $this->reset(['image', 'existing_image']);
+        $this->showDetailModal = false;
+
         if ($id) {
             $stall = Stall::findOrFail($id);
             $this->stallId = $stall->id;
@@ -103,13 +121,14 @@ class StallManager extends Component
         $number = $stall->stall_number;
         $stall->delete();
 
+        $this->closeDetailModal();
         AuditLog::record("Deleted stall {$number}", 'Stall', $id, null, Auth::id());
         $this->dispatch('notify', type: 'success', message: 'Stall deleted successfully!');
     }
 
     public function render()
     {
-        $query = Stall::with('location');
+        $query = Stall::with(['location', 'currentLease.user']);
 
         if ($this->search) {
             $query->where('stall_number', 'like', "%{$this->search}%");

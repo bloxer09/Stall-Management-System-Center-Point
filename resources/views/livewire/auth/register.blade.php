@@ -26,13 +26,14 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div class="form-control w-full">
                 <label class="label pb-1"><span class="label-text font-bold text-base-content/80 text-xs">Password <span class="text-error">*</span></span></label>
-                <input type="password" wire:model="password" required class="input input-bordered w-full rounded-xl focus:input-primary font-medium text-sm" />
+                <input type="password" wire:model.live="password" required class="input input-bordered w-full rounded-xl focus:input-primary font-medium text-sm" />
             </div>
             <div class="form-control w-full">
                 <label class="label pb-1"><span class="label-text font-bold text-base-content/80 text-xs">Confirm Password <span class="text-error">*</span></span></label>
                 <input type="password" wire:model="password_confirmation" required class="input input-bordered w-full rounded-xl focus:input-primary font-medium text-sm" />
             </div>
         </div>
+        <x-password-strength model="password" />
         @error('password') <span class="text-xs text-error block font-semibold">{{ $message }}</span> @enderror
 
         <div class="form-control">

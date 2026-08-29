@@ -1,22 +1,36 @@
 <x-app-layout>
+    @php
+        $bgImage = \App\Models\Setting::get('landing_bg_image');
+        $platformName = \App\Models\Setting::get('platform_name', 'Center Point Commercial Complex');
+        $platformAddress = \App\Models\Setting::get('platform_address', 'Pagadian City, Zamboanga del Sur');
+        $supportEmail = \App\Models\Setting::get('support_email', 'support@stallm.com');
+        $supportPhone = \App\Models\Setting::get('support_phone', '09171112233');
+    @endphp
+
     <div class="space-y-10 py-2">
-        <!-- Hero Section -->
-        <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/15 via-base-100 to-base-100 border border-base-300 p-8 sm:p-12 shadow-sm">
-            <div class="absolute -right-16 -top-16 w-80 h-80 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="absolute -left-16 -bottom-16 w-80 h-80 bg-secondary/10 rounded-full blur-3xl pointer-events-none"></div>
+        <!-- Hero Section with Dynamic Background Image & Glassmorphism Overlay -->
+        <div class="relative overflow-hidden rounded-3xl border border-base-300 shadow-lg min-h-[380px] flex flex-col justify-between p-8 sm:p-12 text-white"
+             style="{{ $bgImage ? 'background-image: url(' . asset('storage/' . $bgImage) . '); background-size: cover; background-position: center;' : 'background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 50%, #1e293b 100%);' }}">
             
-            <div class="relative z-10 max-w-3xl space-y-6">
-                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-black tracking-wide uppercase">
+            <!-- Dark Gradient Backdrop Overlay (ensures high contrast text readability over any image) -->
+            <div class="absolute inset-0 bg-slate-950/75 backdrop-blur-[2px]"></div>
+
+            <!-- Glowing Ambient Circles -->
+            <div class="absolute -right-16 -top-16 w-80 h-80 bg-primary/25 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -left-16 -bottom-16 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div class="relative z-10 max-w-3xl space-y-5">
+                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/25 text-primary-content border border-primary/30 text-xs font-black tracking-wide uppercase backdrop-blur-md">
                     <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-                    Center Point Commercial Complex
+                    {{ $platformName }}
                 </div>
 
-                <h1 class="text-3xl sm:text-5xl font-black text-base-content tracking-tight leading-tight">
-                    Commercial Space & Stall Management
+                <h1 class="text-3xl sm:text-5xl font-black tracking-tight leading-tight text-white drop-shadow-sm">
+                    Commercial Space &amp; Stall Management
                 </h1>
 
-                <p class="text-sm sm:text-base text-base-content/80 font-medium leading-relaxed max-w-2xl">
-                    Welcome to Center Point Commercial Complex in Pagadian City. Manage stall rentals, track payments, and get direct support.
+                <p class="text-sm sm:text-base text-slate-200 font-medium leading-relaxed max-w-2xl">
+                    Located in <strong>{{ $platformAddress }}</strong>. Explore available retail spaces, manage lease agreements, settle rental bills online, and get direct facility support.
                 </p>
 
                 <!-- Quick Action Buttons -->
@@ -27,200 +41,178 @@
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
                                 Admin Dashboard
                             </a>
-                            <a href="{{ route('admin.stalls') }}" wire:navigate class="btn btn-outline rounded-2xl font-bold px-6 border-base-300 hover:bg-base-200">
-                                Stalls
+                            <a href="{{ route('admin.stalls') }}" wire:navigate class="btn btn-neutral text-white rounded-2xl font-bold px-6 border-white/20 hover:bg-white/20 backdrop-blur-sm">
+                                Manage Stalls
                             </a>
                         @else
                             <a href="{{ route('user.dashboard') }}" wire:navigate class="btn btn-primary rounded-2xl font-bold px-7 shadow-md">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 00-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                                My Account
+                                Tenant Dashboard
                             </a>
-                            <a href="{{ route('user.payments') }}" wire:navigate class="btn btn-outline rounded-2xl font-bold px-6 border-base-300 hover:bg-base-200">
-                                Invoices & Payments
+                            <a href="{{ route('user.payments') }}" wire:navigate class="btn btn-neutral text-white rounded-2xl font-bold px-6 border-white/20 hover:bg-white/20 backdrop-blur-sm">
+                                My Invoices
                             </a>
                         @endif
                     @else
-                        <button type="button" onclick="Livewire.dispatch('open-login-modal')" class="btn btn-primary rounded-2xl font-bold px-7 shadow-md">
+                        <button type="button" onclick="Livewire.dispatch('open-login-modal')" class="btn btn-primary rounded-2xl font-bold px-8 shadow-md">
                             Sign In
                         </button>
-                        <button type="button" onclick="Livewire.dispatch('open-register-modal')" class="btn btn-outline rounded-2xl font-bold px-6 border-base-300 hover:bg-base-200">
-                            Register Account
+                        <button type="button" onclick="Livewire.dispatch('open-register-modal')" class="btn btn-neutral text-white rounded-2xl font-bold px-7 border-white/20 hover:bg-white/20 backdrop-blur-sm">
+                            Create Account
                         </button>
                     @endauth
                 </div>
             </div>
 
-            <!-- Highlights Metrics Bar -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-8 mt-8 border-t border-base-300/80">
-                <div class="p-4 rounded-2xl bg-base-100/70 backdrop-blur-sm border border-base-200">
-                    <div class="text-2xl font-black text-primary">3</div>
-                    <div class="text-xs font-bold text-base-content/70 mt-0.5">Commercial Floors</div>
+            <!-- Quick Metrics Highlight Bar -->
+            <div class="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6 mt-6 border-t border-white/10">
+                <div class="p-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10">
+                    <div class="text-xl font-black text-white">Commercial</div>
+                    <div class="text-xs font-bold text-slate-300 mt-0.5">3 Building Levels</div>
                 </div>
-                <div class="p-4 rounded-2xl bg-base-100/70 backdrop-blur-sm border border-base-200">
-                    <div class="text-2xl font-black text-primary">Easy</div>
-                    <div class="text-xs font-bold text-base-content/70 mt-0.5">Online Leases</div>
+                <div class="p-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10">
+                    <div class="text-xl font-black text-white">Digital</div>
+                    <div class="text-xs font-bold text-slate-300 mt-0.5">Leases &amp; Invoices</div>
                 </div>
-                <div class="p-4 rounded-2xl bg-base-100/70 backdrop-blur-sm border border-base-200">
-                    <div class="text-2xl font-black text-primary">PayMongo</div>
-                    <div class="text-xs font-bold text-base-content/70 mt-0.5">Online Checkout</div>
+                <div class="p-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10">
+                    <div class="text-xl font-black text-white">PayMongo</div>
+                    <div class="text-xs font-bold text-slate-300 mt-0.5">GCash &amp; Card Payments</div>
                 </div>
-                <div class="p-4 rounded-2xl bg-base-100/70 backdrop-blur-sm border border-base-200">
-                    <div class="text-2xl font-black text-primary">24/7</div>
-                    <div class="text-xs font-bold text-base-content/70 mt-0.5">Security</div>
+                <div class="p-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10">
+                    <div class="text-xl font-black text-white">24/7</div>
+                    <div class="text-xs font-bold text-slate-300 mt-0.5">Facility Maintenance</div>
                 </div>
             </div>
         </div>
 
-        <!-- Commercial Zones / Floor Level Overview -->
-        <div class="space-y-6">
+        <!-- Commercial Building Directory -->
+        <div class="space-y-5">
             <div>
-                <h2 class="text-2xl font-black tracking-tight text-base-content">Building Floors & Directory</h2>
-                <p class="text-xs text-base-content/70 mt-1 font-medium">Explore the commercial areas at Center Point Commercial Complex.</p>
+                <h2 class="text-2xl font-black tracking-tight text-base-content">Building Zones &amp; Floor Directory</h2>
+                <p class="text-xs text-base-content/60 mt-1">Commercial areas available at {{ $platformName }}.</p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <!-- Ground Floor -->
-                <div class="card bg-base-100 border border-base-300 rounded-3xl p-6 shadow-sm hover:shadow-md transition space-y-4">
+                <div class="card bg-base-100 border border-base-300 rounded-3xl p-6 shadow-sm hover:shadow-md transition space-y-3">
                     <div class="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-black text-lg">
                         GF
                     </div>
                     <div>
-                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-primary">Level 1 &bull; Prime Retail</span>
+                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-primary">Level 1 &bull; Retail</span>
                         <h3 class="text-lg font-black text-base-content mt-0.5">Ground Floor Arcade</h3>
-                        <p class="text-xs text-base-content/70 mt-2 leading-relaxed">
-                            High foot-traffic commercial zone featuring groceries, general merchandise, customer service kiosks, and retail storefronts with glass frontage.
+                        <p class="text-xs text-base-content/70 mt-1.5 leading-relaxed">
+                            Prime high foot-traffic zone featuring retail storefronts, customer kiosks, convenience stores, and merchandise spaces.
                         </p>
                     </div>
-                    <div class="pt-3 border-t border-base-200 flex items-center justify-between text-xs text-base-content/60 font-semibold">
-                        <span>High Foot-Traffic Zone</span>
-                        <span class="badge badge-sm badge-ghost font-bold">12 Commercial Units</span>
+                    <div class="pt-2 border-t border-base-200 flex items-center justify-between text-xs text-base-content/60 font-semibold">
+                        <span>Main Street Entrance</span>
+                        <span class="badge badge-sm badge-ghost font-bold">Prime Spaces</span>
                     </div>
                 </div>
 
                 <!-- Second Floor -->
-                <div class="card bg-base-100 border border-base-300 rounded-3xl p-6 shadow-sm hover:shadow-md transition space-y-4">
+                <div class="card bg-base-100 border border-base-300 rounded-3xl p-6 shadow-sm hover:shadow-md transition space-y-3">
                     <div class="w-12 h-12 rounded-2xl bg-secondary/10 text-secondary flex items-center justify-center font-black text-lg">
                         2F
                     </div>
                     <div>
                         <span class="text-[10px] font-extrabold uppercase tracking-wider text-secondary">Level 2 &bull; Mezzanine</span>
                         <h3 class="text-lg font-black text-base-content mt-0.5">Second Floor Mezzanine</h3>
-                        <p class="text-xs text-base-content/70 mt-2 leading-relaxed">
-                            Dedicated specialty zone hosting fashion boutiques, electronics, printing & bookshops, pharmacy outlets, and commercial offices.
+                        <p class="text-xs text-base-content/70 mt-1.5 leading-relaxed">
+                            Specialty commercial zone accommodating fashion boutiques, electronics, pharmacies, office services, and specialty retail.
                         </p>
                     </div>
-                    <div class="pt-3 border-t border-base-200 flex items-center justify-between text-xs text-base-content/60 font-semibold">
-                        <span>Specialty & Apparel</span>
-                        <span class="badge badge-sm badge-ghost font-bold">10 Commercial Units</span>
+                    <div class="pt-2 border-t border-base-200 flex items-center justify-between text-xs text-base-content/60 font-semibold">
+                        <span>Specialty &amp; Apparel</span>
+                        <span class="badge badge-sm badge-ghost font-bold">Standard Spaces</span>
                     </div>
                 </div>
 
                 <!-- Food Court -->
-                <div class="card bg-base-100 border border-base-300 rounded-3xl p-6 shadow-sm hover:shadow-md transition space-y-4">
+                <div class="card bg-base-100 border border-base-300 rounded-3xl p-6 shadow-sm hover:shadow-md transition space-y-3">
                     <div class="w-12 h-12 rounded-2xl bg-accent/10 text-accent flex items-center justify-center font-black text-lg">
                         FC
                     </div>
                     <div>
-                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-accent">Dining & Refreshments</span>
+                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-accent">Dining &amp; Refreshments</span>
                         <h3 class="text-lg font-black text-base-content mt-0.5">Food Court Zone</h3>
-                        <p class="text-xs text-base-content/70 mt-2 leading-relaxed">
-                            Spacious communal dining area equipped with individual counter food stalls, specialized food preparation counters, and ventilation.
+                        <p class="text-xs text-base-content/70 mt-1.5 leading-relaxed">
+                            Communal dining space equipped with dedicated food preparation counters, utility connections, and dining seating.
                         </p>
                     </div>
-                    <div class="pt-3 border-t border-base-200 flex items-center justify-between text-xs text-base-content/60 font-semibold">
-                        <span>Dedicated Food Counters</span>
-                        <span class="badge badge-sm badge-ghost font-bold">6 Food Stalls</span>
+                    <div class="pt-2 border-t border-base-200 flex items-center justify-between text-xs text-base-content/60 font-semibold">
+                        <span>Dining Hall Access</span>
+                        <span class="badge badge-sm badge-ghost font-bold">Food Counters</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Facilities & Services Features -->
-        <div class="card bg-base-100 border border-base-300 rounded-3xl p-8 shadow-sm space-y-6">
+        <!-- Key Services -->
+        <div class="card bg-base-100 border border-base-300 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
             <div>
-                <h2 class="text-2xl font-black tracking-tight text-base-content">Platform & Facility Services</h2>
-                <p class="text-xs text-base-content/70 mt-1 font-medium">Center Point provides integrated commercial management tools for facility administrators and leasing tenants.</p>
+                <h2 class="text-2xl font-black tracking-tight text-base-content">Integrated Platform Features</h2>
+                <p class="text-xs text-base-content/60 mt-1">Convenient commercial stall management tools for tenants and management.</p>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div class="flex items-start gap-4 p-4 rounded-2xl bg-base-200/50">
-                    <div class="p-3 rounded-xl bg-primary text-primary-content font-bold flex-shrink-0">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="p-4 rounded-2xl bg-base-200/50 space-y-2">
+                    <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                     </div>
-                    <div class="space-y-1">
-                        <h4 class="font-bold text-sm text-base-content">Stall Directory & Catalog</h4>
-                        <p class="text-xs text-base-content/70 leading-relaxed">Centralized inventory of commercial stall spaces, dimensions, and floor level assignments.</p>
-                    </div>
+                    <h4 class="font-bold text-sm text-base-content">Stall Catalog</h4>
+                    <p class="text-xs text-base-content/70">Centralized directory of available stall units, dimensions, and monthly rates.</p>
                 </div>
 
-                <div class="flex items-start gap-4 p-4 rounded-2xl bg-base-200/50">
-                    <div class="p-3 rounded-xl bg-primary text-primary-content font-bold flex-shrink-0">
+                <div class="p-4 rounded-2xl bg-base-200/50 space-y-2">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V8a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
                     </div>
-                    <div class="space-y-1">
-                        <h4 class="font-bold text-sm text-base-content">Online Checkout</h4>
-                        <p class="text-xs text-base-content/70 leading-relaxed">Instant invoice settlements via PayMongo supporting GCash, Maya, and credit/debit cards.</p>
-                    </div>
+                    <h4 class="font-bold text-sm text-base-content">Online Checkout</h4>
+                    <p class="text-xs text-base-content/70">Instant rental payments via GCash, Maya, and credit/debit cards powered by PayMongo.</p>
                 </div>
 
-                <div class="flex items-start gap-4 p-4 rounded-2xl bg-base-200/50">
-                    <div class="p-3 rounded-xl bg-primary text-primary-content font-bold flex-shrink-0">
+                <div class="p-4 rounded-2xl bg-base-200/50 space-y-2">
+                    <div class="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center font-bold">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                     </div>
-                    <div class="space-y-1">
-                        <h4 class="font-bold text-sm text-base-content">PDF Leases & Receipts</h4>
-                        <p class="text-xs text-base-content/70 leading-relaxed">Automated lease contract generation and downloadable digital receipts with verification QR codes.</p>
-                    </div>
+                    <h4 class="font-bold text-sm text-base-content">Digital Leases</h4>
+                    <p class="text-xs text-base-content/70">Official downloadable PDF lease agreements and verified digital payment receipts.</p>
                 </div>
 
-                <div class="flex items-start gap-4 p-4 rounded-2xl bg-base-200/50">
-                    <div class="p-3 rounded-xl bg-primary text-primary-content font-bold flex-shrink-0">
+                <div class="p-4 rounded-2xl bg-base-200/50 space-y-2">
+                    <div class="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                     </div>
-                    <div class="space-y-1">
-                        <h4 class="font-bold text-sm text-base-content">Support Center & Chat</h4>
-                        <p class="text-xs text-base-content/70 leading-relaxed">Direct communication channel between tenants and facility maintenance for rapid resolution.</p>
-                    </div>
-                </div>
-
-                <div class="flex items-start gap-4 p-4 rounded-2xl bg-base-200/50">
-                    <div class="p-3 rounded-xl bg-primary text-primary-content font-bold flex-shrink-0">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                    </div>
-                    <div class="space-y-1">
-                        <h4 class="font-bold text-sm text-base-content">Analytics & Reporting</h4>
-                        <p class="text-xs text-base-content/70 leading-relaxed">Comprehensive administrative dashboards tracking revenue trends, occupancy, and lease lifecycles.</p>
-                    </div>
-                </div>
-
-                <div class="flex items-start gap-4 p-4 rounded-2xl bg-base-200/50">
-                    <div class="p-3 rounded-xl bg-primary text-primary-content font-bold flex-shrink-0">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                    </div>
-                    <div class="space-y-1">
-                        <h4 class="font-bold text-sm text-base-content">Facility Security & Safety</h4>
-                        <p class="text-xs text-base-content/70 leading-relaxed">Rigorous building code adherence, fire safety compliance, and continuous perimeter monitoring.</p>
-                    </div>
+                    <h4 class="font-bold text-sm text-base-content">Direct Support</h4>
+                    <p class="text-xs text-base-content/70">Integrated ticket center and real-time chat with property administrators.</p>
                 </div>
             </div>
         </div>
 
-        <!-- Contact & Administration Card -->
+        <!-- Contact & Administration Card with Dynamic Address -->
         <div class="card bg-base-100 border border-base-300 rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
             <div class="space-y-2 text-center md:text-left">
-                <h3 class="text-xl font-black text-base-content">Facility Administration & Inquiries</h3>
+                <h3 class="text-xl font-black text-base-content">Facility Administration &amp; Inquiries</h3>
                 <p class="text-xs text-base-content/70 max-w-xl">
-                    For leasing inquiries, contract renewals, or facility assistance, visit the Center Point Administration Office or contact our team directly.
+                    For commercial stall leasing inquiries, contract renewals, or assistance, visit the {{ $platformName }} Administration Office or contact us.
                 </p>
                 <div class="flex flex-wrap items-center justify-center md:justify-start gap-4 pt-2 text-xs font-bold text-base-content/80">
                     <span class="flex items-center gap-1.5">
                         <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                        Pagadian City, Zamboanga del Sur
+                        {{ $platformAddress }}
                     </span>
                     <span class="flex items-center gap-1.5">
                         <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                        admin@stallm.com
+                        {{ $supportEmail }}
                     </span>
+                    @if($supportPhone)
+                    <span class="flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                        {{ $supportPhone }}
+                    </span>
+                    @endif
                 </div>
             </div>
 

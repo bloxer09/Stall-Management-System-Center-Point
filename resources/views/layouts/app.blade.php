@@ -32,7 +32,11 @@
              class="fixed top-0 left-0 h-[2.5px] bg-primary z-[9999] transition-all duration-300 ease-out"
              style="width: 0%; opacity: 0;"></div>
 
-        <div class="drawer {{ auth()->check() ? 'lg:drawer-open' : '' }} min-h-screen">
+        @php
+            $isPortalPage = auth()->check() && (request()->routeIs('admin.*') || request()->routeIs('user.*'));
+        @endphp
+
+        <div class="drawer {{ $isPortalPage ? 'lg:drawer-open' : '' }} min-h-screen">
             <input id="app-drawer" type="checkbox" class="drawer-toggle" />
             
             <div class="drawer-content flex flex-col min-w-0 flex-1 bg-base-200">
@@ -67,7 +71,7 @@
                         <span><strong>{{ \App\Models\Setting::get('platform_name', 'Center Point Commercial Complex') }}</strong> &bull; Stall Management System &copy; {{ date('Y') }}. All rights reserved.</span>
                     </div>
                     <div class="flex items-center gap-3 font-semibold text-xs text-base-content/60">
-                        <span>Pagadian City, Zamboanga del Sur</span>
+                        <span>{{ \App\Models\Setting::get('platform_address', 'Pagadian City, Zamboanga del Sur') }}</span>
                         <span>&bull;</span>
                         <a href="{{ route('privacy') }}" wire:navigate class="hover:text-primary transition">Privacy Policy</a>
                         <span>&bull;</span>
@@ -76,7 +80,7 @@
                 </footer>
             </div> 
 
-            @auth
+            @if($isPortalPage)
             <!-- Sidebar Drawer for Mobile & Desktop -->
             <div class="drawer-side z-40">
                 <label for="app-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
@@ -134,11 +138,6 @@
                                     <a href="{{ route('admin.tickets') }}" wire:navigate class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition {{ request()->routeIs('admin.tickets') ? 'bg-primary text-primary-content font-bold shadow-xs' : 'text-base-content/70 hover:text-base-content hover:bg-base-200' }}">
                                         <svg class="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                                         <span>Support Tickets</span>
-                                    </a>
-
-                                    <a href="{{ route('admin.analytics') }}" wire:navigate class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition {{ request()->routeIs('admin.analytics') ? 'bg-primary text-primary-content font-bold shadow-xs' : 'text-base-content/70 hover:text-base-content hover:bg-base-200' }}">
-                                        <svg class="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                                        <span>Analytics</span>
                                     </a>
 
                                     <div class="pt-4 pb-1.5 px-3 text-[10px] font-bold text-base-content/50 uppercase tracking-wider">System</div>
@@ -210,7 +209,7 @@
                     @endauth
                 </aside>
             </div>
-            @endauth
+            @endif
         </div>
 
         <!-- Global Interactive Auth Modals -->
@@ -304,19 +303,25 @@
                 document.addEventListener('livewire:navigated', finishProgress);
             })();
 
-            // Dispatch toast from Livewire session flash messages
+            // Dispatch toast from Livewire / session flash messages
             @php
                 $flashMessage = session('message');
                 $flashError = session('error');
             @endphp
-            document.addEventListener('livewire:initialized', function() {
+            function triggerFlashToasts() {
                 @if($flashMessage)
                     window.dispatchEvent(new CustomEvent('notify', { detail: { type: 'success', message: @json($flashMessage) } }));
                 @endif
                 @if($flashError)
                     window.dispatchEvent(new CustomEvent('notify', { detail: { type: 'error', message: @json($flashError) } }));
                 @endif
-            });
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', triggerFlashToasts);
+            } else {
+                triggerFlashToasts();
+            }
+            document.addEventListener('livewire:initialized', triggerFlashToasts);
         </script>
 
         @livewireScripts
