@@ -4,6 +4,7 @@ namespace App\Livewire\Profile;
 
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Services\TwoFactorService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Attributes\On;
@@ -28,6 +29,11 @@ class ProfileModal extends Component
     public string $current_password = '';
     public string $password = '';
     public string $password_confirmation = '';
+
+    // Two-Factor Authentication (admins only)
+    public string $twoFactorCode = '';
+    public string $twoFactorPassword = '';
+    public bool $twoFactorCodeSent = false;
 
     public function mount(): void
     {
@@ -72,8 +78,11 @@ class ProfileModal extends Component
 
         $this->validate([
             'name' => ['required', 'string', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:20'],
+            // 2FA codes go to this number, so it cannot be cleared while 2FA is on.
+            'phone' => [$user->hasTwoFactorEnabled() ? 'required' : 'nullable', 'string', 'max:20'],
             'photo' => ['nullable', 'image', 'max:2048'],
+        ], [
+            'phone.required' => 'Turn off two-factor authentication before removing your phone number.',
         ]);
 
         $dataToUpdate = [
@@ -113,6 +122,77 @@ class ProfileModal extends Component
 
         $this->reset(['current_password', 'password', 'password_confirmation']);
         $this->dispatch('notify', type: 'success', message: 'Account password updated successfully.');
+    }
+
+    public function sendTwoFactorEnableCode(TwoFactorService $twoFactor): void
+    {
+        $user = Auth::user();
+        if (!$user || !$user->isAdmin() || $user->hasTwoFactorEnabled() || blank($user->phone)) {
+            return;
+        }
+
+        if (!$twoFactor->sendCode($user)) {
+            $wait = $twoFactor->secondsUntilResend($user);
+            $this->addError('twoFactorCode', $wait > 0
+                ? "Please wait {$wait} seconds before requesting another code."
+                : "We couldn't send the code. Please try again.");
+            return;
+        }
+
+        $this->twoFactorCodeSent = true;
+        $this->dispatch('notify', type: 'success', message: 'Verification code sent to your phone.');
+    }
+
+    public function confirmTwoFactor(TwoFactorService $twoFactor): void
+    {
+        $user = Auth::user();
+        if (!$user || !$user->isAdmin() || $user->hasTwoFactorEnabled()) {
+            return;
+        }
+
+        $this->validate(['twoFactorCode' => ['required', 'digits:6']]);
+
+        if (!$twoFactor->verify($user, $this->twoFactorCode)) {
+            $this->addError('twoFactorCode', 'That code is incorrect or has expired.');
+            return;
+        }
+
+        $user->forceFill([
+            'two_factor_enabled' => true,
+            'two_factor_confirmed_at' => now(),
+        ])->save();
+
+        // This session just proved possession of the phone, so it does not need a second challenge.
+        session(['two_factor_verified' => true]);
+        AuditLog::record('Enabled two-factor authentication', 'User', $user->id);
+
+        $this->reset(['twoFactorCode', 'twoFactorCodeSent']);
+        $this->dispatch('notify', type: 'success', message: 'Two-factor authentication is now on.');
+    }
+
+    public function disableTwoFactor(): void
+    {
+        $user = Auth::user();
+        if (!$user || !$user->hasTwoFactorEnabled()) {
+            return;
+        }
+
+        $this->validate(['twoFactorPassword' => ['required', 'string']]);
+
+        if (!Hash::check($this->twoFactorPassword, $user->password)) {
+            $this->addError('twoFactorPassword', 'The password is incorrect.');
+            return;
+        }
+
+        $user->forceFill([
+            'two_factor_enabled' => false,
+            'two_factor_confirmed_at' => null,
+        ])->save();
+
+        AuditLog::record('Disabled two-factor authentication', 'User', $user->id);
+
+        $this->reset('twoFactorPassword');
+        $this->dispatch('notify', type: 'success', message: 'Two-factor authentication is now off.');
     }
 
     public function render()

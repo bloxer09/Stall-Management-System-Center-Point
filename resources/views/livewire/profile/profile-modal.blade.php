@@ -128,6 +128,45 @@
                     </div>
                 </div>
             </form>
+
+            @if(auth()->user()->isAdmin())
+                <div class="p-4 rounded-2xl border border-base-300 bg-base-200/40 space-y-3">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <h4 class="font-black text-sm text-base-content">Two-Factor Authentication</h4>
+                            <p class="text-xs text-base-content/60 mt-0.5">Require a 6-digit SMS code after your password every time you sign in.</p>
+                        </div>
+                        @if(auth()->user()->hasTwoFactorEnabled())
+                            <span class="badge badge-success badge-sm font-bold whitespace-nowrap">On</span>
+                        @else
+                            <span class="badge badge-ghost badge-sm font-bold whitespace-nowrap">Off</span>
+                        @endif
+                    </div>
+
+                    @if(auth()->user()->hasTwoFactorEnabled())
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <input wire:model="twoFactorPassword" type="password" placeholder="Current password to turn off" autocomplete="current-password" class="input input-bordered input-sm rounded-xl text-sm flex-1" />
+                            <button type="button" wire:click="disableTwoFactor" wire:loading.attr="disabled" class="btn btn-outline btn-error btn-sm rounded-xl font-bold">Turn off</button>
+                        </div>
+                        @error('twoFactorPassword') <span class="text-xs text-error">{{ $message }}</span> @enderror
+                    @elseif(blank(auth()->user()->phone))
+                        <p class="text-xs text-warning font-semibold">Add a phone number first in Profile Details. Codes are sent to that number.</p>
+                    @elseif(!$twoFactorCodeSent)
+                        <button type="button" wire:click="sendTwoFactorEnableCode" wire:loading.attr="disabled" class="btn btn-primary btn-sm rounded-xl font-bold">
+                            <span wire:loading wire:target="sendTwoFactorEnableCode" class="loading loading-spinner loading-xs"></span>
+                            Turn on &mdash; send code to {{ auth()->user()->phone }}
+                        </button>
+                        @error('twoFactorCode') <span class="text-xs text-error block">{{ $message }}</span> @enderror
+                    @else
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <input wire:model="twoFactorCode" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6-digit code" class="input input-bordered input-sm rounded-xl text-sm tracking-widest flex-1" />
+                            <button type="button" wire:click="confirmTwoFactor" wire:loading.attr="disabled" class="btn btn-primary btn-sm rounded-xl font-bold">Confirm</button>
+                        </div>
+                        @error('twoFactorCode') <span class="text-xs text-error">{{ $message }}</span> @enderror
+                        <button type="button" wire:click="sendTwoFactorEnableCode" class="text-xs text-primary font-bold hover:underline">Resend code</button>
+                    @endif
+                </div>
+            @endif
             @endif
         </div>
         <form method="dialog" class="modal-backdrop"><button wire:click="closeModal">close</button></form>
