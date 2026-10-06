@@ -248,7 +248,7 @@
                 remove(id) { this.toasts = this.toasts.filter(t => t.id !== id); }
             }"
             x-on:notify.window="add($event.detail.type || 'success', $event.detail.message)"
-            class="fixed bottom-5 right-5 z-[9998] flex flex-col gap-2 items-end pointer-events-none"
+            aria-live="polite" role="status" class="fixed bottom-5 right-5 z-[9998] flex flex-col gap-2 items-end pointer-events-none"
             aria-live="polite">
             <template x-for="toast in toasts" :key="toast.id">
                 <div x-show="true"

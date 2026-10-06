@@ -79,13 +79,26 @@
     </div>
 
     <!-- Chart: 12-Month Revenue Trend -->
-    <div class="card bg-base-100 border border-base-300 shadow-md rounded-3xl p-6">
+    <div class="card bg-base-100 border border-base-300 shadow-md rounded-3xl p-6" x-data="{ asTable: false }">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-base font-black text-base-content uppercase tracking-wider">12-Month Revenue Trend</h2>
-            <span class="badge badge-primary badge-sm font-bold">Chart</span>
+            <button type="button" class="btn btn-ghost btn-xs rounded-lg font-bold" x-on:click="asTable = !asTable" :aria-pressed="asTable.toString()">
+                <span x-text="asTable ? 'View as chart' : 'View as table'">View as table</span>
+            </button>
         </div>
-        <div class="relative h-64">
-            <canvas id="revenueChart"></canvas>
+        <div class="relative h-64" x-show="!asTable">
+            <canvas id="revenueChart" role="img" aria-label="Bar chart of revenue for the last 12 months; use View as table for the numbers"></canvas>
+        </div>
+        <div x-show="asTable" x-cloak class="overflow-x-auto">
+            <table class="table table-sm w-full" data-revenue-table>
+                <caption class="sr-only">Revenue for the last 12 months</caption>
+                <thead><tr><th scope="col">Month</th><th scope="col" class="text-right">Revenue</th></tr></thead>
+                <tbody>
+                    @foreach($monthlyTrend as $point)
+                        <tr><th scope="row" class="font-semibold">{{ $point['month'] }}</th><td class="text-right font-mono">₱{{ number_format($point['revenue'], 2) }}</td></tr>
+                    @endforeach
+                </tbody>
+            </table>
         </div>
     </div>
 

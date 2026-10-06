@@ -3,7 +3,7 @@
     <dialog class="modal modal-open backdrop-blur-xs z-50">
         <div class="modal-box max-w-lg p-6 bg-base-100 rounded-3xl border border-base-300 relative shadow-2xl space-y-5">
             <!-- Close button -->
-            <button wire:click="closeModal" class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-base-content/60 hover:text-base-content">
+            <button wire:click="closeModal" class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-base-content/60 hover:text-base-content" aria-label="Close" x-data x-on:keydown.escape.window="$wire.closeModal()">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
 

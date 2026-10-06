@@ -87,7 +87,7 @@
     @if($selectedStall)
         <div class="modal modal-open" role="dialog" aria-modal="true">
             <div class="modal-box rounded-3xl max-w-md">
-                <button type="button" wire:click="closeStall" class="btn btn-sm btn-circle btn-ghost absolute right-3 top-3" aria-label="Close">✕</button>
+                <button type="button" wire:click="closeStall" class="btn btn-sm btn-circle btn-ghost absolute right-3 top-3" aria-label="Close" x-data x-on:keydown.escape.window="$wire.closeStall()">✕</button>
                 @if($selectedStall->image)
                     <img src="{{ $selectedStall->image_url }}" alt="Stall {{ $selectedStall->stall_number }}" class="w-full h-44 object-cover rounded-2xl mb-4">
                 @endif

@@ -387,7 +387,7 @@
                             @endif
 
                             <div class="flex items-center gap-2">
-                                <label class="btn btn-ghost btn-circle btn-xs text-base-content/70 hover:text-primary cursor-pointer"
+                                <label aria-label="Attach files" title="Attach files" class="btn btn-ghost btn-circle btn-xs text-base-content/70 hover:text-primary cursor-pointer"
                                     title="Attach File(s) or Paste (Ctrl+V)">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -397,7 +397,7 @@
                                 </label>
                                 <input type="text" wire:model="newMessage" placeholder="Type a message or paste files..." x-data="{ lastTyping: 0 }" @input="if (Date.now() - lastTyping > 2000) { lastTyping = Date.now(); $wire.typing() }"
                                     class="input input-sm input-bordered flex-1 rounded-xl text-xs" />
-                                <button type="submit" class="btn btn-primary btn-sm rounded-xl font-bold px-3">
+                                <button type="submit" aria-label="Send message" class="btn btn-primary btn-sm rounded-xl font-bold px-3">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
