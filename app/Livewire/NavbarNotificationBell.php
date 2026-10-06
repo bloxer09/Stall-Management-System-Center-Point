@@ -52,33 +52,45 @@ class NavbarNotificationBell extends Component
         $notif->update(['is_read' => true]);
         $this->loadNotifications();
 
-        if ($this->isInternalLink($notif->link)) {
-            $this->redirect($notif->link, navigate: true);
+        if ($path = $this->internalPath($notif->link)) {
+            $this->redirect($path, navigate: true);
         }
     }
 
     /**
-     * Only same-site paths and URLs are followed; anything else (other hosts, protocol-relative
-     * "//host" links, javascript:) is ignored so a stored link can never send users off-site.
+     * The same-site path (with query and fragment) a stored link points to, or null when it
+     * must not be followed. Redirecting by path keeps the browser on whatever origin it is on
+     * (localhost vs 127.0.0.1), and anything ambiguous — other hosts, "//host", javascript:,
+     * userinfo, backslashes, control characters — is refused rather than guessed at.
      */
-    private function isInternalLink(?string $link): bool
+    private function internalPath(?string $link): ?string
     {
-        if ($link === null || $link === '') {
-            return false;
+        if ($link === null || $link === '' || preg_match('/[\x00-\x20\x7F\\\\]/', $link)) {
+            return null;
         }
 
         if (str_starts_with($link, '/')) {
-            return !str_starts_with($link, '//') && !str_starts_with($link, '/\\');
+            return str_starts_with($link, '//') ? null : $link;
         }
 
-        $scheme = strtolower((string) parse_url($link, PHP_URL_SCHEME));
-        $host = strtolower((string) parse_url($link, PHP_URL_HOST));
+        $parts = parse_url($link);
+        if ($parts === false || isset($parts['user']) || isset($parts['pass'])) {
+            return null;
+        }
+
+        $scheme = strtolower($parts['scheme'] ?? '');
+        $host = strtolower($parts['host'] ?? '');
         $allowedHosts = array_filter([
             strtolower((string) parse_url((string) config('app.url'), PHP_URL_HOST)),
             strtolower(request()->getHost()),
         ]);
+        if (!in_array($scheme, ['http', 'https'], true) || !in_array($host, $allowedHosts, true)) {
+            return null;
+        }
 
-        return in_array($scheme, ['http', 'https'], true) && in_array($host, $allowedHosts, true);
+        return ($parts['path'] ?? '/')
+            . (isset($parts['query']) ? '?' . $parts['query'] : '')
+            . (isset($parts['fragment']) ? '#' . $parts['fragment'] : '');
     }
 
     public function markAllAsRead()

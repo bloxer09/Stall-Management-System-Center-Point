@@ -54,8 +54,16 @@ class StallGridEditor extends Component
     /**
      * Drag-and-drop: move an unplaced or already placed stall into an empty cell of this floor.
      */
-    public function moveStall(int $stallId, int $row, int $col): bool
+    public function moveStall(mixed $stallId, mixed $row, mixed $col): bool
     {
+        // Values come straight from the browser's drop event; anything that isn't a whole number is ignored.
+        foreach ([$stallId, $row, $col] as $value) {
+            if (filter_var($value, FILTER_VALIDATE_INT) === false) {
+                return false;
+            }
+        }
+        [$stallId, $row, $col] = [(int) $stallId, (int) $row, (int) $col];
+
         $stall = Stall::find($stallId);
         if (!$stall) {
             return false;

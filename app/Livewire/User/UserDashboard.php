@@ -16,18 +16,14 @@ class UserDashboard extends Component
     use RequestsLeaseRenewal;
 
     /**
-     * Applications the tenant made, matched by linked account or by the same email (any casing),
-     * so someone who registered first and applied later still sees their status.
+     * Applications linked to this account: submitted while signed in, or approved for it.
+     * Not matched by email alone — emails are not verified, so that would expose someone
+     * else's applications to whoever registers with their address.
      */
     private function myApplications()
     {
-        $user = auth()->user();
-
         return StallApplication::with('preferredStall')
-            ->where(function ($q) use ($user) {
-                $q->where('user_id', $user->id)
-                    ->orWhereRaw('LOWER(applicant_email) = ?', [strtolower($user->email)]);
-            })
+            ->where('user_id', auth()->id())
             ->latest()
             ->limit(5)
             ->get();

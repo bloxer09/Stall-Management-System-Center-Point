@@ -175,7 +175,12 @@ class DemoSeeder extends Seeder
 
     private function pendingInvoice(StallMapping $lease, Carbon $dueDate): void
     {
-        $this->invoice($lease, now()->startOfMonth(), $dueDate, 'pending');
+        $invoice = $this->invoice($lease, now()->startOfMonth(), $dueDate, 'pending');
+
+        // Re-seeding after a rehearsal must put the bill back to unpaid and un-notified,
+        // so the payment and overdue-notice flows can be demonstrated again.
+        $invoice->forceFill(['paid_at' => null, 'overdue_notified_at' => null])->save();
+        $invoice->transactions()->delete();
     }
 
     private function invoice(StallMapping $lease, Carbon $period, Carbon $dueDate, string $status): Invoice

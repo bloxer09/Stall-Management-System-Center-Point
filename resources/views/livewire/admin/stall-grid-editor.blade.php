@@ -69,7 +69,7 @@
                                 x-data="{ over: false }"
                                 @dragover.prevent="over = true"
                                 @dragleave="over = false"
-                                @drop.prevent="over = false; $wire.moveStall(parseInt($event.dataTransfer.getData('text/plain')), {{ $r }}, {{ $c }})"
+                                @drop.prevent="over = false; const id = parseInt($event.dataTransfer.getData('text/plain'), 10); if (Number.isInteger(id)) $wire.moveStall(id, {{ $r }}, {{ $c }})"
                                 :class="over && 'ring-2 ring-primary bg-primary/10'"
                             @else
                                 draggable="true"

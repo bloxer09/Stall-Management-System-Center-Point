@@ -62,18 +62,17 @@ class TenantDashboardTest extends TestCase
             ->assertSee(route('stalls.browse'));
     }
 
-    public function test_my_applications_matches_user_id_and_email_case_insensitively(): void
+    public function test_my_applications_lists_only_applications_linked_to_the_account(): void
     {
         $this->application(['business_name' => 'Linked By Id', 'user_id' => $this->tenant->id, 'applicant_email' => 'other-address@mail.com', 'preferred_stall_id' => $this->stall('A-1')->id]);
-        $this->application(['business_name' => 'Linked By Email', 'applicant_email' => 'JUAN@MAIL.COM', 'status' => 'rejected', 'rejection_reason' => 'Food stalls only.', 'preferred_stall_id' => $this->stall('A-2')->id]);
-        $this->application(['business_name' => 'Somebody Else', 'applicant_email' => 'maria@mail.com', 'preferred_stall_id' => $this->stall('A-3')->id]);
+        $this->application(['business_name' => 'Rejected Linked', 'user_id' => $this->tenant->id, 'status' => 'rejected', 'rejection_reason' => 'Food stalls only.', 'preferred_stall_id' => $this->stall('A-2')->id]);
+        $this->application(['business_name' => 'Same Email Unlinked', 'applicant_email' => 'JUAN@MAIL.COM', 'preferred_stall_id' => $this->stall('A-3')->id]);
 
         Livewire::actingAs($this->tenant)->test(UserDashboard::class)
             ->assertSee('My applications')
             ->assertSee('Linked By Id')
-            ->assertSee('Linked By Email')
             ->assertSee('Food stalls only.')
-            ->assertDontSee('Somebody Else');
+            ->assertDontSee('Same Email Unlinked');
     }
 
     public function test_lease_countdown_and_renew_button(): void

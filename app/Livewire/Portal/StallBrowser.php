@@ -66,7 +66,11 @@ class StallBrowser extends Component
 
         try {
             $applications->submit(
-                $this->form->payload() + ['preferred_stall_id' => $this->selectedStallId],
+                $this->form->payload() + [
+                    'preferred_stall_id' => $this->selectedStallId,
+                    // A signed-in tenant's application is linked to their account so it shows on their dashboard.
+                    'user_id' => auth()->user()?->isUser() ? auth()->id() : null,
+                ],
                 $this->form->document,
                 request()->ip()
             );
