@@ -5,17 +5,169 @@ namespace App\Services;
 use App\Models\AuditLog;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\Notification;
 use App\Models\Stall;
 use App\Models\StallMapping;
+use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class LeaseService
 {
+    private const RENEWAL_WINDOW_DAYS = 60;
+
     public function __construct(
-        protected FileUploadService $fileUploader
+        protected FileUploadService $fileUploader,
+        protected MailService $mailer,
+        protected SmsService $sms,
     ) {}
+
+    /**
+     * A tenant may ask to renew an active lease once it is within 60 days of its end
+     * (the first expiry warning), unless a request is already waiting for review.
+     */
+    public function isRenewalEligible(StallMapping $lease): bool
+    {
+        return $lease->is_active
+            && $lease->end_date !== null
+            && $lease->end_date->lte(now()->addDays(self::RENEWAL_WINDOW_DAYS)->endOfDay())
+            && $lease->renewal_status !== 'requested';
+    }
+
+    /**
+     * @throws InvalidArgumentException with a tenant-readable message when the request is not allowed.
+     */
+    public function requestRenewal(StallMapping $lease, User $tenant, Carbon $requestedEnd, ?string $note = null): StallMapping
+    {
+        if ($lease->user_id !== $tenant->id) {
+            throw new InvalidArgumentException('You can only renew your own lease.');
+        }
+        if (!$lease->is_active) {
+            throw new InvalidArgumentException('Only active leases can be renewed.');
+        }
+        if ($lease->renewal_status === 'requested') {
+            throw new InvalidArgumentException('A renewal request for this lease is already waiting for review.');
+        }
+        if (!$this->isRenewalEligible($lease)) {
+            throw new InvalidArgumentException('Renewal opens 60 days before your lease ends.');
+        }
+        if ($requestedEnd->lte($lease->end_date)) {
+            throw new InvalidArgumentException('The new end date must be after your current end date.');
+        }
+
+        DB::transaction(function () use ($lease, $requestedEnd, $note) {
+            $lease->update([
+                'renewal_status' => 'requested',
+                'requested_end_date' => $requestedEnd->toDateString(),
+                'renewal_note' => $note !== null && trim($note) !== '' ? trim($note) : null,
+                'renewal_rejection_reason' => null,
+            ]);
+
+            AuditLog::record(
+                "Renewal requested for Lease #{$lease->id} until {$requestedEnd->toDateString()}",
+                'StallMapping',
+                $lease->id,
+                $note
+            );
+        });
+
+        $stallNumber = $lease->stall?->stall_number;
+        foreach (User::where('role', 'admin')->pluck('id') as $adminId) {
+            Notification::send(
+                $adminId,
+                'renewal',
+                'Lease renewal requested',
+                "{$tenant->name} asked to renew Stall {$stallNumber} until {$requestedEnd->format('M d, Y')}.",
+                route('admin.mappings')
+            );
+        }
+
+        return $lease->fresh();
+    }
+
+    /**
+     * @throws InvalidArgumentException when there is no pending request or the date is invalid.
+     */
+    public function approveRenewal(StallMapping $lease, User $admin, ?Carbon $overrideEnd = null): StallMapping
+    {
+        $lease = DB::transaction(function () use ($lease, $admin, $overrideEnd) {
+            $locked = StallMapping::whereKey($lease->id)->lockForUpdate()->firstOrFail();
+            if ($locked->renewal_status !== 'requested') {
+                throw new InvalidArgumentException('There is no pending renewal request for this lease.');
+            }
+
+            $newEnd = $overrideEnd ?? $locked->requested_end_date;
+            if (!$newEnd || $newEnd->lte($locked->end_date)) {
+                throw new InvalidArgumentException('The new end date must be after the current end date.');
+            }
+
+            $locked->update([
+                'end_date' => $newEnd->toDateString(),
+                'renewal_status' => 'approved',
+                'renewal_rejection_reason' => null,
+            ]);
+
+            AuditLog::record(
+                "Approved renewal for Lease #{$locked->id} until {$newEnd->toDateString()}",
+                'StallMapping',
+                $locked->id,
+                null,
+                $admin->id
+            );
+
+            return $locked->fresh(['user', 'stall']);
+        });
+
+        $tenant = $lease->user;
+        $stallNumber = $lease->stall?->stall_number;
+        $until = $lease->end_date->format('M d, Y');
+        $message = "Your lease renewal for Stall {$stallNumber} was approved. Your lease now ends on {$until}.";
+
+        Notification::send($tenant->id, 'renewal', 'Lease renewal approved', $message, route('user.leases'));
+        $this->mailer->sendEmail($tenant->email, $tenant->name, 'Your lease renewal was approved', '<p>Hello ' . e($tenant->name) . ',</p><p>' . e($message) . '</p>', $message);
+        if ($tenant->phone) {
+            $this->sms->sendSms($tenant->phone, "STALLM: {$message}");
+        }
+
+        return $lease;
+    }
+
+    /**
+     * @throws InvalidArgumentException when the reason is empty or there is no pending request.
+     */
+    public function rejectRenewal(StallMapping $lease, User $admin, string $reason): StallMapping
+    {
+        $reason = trim($reason);
+        if ($reason === '') {
+            throw new InvalidArgumentException('Please give a reason for rejecting the renewal.');
+        }
+
+        $lease = DB::transaction(function () use ($lease, $admin, $reason) {
+            $locked = StallMapping::whereKey($lease->id)->lockForUpdate()->firstOrFail();
+            if ($locked->renewal_status !== 'requested') {
+                throw new InvalidArgumentException('There is no pending renewal request for this lease.');
+            }
+
+            $locked->update([
+                'renewal_status' => 'rejected',
+                'renewal_rejection_reason' => $reason,
+            ]);
+
+            AuditLog::record("Rejected renewal for Lease #{$locked->id}", 'StallMapping', $locked->id, $reason, $admin->id);
+
+            return $locked->fresh(['user', 'stall']);
+        });
+
+        $tenant = $lease->user;
+        $stallNumber = $lease->stall?->stall_number;
+        $message = "Your lease renewal request for Stall {$stallNumber} was not approved. Reason: {$reason}";
+
+        Notification::send($tenant->id, 'renewal', 'Lease renewal not approved', $message, route('user.leases'));
+        $this->mailer->sendEmail($tenant->email, $tenant->name, 'Update on your lease renewal', '<p>Hello ' . e($tenant->name) . ',</p><p>' . e($message) . '</p>', $message);
+
+        return $lease;
+    }
 
     /**
      * Create a new stall lease agreement in Pending Initial Payment status.
