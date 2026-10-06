@@ -122,7 +122,14 @@
                         </label>
                         <div class="flex flex-col sm:flex-row gap-2">
                             <button type="button" wire:click="reject" wire:loading.attr="disabled" class="btn btn-outline btn-error rounded-xl font-bold flex-1">Reject</button>
+                            <button type="button" wire:click="approve" wire:loading.attr="disabled" wire:confirm="Approve this application and create the tenant's account?" class="btn btn-success rounded-xl font-bold flex-1">Approve</button>
                         </div>
+                    </div>
+                @elseif($selected->status === 'approved' && $selected->user_id)
+                    <div class="mt-6 border-t border-base-200 pt-4">
+                        <a href="{{ route('admin.mappings', array_filter(['user' => $selected->user_id, 'stall' => $selected->preferred_stall_id])) }}" wire:navigate class="btn btn-primary rounded-xl font-bold w-full">
+                            Assign stall to {{ $selected->user->name ?? 'tenant' }}
+                        </a>
                     </div>
                 @endif
             </div>

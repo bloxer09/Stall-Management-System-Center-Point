@@ -10,6 +10,8 @@ use App\Models\User;
 use DomainException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -86,6 +88,98 @@ class StallApplicationService
         }
 
         return $application;
+    }
+
+    /**
+     * Approve an application: link (or create) the applicant's tenant account.
+     * The admin assigns the stall afterwards in Lease Mappings.
+     *
+     * @return array{application: StallApplication, user: User, created: bool, emailSent: bool}
+     *
+     * @throws DomainException when the application was already reviewed.
+     */
+    public function approve(StallApplication $application, User $admin): array
+    {
+        [$application, $user, $created] = DB::transaction(function () use ($application, $admin) {
+            $locked = $this->lockPending($application);
+            $email = Str::lower(trim($locked->applicant_email));
+
+            $user = User::whereRaw('LOWER(email) = ?', [$email])->first();
+            $created = false;
+
+            if (!$user) {
+                $user = User::create([
+                    'name' => $locked->applicant_name,
+                    'email' => $email,
+                    'phone' => $locked->applicant_phone,
+                    'password' => Hash::make(Str::random(40)),
+                    'role' => 'user',
+                    'email_verified_at' => now(),
+                ]);
+                $created = true;
+            }
+
+            $locked->update([
+                'status' => 'approved',
+                'user_id' => $user->id,
+                'reviewed_by' => $admin->id,
+                'reviewed_at' => now(),
+            ]);
+
+            AuditLog::record(
+                "Approved stall application from {$locked->applicant_name}" . ($created ? ' (tenant account created)' : ' (linked to existing account)'),
+                'StallApplication',
+                $locked->id,
+                null,
+                $admin->id
+            );
+
+            return [$locked, $user, $created];
+        });
+
+        $stallNumber = $application->preferredStall?->stall_number;
+        $stallText = $stallNumber ? ' for Stall ' . $stallNumber : '';
+
+        if ($created) {
+            $link = $this->setPasswordUrl($user);
+            $emailSent = $this->mailer->sendEmail(
+                $user->email,
+                $user->name,
+                'Your stall application was approved — set your password',
+                '<p>Hello ' . e($user->name) . ',</p>'
+                    . '<p>Good news! Your application' . e($stallText) . ' was approved and your tenant account is ready.</p>'
+                    . '<p><a href="' . e($link) . '">Set your password</a> to sign in. This link expires in 72 hours.</p>',
+                "Hello {$user->name}, your application{$stallText} was approved. Set your password here (expires in 72 hours): {$link}"
+            );
+        } else {
+            $emailSent = $this->mailer->sendEmail(
+                $user->email,
+                $user->name,
+                'Your stall application was approved',
+                '<p>Hello ' . e($user->name) . ',</p>'
+                    . '<p>Good news! Your application' . e($stallText) . ' was approved. Sign in to your account to continue.</p>',
+                "Hello {$user->name}, your application{$stallText} was approved. Sign in to your account to continue."
+            );
+            Notification::send($user->id, 'application', 'Application approved', "Your application{$stallText} was approved.", route('user.dashboard'));
+        }
+
+        return ['application' => $application, 'user' => $user, 'created' => $created, 'emailSent' => $emailSent];
+    }
+
+    /**
+     * Signed 72-hour link. The "v" fingerprint changes when the password changes, so a used link stops working.
+     */
+    public function setPasswordUrl(User $user): string
+    {
+        return URL::temporarySignedRoute('account.set-password', now()->addHours(72), [
+            'user' => $user->id,
+            'v' => self::passwordFingerprint($user),
+        ]);
+    }
+
+    public static function passwordFingerprint(User $user): string
+    {
+        return substr(sha1((string) $user->password), 0, 12);
     }
 
     /**

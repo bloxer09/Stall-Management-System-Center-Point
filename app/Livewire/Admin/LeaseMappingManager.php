@@ -67,6 +67,21 @@ class LeaseMappingManager extends Component
         $this->selectedLease = null;
     }
 
+    public function mount(): void
+    {
+        // "Assign stall" from an approved application arrives with ?user=&stall= to pre-fill the form.
+        $userId = (int) request()->query('user');
+        $stallId = (int) request()->query('stall');
+
+        if ($userId && User::whereKey($userId)->where('role', 'user')->exists()) {
+            $this->openModal();
+            $this->user_id = $userId;
+            if ($stallId && Stall::whereKey($stallId)->where('status', 'available')->exists()) {
+                $this->stall_id = $stallId;
+            }
+        }
+    }
+
     public function openModal()
     {
         $this->resetValidation();

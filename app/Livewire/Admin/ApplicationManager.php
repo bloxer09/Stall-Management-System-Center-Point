@@ -40,6 +40,30 @@ class ApplicationManager extends Component
         $this->rejectionReason = '';
     }
 
+    public function approve(StallApplicationService $applications): void
+    {
+        $application = StallApplication::find($this->selectedId);
+        if (!$application) {
+            return;
+        }
+
+        try {
+            $result = $applications->approve($application, auth()->user());
+        } catch (DomainException $e) {
+            $this->dispatch('notify', type: 'error', message: $e->getMessage());
+            return;
+        }
+
+        $message = $result['created']
+            ? 'Approved. A tenant account was created and a set-password link was emailed.'
+            : 'Approved and linked to the applicant\'s existing account.';
+        $this->dispatch('notify', type: 'success', message: $message);
+
+        if (!$result['emailSent']) {
+            $this->dispatch('notify', type: 'warning', message: 'The approval was saved, but the email to the applicant could not be sent.');
+        }
+    }
+
     public function reject(StallApplicationService $applications): void
     {
         $application = StallApplication::find($this->selectedId);

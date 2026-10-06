@@ -25,6 +25,15 @@ Route::get('/stalls', function () {
     return view('pages.stalls');
 })->name('stalls.browse');
 
+// Signature is validated inside the component so an expired link shows a friendly page instead of a 403.
+Route::get('/account/set-password/{user}', function (\Illuminate\Http\Request $request, \App\Models\User $user) {
+    return view('pages.auth.set-password', [
+        'user' => $user,
+        'signatureValid' => $request->hasValidSignature(),
+        'fingerprint' => (string) $request->query('v', ''),
+    ]);
+})->name('account.set-password');
+
 Route::get('/privacy-policy', function () {
     return view('pages.privacy');
 })->name('privacy');
