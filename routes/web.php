@@ -54,6 +54,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/receipt/{id}/pdf', [ReceiptVerificationController::class, 'downloadPdf'])->name('receipt.pdf');
     Route::get('/files/contract/{id}', [FileController::class, 'downloadContract'])->name('file.contract');
     Route::get('/files/ticket-attachment/{id}', [FileController::class, 'downloadTicketAttachment'])->name('file.ticket-attachment');
+    Route::get('/files/application-document/{id}', [FileController::class, 'downloadApplicationDocument'])->name('file.application-document');
 });
 
 /*
@@ -104,6 +105,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/grid-editor', function () {
         return view('pages.admin.grid-editor');
     })->name('grid-editor');
+
+    Route::get('/applications', function () {
+        return view('pages.admin.applications');
+    })->name('applications');
 
     Route::get('/mappings', function () {
         return view('pages.admin.mappings');

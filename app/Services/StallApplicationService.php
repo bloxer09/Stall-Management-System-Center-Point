@@ -2,10 +2,12 @@
 
 namespace App\Services;
 
+use App\Models\AuditLog;
 use App\Models\Notification;
 use App\Models\Stall;
 use App\Models\StallApplication;
 use App\Models\User;
+use DomainException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
@@ -79,10 +81,59 @@ class StallApplicationService
                 'application',
                 'New stall application',
                 "{$application->applicant_name} applied for Stall {$stall->stall_number}",
-                url('/admin/applications')
+                route('admin.applications')
             );
         }
 
         return $application;
+    }
+
+    /**
+     * @throws DomainException when the application was already reviewed.
+     */
+    public function reject(StallApplication $application, User $admin, string $reason): StallApplication
+    {
+        $application = DB::transaction(function () use ($application, $admin, $reason) {
+            $locked = $this->lockPending($application);
+
+            $locked->update([
+                'status' => 'rejected',
+                'rejection_reason' => $reason,
+                'reviewed_by' => $admin->id,
+                'reviewed_at' => now(),
+            ]);
+
+            AuditLog::record("Rejected stall application from {$locked->applicant_name}", 'StallApplication', $locked->id, $reason, $admin->id);
+
+            return $locked;
+        });
+
+        $stallNumber = $application->preferredStall?->stall_number;
+        $this->mailer->sendEmail(
+            $application->applicant_email,
+            $application->applicant_name,
+            'Update on your stall application',
+            '<p>Hello ' . e($application->applicant_name) . ',</p>'
+                . '<p>We are sorry, but your application' . ($stallNumber ? ' for <strong>Stall ' . e($stallNumber) . '</strong>' : '') . ' was not approved.</p>'
+                . '<p><strong>Reason:</strong> ' . e($reason) . '</p>'
+                . '<p>You are welcome to apply for another available stall.</p>',
+            "Hello {$application->applicant_name}, your stall application was not approved. Reason: {$reason}"
+        );
+
+        return $application;
+    }
+
+    /**
+     * Re-read the application under a row lock so two admins cannot review it at once.
+     */
+    protected function lockPending(StallApplication $application): StallApplication
+    {
+        $locked = StallApplication::whereKey($application->id)->lockForUpdate()->firstOrFail();
+
+        if ($locked->status !== 'pending') {
+            throw new DomainException('Application has already been reviewed.');
+        }
+
+        return $locked;
     }
 }

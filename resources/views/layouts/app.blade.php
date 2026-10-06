@@ -128,6 +128,15 @@
                                         <span>Leases & Tenants</span>
                                     </a>
 
+                                    @php $pendingApplications = \App\Models\StallApplication::where('status', 'pending')->count(); @endphp
+                                    <a href="{{ route('admin.applications') }}" wire:navigate class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition {{ request()->routeIs('admin.applications') ? 'bg-primary text-primary-content font-bold shadow-xs' : 'text-base-content/70 hover:text-base-content hover:bg-base-200' }}">
+                                        <svg class="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                                        <span class="flex-1">Applications</span>
+                                        @if($pendingApplications > 0)
+                                            <span class="badge badge-warning badge-sm font-bold">{{ $pendingApplications }}</span>
+                                        @endif
+                                    </a>
+
                                     <div class="pt-4 pb-1.5 px-3 text-[10px] font-bold text-base-content/50 uppercase tracking-wider">Finance & Operations</div>
 
                                     <a href="{{ route('admin.payments') }}" wire:navigate class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition {{ request()->routeIs('admin.payments') ? 'bg-primary text-primary-content font-bold shadow-xs' : 'text-base-content/70 hover:text-base-content hover:bg-base-200' }}">
