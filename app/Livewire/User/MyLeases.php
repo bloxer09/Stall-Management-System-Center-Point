@@ -5,6 +5,9 @@ namespace App\Livewire\User;
 use App\Models\AuditLog;
 use App\Models\StallMapping;
 use App\Services\FileUploadService;
+use App\Services\LeaseService;
+use Illuminate\Support\Carbon;
+use InvalidArgumentException;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
@@ -25,6 +28,57 @@ class MyLeases extends Component
     public $selectedStallId = null;
     public $newStallImage = null;
     public $existingStallImage = null;
+
+    // Lease Renewal Request Modal State
+    public ?int $renewalLeaseId = null;
+    public string $renewalOption = '6m';
+    public string $renewalCustomDate = '';
+    public string $renewalNote = '';
+
+    public function openRenewal(int $id, LeaseService $leases): void
+    {
+        $this->resetValidation();
+        $lease = StallMapping::where('user_id', auth()->id())->find($id);
+
+        $this->renewalLeaseId = $lease && $leases->isRenewalEligible($lease) ? $lease->id : null;
+        $this->renewalOption = '6m';
+        $this->renewalCustomDate = '';
+        $this->renewalNote = '';
+    }
+
+    public function closeRenewal(): void
+    {
+        $this->renewalLeaseId = null;
+    }
+
+    public function submitRenewal(LeaseService $leases): void
+    {
+        $lease = $this->renewalLeaseId
+            ? StallMapping::where('user_id', auth()->id())->find($this->renewalLeaseId)
+            : null;
+        if (!$lease) {
+            return;
+        }
+
+        if ($this->renewalOption === 'custom') {
+            $this->validate(['renewalCustomDate' => ['required', 'date']], [], ['renewalCustomDate' => 'new end date']);
+            $requestedEnd = Carbon::parse($this->renewalCustomDate);
+        } else {
+            $requestedEnd = $this->renewalOption === '1y'
+                ? $lease->end_date->copy()->addYear()
+                : $lease->end_date->copy()->addMonths(6);
+        }
+
+        try {
+            $leases->requestRenewal($lease, auth()->user(), $requestedEnd, mb_substr($this->renewalNote, 0, 500));
+        } catch (InvalidArgumentException $e) {
+            $this->addError('renewal', $e->getMessage());
+            return;
+        }
+
+        $this->renewalLeaseId = null;
+        $this->dispatch('notify', type: 'success', message: 'Renewal request sent. The office will review it.');
+    }
 
     public function updatingSearch()
     {
@@ -127,8 +181,18 @@ class MyLeases extends Component
             }
         }
 
+        $leases = $query->latest()->paginate(8);
+        $leaseService = app(LeaseService::class);
+
         return view('livewire.user.my-leases', [
-            'leases' => $query->latest()->paginate(8),
+            'leases' => $leases,
+            'renewableIds' => $leases->getCollection()
+                ->filter(fn (StallMapping $lease) => $leaseService->isRenewalEligible($lease))
+                ->pluck('id')
+                ->all(),
+            'renewalLease' => $this->renewalLeaseId
+                ? StallMapping::with('stall')->where('user_id', auth()->id())->find($this->renewalLeaseId)
+                : null,
         ]);
     }
 }

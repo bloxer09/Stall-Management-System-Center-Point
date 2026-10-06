@@ -75,6 +75,16 @@
                                         Concluded
                                     </span>
                                 @endif
+
+                                @if($lease->is_active && $lease->renewal_status === 'requested')
+                                    <div class="text-[11px] font-bold text-warning mt-1">Renewal requested — awaiting review</div>
+                                    <div class="text-[10px] text-base-content/60">Until {{ $lease->requested_end_date?->format('M d, Y') }}</div>
+                                @elseif($lease->is_active && $lease->renewal_status === 'rejected')
+                                    <div class="text-[11px] font-bold text-error mt-1">Renewal not approved</div>
+                                    <div class="text-[10px] text-base-content/60 max-w-[220px] whitespace-normal">{{ $lease->renewal_rejection_reason }}</div>
+                                @elseif($lease->is_active && $lease->renewal_status === 'approved')
+                                    <div class="text-[11px] font-bold text-success mt-1">Renewed until {{ $lease->end_date->format('M d, Y') }}</div>
+                                @endif
                             </td>
                             <td class="text-right">
                                 <div class="flex items-center justify-end gap-1.5">
@@ -82,6 +92,11 @@
                                         <a href="{{ route('user.payments') }}" wire:navigate class="btn btn-warning btn-xs rounded-xl font-black text-slate-900 shadow-xs">
                                             Pay to Activate
                                         </a>
+                                    @endif
+                                    @if(in_array($lease->id, $renewableIds, true))
+                                        <button wire:click="openRenewal({{ $lease->id }})" class="btn btn-primary btn-xs rounded-xl font-bold">
+                                            Request renewal
+                                        </button>
                                     @endif
                                     <button wire:click="openDetailModal({{ $lease->id }})" class="btn btn-ghost btn-xs text-primary font-bold rounded-xl">
                                         View Details
@@ -203,6 +218,50 @@
             </div>
             <form method="dialog" class="modal-backdrop"><button wire:click="closeDetailModal">close</button></form>
         </dialog>
+    @endif
+
+    <!-- Modal: Lease Renewal Request -->
+    @if($renewalLease)
+        <div class="modal modal-open" role="dialog" aria-modal="true">
+            <div class="modal-box rounded-3xl max-w-md space-y-4">
+                <div>
+                    <h3 class="font-black text-xl">Request lease renewal</h3>
+                    <p class="text-xs text-base-content/60 mt-1">
+                        Stall #{{ $renewalLease->stall->stall_number }} &middot; current lease ends {{ $renewalLease->end_date->format('M d, Y') }}
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2">
+                    @foreach(['6m' => '+6 months', '1y' => '+1 year', 'custom' => 'Custom date'] as $value => $label)
+                        <label class="btn btn-sm rounded-xl font-bold {{ $renewalOption === $value ? 'btn-primary' : 'btn-outline' }}">
+                            <input type="radio" wire:model.live="renewalOption" value="{{ $value }}" class="hidden">
+                            {{ $label }}
+                        </label>
+                    @endforeach
+                </div>
+
+                @if($renewalOption === 'custom')
+                    <label class="form-control w-full">
+                        <span class="label-text text-xs font-bold">New end date</span>
+                        <input type="date" wire:model="renewalCustomDate" min="{{ $renewalLease->end_date->copy()->addDay()->toDateString() }}" class="input input-bordered input-sm rounded-xl">
+                    </label>
+                @endif
+                @error('renewalCustomDate') <span class="text-error text-xs">{{ $message }}</span> @enderror
+
+                <label class="form-control w-full">
+                    <span class="label-text text-xs font-bold">Note to the office (optional)</span>
+                    <textarea wire:model="renewalNote" rows="2" maxlength="500" class="textarea textarea-bordered rounded-xl text-sm"></textarea>
+                </label>
+
+                @error('renewal') <div class="alert alert-error rounded-2xl text-sm">{{ $message }}</div> @enderror
+
+                <div class="modal-action">
+                    <button type="button" wire:click="closeRenewal" class="btn btn-ghost rounded-xl font-bold">Cancel</button>
+                    <button type="button" wire:click="submitRenewal" wire:loading.attr="disabled" class="btn btn-primary rounded-xl font-bold">Send request</button>
+                </div>
+            </div>
+            <div class="modal-backdrop" wire:click="closeRenewal"></div>
+        </div>
     @endif
 
     <!-- Modal 2: Stall Photo Upload Modal -->

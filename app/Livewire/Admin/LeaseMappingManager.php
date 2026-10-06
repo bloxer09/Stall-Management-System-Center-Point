@@ -8,6 +8,8 @@ use App\Models\StallMapping;
 use App\Models\User;
 use App\Services\FileUploadService;
 use App\Services\InvoiceService;
+use App\Services\LeaseService;
+use Illuminate\Support\Carbon;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
@@ -24,6 +26,10 @@ class LeaseMappingManager extends Component
     // Lease Detail & Actions Modal
     public $selectedLease = null;
     public $showDetailModal = false;
+
+    // Renewal review (detail modal)
+    public string $renewalEndDate = '';
+    public string $renewalRejectReason = '';
 
     public function updatingSearch()
     {
@@ -57,8 +63,43 @@ class LeaseMappingManager extends Component
 
     public function openDetailModal($id)
     {
+        $this->resetValidation();
         $this->selectedLease = StallMapping::with(['user', 'stall.location', 'initialInvoice'])->findOrFail($id);
+        $this->renewalEndDate = $this->selectedLease->requested_end_date?->toDateString() ?? '';
+        $this->renewalRejectReason = '';
         $this->showDetailModal = true;
+    }
+
+    public function approveRenewal(int $id, LeaseService $leaseService): void
+    {
+        $lease = StallMapping::findOrFail($id);
+        $this->validate(['renewalEndDate' => ['required', 'date']], [], ['renewalEndDate' => 'new end date']);
+
+        try {
+            $leaseService->approveRenewal($lease, auth()->user(), Carbon::parse($this->renewalEndDate));
+        } catch (\InvalidArgumentException $e) {
+            $this->addError('renewalEndDate', $e->getMessage());
+            return;
+        }
+
+        $this->dispatch('notify', type: 'success', message: 'Renewal approved. The tenant was notified.');
+        $this->closeDetailModal();
+    }
+
+    public function rejectRenewal(int $id, LeaseService $leaseService): void
+    {
+        $lease = StallMapping::findOrFail($id);
+        $this->validate(['renewalRejectReason' => ['required', 'string', 'max:500']], [], ['renewalRejectReason' => 'reason']);
+
+        try {
+            $leaseService->rejectRenewal($lease, auth()->user(), $this->renewalRejectReason);
+        } catch (\InvalidArgumentException $e) {
+            $this->addError('renewalRejectReason', $e->getMessage());
+            return;
+        }
+
+        $this->dispatch('notify', type: 'success', message: 'Renewal rejected. The tenant was notified.');
+        $this->closeDetailModal();
     }
 
     public function closeDetailModal()
@@ -163,6 +204,8 @@ class LeaseMappingManager extends Component
                 $query->where('payment_status', 'pending_initial');
             } elseif ($this->statusFilter === 'inactive') {
                 $query->where('is_active', false)->where('payment_status', '!=', 'pending_initial');
+            } elseif ($this->statusFilter === 'renewal_requested') {
+                $query->where('is_active', true)->where('renewal_status', 'requested');
             }
         }
 

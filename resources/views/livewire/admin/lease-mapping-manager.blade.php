@@ -40,6 +40,7 @@
                     <option value="active">Good Standing (Active)</option>
                     <option value="pending">Pending Initial Payment</option>
                     <option value="inactive">Inactive / Terminated</option>
+                    <option value="renewal_requested">Renewal Requested</option>
                 </select>
             </div>
         </div>
@@ -101,6 +102,9 @@
                                     <span class="badge badge-sm font-bold uppercase badge-ghost text-base-content/60">
                                         Terminated
                                     </span>
+                                @endif
+                                @if($map->is_active && $map->renewal_status === 'requested')
+                                    <span class="badge badge-sm font-bold uppercase badge-warning mt-1">Renewal requested</span>
                                 @endif
                             </td>
                             <td class="text-right">
@@ -246,8 +250,36 @@
                             <span>✓</span> Active &bull; In Good Standing
                         </div>
                         <p class="text-base-content/80 text-[11px]">
-                            Lease is automatically renewed and kept active as monthly bills are settled.
+                            Lease stays in good standing while monthly bills are settled. Extending the end date requires an approved renewal.
                         </p>
+                    </div>
+                @endif
+
+                @if($selectedLease->is_active && $selectedLease->renewal_status === 'requested')
+                    <div class="p-3.5 bg-warning/10 border border-warning/30 rounded-2xl text-xs space-y-3">
+                        <div>
+                            <div class="font-black text-warning uppercase tracking-wide text-[11px]">Renewal requested</div>
+                            <p class="text-base-content/80 text-[11px] mt-1">
+                                Tenant asked to extend until <strong>{{ $selectedLease->requested_end_date?->format('M d, Y') }}</strong>.
+                            </p>
+                            @if($selectedLease->renewal_note)
+                                <p class="text-base-content/70 text-[11px] italic mt-1">“{{ $selectedLease->renewal_note }}”</p>
+                            @endif
+                        </div>
+                        <label class="form-control w-full">
+                            <span class="label-text text-[11px] font-bold">New end date</span>
+                            <input type="date" wire:model="renewalEndDate" min="{{ $selectedLease->end_date->copy()->addDay()->toDateString() }}" class="input input-bordered input-sm rounded-xl">
+                            @error('renewalEndDate') <span class="text-error text-[11px] mt-1">{{ $message }}</span> @enderror
+                        </label>
+                        <label class="form-control w-full">
+                            <span class="label-text text-[11px] font-bold">Reason (required to reject)</span>
+                            <textarea wire:model="renewalRejectReason" rows="2" maxlength="500" class="textarea textarea-bordered rounded-xl text-xs"></textarea>
+                            @error('renewalRejectReason') <span class="text-error text-[11px] mt-1">{{ $message }}</span> @enderror
+                        </label>
+                        <div class="flex gap-2">
+                            <button type="button" wire:click="rejectRenewal({{ $selectedLease->id }})" class="btn btn-outline btn-error btn-sm rounded-xl font-bold flex-1">Reject</button>
+                            <button type="button" wire:click="approveRenewal({{ $selectedLease->id }})" class="btn btn-success btn-sm rounded-xl font-bold flex-1">Approve renewal</button>
+                        </div>
                     </div>
                 @endif
 
