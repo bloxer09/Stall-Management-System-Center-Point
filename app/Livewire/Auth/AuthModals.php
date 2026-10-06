@@ -8,6 +8,8 @@ use App\Services\SmsService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -172,18 +174,30 @@ class AuthModals extends Component
 
     public function processLogin()
     {
+        $this->loginEmail = trim($this->loginEmail);
+
         $this->validate([
             'loginEmail' => 'required|email',
             'loginPassword' => 'required|string',
         ]);
 
+        $throttleKey = 'login:' . Str::lower($this->loginEmail) . '|' . request()->ip();
+
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            $this->addError('loginEmail', "Too many login attempts. Please try again in {$seconds} seconds.");
+            return;
+        }
+
         $user = User::where('email', $this->loginEmail)->first();
 
         if (!$user || !Hash::check($this->loginPassword, $user->password)) {
+            RateLimiter::hit($throttleKey, 60);
             $this->addError('loginEmail', 'The provided credentials do not match our records.');
             return;
         }
 
+        RateLimiter::clear($throttleKey);
         Auth::login($user, $this->remember);
         session()->regenerate();
         $this->forceCloseModal();
