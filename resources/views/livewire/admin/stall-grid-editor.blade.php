@@ -42,13 +42,15 @@
             <div class="flex items-center justify-between">
                 <span class="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    Unassigned Stalls (Select a stall then click an empty cell below to place):
+                    Unassigned Stalls (drag a stall onto an empty cell, or select it and click a cell):
                 </span>
                 <span class="badge badge-primary badge-sm font-bold">{{ count($unassignedStalls) }} Unassigned</span>
             </div>
             <div class="flex flex-wrap gap-2 pt-1">
                 @foreach($unassignedStalls as $st)
-                <button wire:click="$set('selectedStallId', {{ $st->id }})" class="btn btn-sm rounded-xl text-xs font-bold transition {{ $selectedStallId == $st->id ? 'btn-primary shadow-xs ring-2 ring-primary ring-offset-2' : 'btn-outline border-base-300 bg-base-100 hover:bg-base-200' }}">
+                <button wire:click="$set('selectedStallId', {{ $st->id }})" draggable="true"
+                    @dragstart="$event.dataTransfer.setData('text/plain', '{{ $st->id }}'); $event.dataTransfer.effectAllowed = 'move'"
+                    class="cursor-grab active:cursor-grabbing btn btn-sm rounded-xl text-xs font-bold transition {{ $selectedStallId == $st->id ? 'btn-primary shadow-xs ring-2 ring-primary ring-offset-2' : 'btn-outline border-base-300 bg-base-100 hover:bg-base-200' }}">
                     Stall {{ $st->stall_number }} (₱{{ number_format($st->price, 2) }})
                 </button>
                 @endforeach
@@ -62,7 +64,19 @@
                 @for($r = 1; $r <= $gridRows; $r++)
                     @for($c = 1; $c <= $gridCols; $c++)
                         @php $key = "{$r}_{$c}"; $stall = $gridStalls[$key] ?? null; @endphp
-                        <div wire:click="placeStallOnGrid({{ $r }}, {{ $c }})" class="h-28 p-3 rounded-2xl border-2 border-dashed flex flex-col justify-between items-center transition cursor-pointer relative group {{ $stall ? ($stall->status === 'occupied' ? 'bg-info/10 border-info text-info-content shadow-xs' : ($stall->status === 'reserved' ? 'bg-warning/10 border-warning shadow-xs' : ($stall->status === 'maintenance' ? 'bg-error/10 border-error shadow-xs' : 'bg-primary/10 border-primary shadow-xs'))) : 'border-base-300 hover:border-primary hover:bg-base-200/50 bg-base-200/20' }}">
+                        <div wire:click="placeStallOnGrid({{ $r }}, {{ $c }})"
+                            @if(!$stall)
+                                x-data="{ over: false }"
+                                @dragover.prevent="over = true"
+                                @dragleave="over = false"
+                                @drop.prevent="over = false; $wire.moveStall(parseInt($event.dataTransfer.getData('text/plain')), {{ $r }}, {{ $c }})"
+                                :class="over && 'ring-2 ring-primary bg-primary/10'"
+                            @else
+                                draggable="true"
+                                @dragstart="$event.dataTransfer.setData('text/plain', '{{ $stall->id }}'); $event.dataTransfer.effectAllowed = 'move'"
+                            @endif
+                            wire:key="cell-{{ $r }}-{{ $c }}"
+                            class="h-28 p-3 rounded-2xl border-2 border-dashed flex flex-col justify-between items-center transition cursor-pointer relative group {{ $stall ? ($stall->status === 'occupied' ? 'bg-info/10 border-info text-info-content shadow-xs' : ($stall->status === 'reserved' ? 'bg-warning/10 border-warning shadow-xs' : ($stall->status === 'maintenance' ? 'bg-error/10 border-error shadow-xs' : 'bg-primary/10 border-primary shadow-xs'))) : 'border-base-300 hover:border-primary hover:bg-base-200/50 bg-base-200/20' }}">
                             <span class="text-[10px] text-base-content/40 font-mono self-start font-bold">R{{ $r }}C{{ $c }}</span>
                             @if($stall)
                             <div class="text-center w-full">
@@ -71,7 +85,7 @@
                                     {{ $stall->status }}
                                 </span>
                             </div>
-                            <button wire:click.stop="removeStallFromGrid({{ $stall->id }})" title="Remove from grid cell" class="absolute top-1.5 right-1.5 btn btn-ghost btn-xs btn-circle text-error opacity-0 group-hover:opacity-100 transition hover:bg-error/10">
+                            <button wire:click.stop="removeStallFromGrid({{ $stall->id }})" title="Remove from grid cell" aria-label="Remove Stall {{ $stall->stall_number }} from grid" class="absolute top-1.5 right-1.5 btn btn-ghost btn-xs btn-circle text-error opacity-0 group-hover:opacity-100 transition hover:bg-error/10">
                                 ✕
                             </button>
                             @else

@@ -19,7 +19,7 @@
 - **Private Document Protection**: IDOR-guarded file endpoints for lease contracts and ticket attachments (`FileController`).
 
 ### 🗺️ Visual Stall & Floor Plan Management
-- **Interactive Floor Plan Grid Editor**: Reactive Livewire component (`Admin\StallGridEditor`) supporting drag-and-drop & click-to-position stall grid layouts per floor.
+- **Interactive Floor Plan Grid Editor**: Reactive Livewire component (`Admin\StallGridEditor`) supporting drag-and-drop or click-to-place stall layouts per floor, with server-side bounds and floor-ownership checks.
 - **Stall Lifecycle**: State tracking (`available`, `occupied`, `maintenance`) with custom monthly pricing and floor assignments.
 
 ### 📜 Tenant Lease & Allocation Management

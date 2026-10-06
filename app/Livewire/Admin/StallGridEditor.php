@@ -39,33 +39,70 @@ class StallGridEditor extends Component
         })->get();
     }
 
+    /**
+     * Click-to-place: put the stall chosen from the unassigned list into a cell.
+     */
     public function placeStallOnGrid($row, $col)
     {
         if (!$this->selectedStallId) return;
 
-        $occupiedByAnother = Stall::where('location_id', $this->selectedLocationId)
+        if ($this->moveStall((int) $this->selectedStallId, (int) $row, (int) $col)) {
+            $this->selectedStallId = null;
+        }
+    }
+
+    /**
+     * Drag-and-drop: move an unplaced or already placed stall into an empty cell of this floor.
+     */
+    public function moveStall(int $stallId, int $row, int $col): bool
+    {
+        $stall = Stall::find($stallId);
+        if (!$stall) {
+            return false;
+        }
+
+        if ($error = $this->validatePlacement($stall, $row, $col)) {
+            $this->dispatch('notify', type: 'error', message: $error);
+            return false;
+        }
+
+        $stall->update([
+            'location_id' => $this->selectedLocationId,
+            'grid_row' => $row,
+            'grid_col' => $col,
+        ]);
+
+        $this->dispatch('notify', type: 'success', message: "Placed Stall {$stall->stall_number} at Row {$row}, Col {$col}");
+        $this->updatedSelectedLocationId($this->selectedLocationId);
+
+        return true;
+    }
+
+    /**
+     * Server-side checks shared by click and drag placement; the browser can send any numbers.
+     */
+    private function validatePlacement(Stall $stall, int $row, int $col): ?string
+    {
+        $location = StallLocation::find($this->selectedLocationId);
+        if (!$location) {
+            return 'Choose a floor first.';
+        }
+
+        if ($row < 1 || $row > (int) $location->grid_rows || $col < 1 || $col > (int) $location->grid_cols) {
+            return "That cell is outside this floor's grid.";
+        }
+
+        if ($stall->location_id !== null && (int) $stall->location_id !== (int) $location->id) {
+            return 'That stall belongs to another floor.';
+        }
+
+        $occupied = Stall::where('location_id', $location->id)
             ->where('grid_row', $row)
             ->where('grid_col', $col)
-            ->where('id', '!=', $this->selectedStallId)
+            ->where('id', '!=', $stall->id)
             ->exists();
 
-        if ($occupiedByAnother) {
-            $this->dispatch('notify', type: 'error', message: "Cell (Row {$row}, Col {$col}) is already occupied by another stall.");
-            return;
-        }
-
-        $stall = Stall::find($this->selectedStallId);
-        if ($stall) {
-            $stall->update([
-                'location_id' => $this->selectedLocationId,
-                'grid_row' => $row,
-                'grid_col' => $col,
-            ]);
-
-            $this->dispatch('notify', type: 'success', message: "Assigned Stall {$stall->stall_number} to Row {$row}, Col {$col}");
-            $this->selectedStallId = null;
-            $this->updatedSelectedLocationId($this->selectedLocationId);
-        }
+        return $occupied ? "Cell (Row {$row}, Col {$col}) is already occupied by another stall." : null;
     }
 
     public function removeStallFromGrid($stallId)
