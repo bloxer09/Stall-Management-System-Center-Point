@@ -6,7 +6,7 @@
 [![Payment Gateway](https://img.shields.io/badge/Payments-PayMongo-00D2FF?style=flat-square)](https://paymongo.com)
 [![Tests](https://img.shields.io/badge/PHPUnit-100%25%20Passing-brightgreen?style=flat-square&logo=phpunit&logoColor=white)](https://phpunit.de)
 
-**STALLM** is a modern commercial stall management web application built exclusively on **Laravel 13.x** and **Livewire 3**. It streamlines floor plan layout design, tenant lease allocations, automated monthly invoicing, multi-channel online payment checkout via PayMongo, real-time support chat, and metered utility billing.
+**STALLM** is a modern commercial stall management web application built exclusively on **Laravel 13.x** and **Livewire 3**. It streamlines floor plan layout design, tenant lease allocations, automated monthly invoicing, multi-channel online payment checkout via PayMongo, and real-time support chat.
 
 ---
 

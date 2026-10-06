@@ -19,9 +19,11 @@ return new class extends Migration {
             $table->index(['entity_type', 'entity_id'], 'idx_audit_entity');
         });
 
-        Schema::table('utility_readings', function (Blueprint $table) {
-            $table->index(['stall_id', 'type'], 'idx_utility_stall_type');
-        });
+        if (Schema::hasTable('utility_readings')) {
+            Schema::table('utility_readings', function (Blueprint $table) {
+                $table->index(['stall_id', 'type'], 'idx_utility_stall_type');
+            });
+        }
     }
 
     public function down(): void
@@ -29,6 +31,8 @@ return new class extends Migration {
         Schema::table('notifications', fn($t) => $t->dropIndex('idx_notifications_user_read'));
         Schema::table('two_factor_codes', fn($t) => $t->dropIndex('idx_2fa_expires_at'));
         Schema::table('audit_logs', fn($t) => $t->dropIndex('idx_audit_entity'));
-        Schema::table('utility_readings', fn($t) => $t->dropIndex('idx_utility_stall_type'));
+        if (Schema::hasTable('utility_readings')) {
+            Schema::table('utility_readings', fn($t) => $t->dropIndex('idx_utility_stall_type'));
+        }
     }
 };

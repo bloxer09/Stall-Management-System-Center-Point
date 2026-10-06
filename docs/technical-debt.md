@@ -11,7 +11,7 @@
 ## Medium-term improvements
 
 - Replace duplicated authentication (route login, modal login, unused `LoginForm`) and duplicated navigation with one supported flow.
-- Move lease/payment/utility transitions into transaction-backed actions and add policies.
+- Move lease/payment transitions into transaction-backed actions and add policies.
 - Queue external notifications/PDF/report work and add retry/delivery state.
 - Establish a private document service, image pipeline, retention policy, and safe log viewer.
 - Consolidate Vite/DaisyUI/local legacy assets and standardize UI primitives.

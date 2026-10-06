@@ -90,17 +90,17 @@ Authorization and XSS fixes are code-only. Webhook schema changes must be additi
 
 1. Write a data-profile script/report before adding constraints: duplicate active mappings, overlapping leases, duplicated grid coordinates/readings, duplicate provider session IDs, and payment rows without a valid billing purpose.
 2. Define a billing model decision record: retain `payments` as invoices, or introduce immutable invoices/line items and payment attempts. The recommended model separates invoice, line item, checkout attempt, provider event, and settlement.
-3. Move lease allocation, termination, renewal approval, utility billing, and monthly invoice generation into transaction-backed actions under `app/Actions` or focused services.
+3. Move lease allocation, termination, renewal approval, and monthly invoice generation into transaction-backed actions under `app/Actions` or focused services.
 4. Add forward-only migrations after data cleanup:
    - query-shaped indexes for active lease scans and payment due-state queries;
-   - unique utility reading period and floor-grid position rules;
+   - unique floor-grid position rules;
    - provider event/session idempotency keys;
    - a billing-period identity that prevents duplicate monthly rent invoices.
 5. Refactor the invoice command into an idempotent, set-oriented process; record counts, failures, and a run identifier.
 
 ### Files / systems
 
-New migrations and tests; `StallMapping`, `Stall`, `Payment`, `UtilityReading`; lease/payment/utility Livewire components; `GenerateMonthlyInvoices`; seeders; potentially new action/value-object classes. The exact constraint implementation must be selected after profiling the target MySQL/MariaDB version—do not assume partial-index support.
+New migrations and tests; `StallMapping`, `Stall`, `Payment`; lease/payment Livewire components; `GenerateMonthlyInvoices`; seeders; potentially new action/value-object classes. The exact constraint implementation must be selected after profiling the target MySQL/MariaDB version—do not assume partial-index support.
 
 ### Exit criteria
 

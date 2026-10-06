@@ -23,7 +23,7 @@ The public catalogue queries available stalls. A visitor submits `StallApplicati
 
 ### Lease, transaction, and reporting
 
-Staff create a `StallMapping`, mark its stall occupied, and may attach a contract. Monthly scheduling creates pending `Payment` rows. Tenants select invoices, receive a PayMongo checkout URL, and a webhook marks matching session IDs paid. Utility readings create additional pending payments. Analytics/reports aggregate stall and payment rows, generate CSV/PDF, and render Chart.js data.
+Staff create a `StallMapping`, mark its stall occupied, and may attach a contract. Monthly scheduling creates pending `Payment` rows. Tenants select invoices, receive a PayMongo checkout URL, and a webhook marks matching session IDs paid. Analytics/reports aggregate stall and payment rows, generate CSV/PDF, and render Chart.js data.
 
 ## Integration boundaries and bottlenecks
 
