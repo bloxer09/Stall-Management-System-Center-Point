@@ -140,15 +140,19 @@ class AnalyticsDashboard extends Component
         }
 
         // 5. Payment Gateway / Method Split
-        $gatewayCounts = PaymentTransaction::where('status', 'paid')
+        // Completed transactions are stored as "successful" (the table has no "paid" status).
+        $gatewayCounts = PaymentTransaction::where('status', 'successful')
             ->selectRaw('gateway, COUNT(*) as count, SUM(amount) as total')
             ->groupBy('gateway')
             ->get();
 
+        // Office payments are recorded as "cash" (manual entry) or "office_cash" (mark as paid);
+        // every other gateway is an online PayMongo method.
+        $cashGateways = ['cash', 'office_cash'];
         $cashTotal = 0;
         $onlineTotal = 0;
         foreach ($gatewayCounts as $gw) {
-            if (strtolower($gw->gateway ?? '') === 'cash') {
+            if (in_array(strtolower($gw->gateway ?? ''), $cashGateways, true)) {
                 $cashTotal += (float) $gw->total;
             } else {
                 $onlineTotal += (float) $gw->total;
