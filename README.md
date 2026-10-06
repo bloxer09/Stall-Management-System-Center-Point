@@ -102,6 +102,24 @@ Visit `http://127.0.0.1:8000` in your web browser.
 
 ---
 
+## 🎭 Demo Data & Accounts
+
+Load a realistic demo dataset (3 floors, 30 stalls, 4 tenants with leases, 6 months of payments, an overdue bill, tickets, and stall applications). It is safe to run more than once and refuses to run when `APP_ENV=production`.
+
+```bash
+php artisan db:seed --class=DemoSeeder
+```
+
+| Account | Email | Password | What to show |
+| :--- | :--- | :--- | :--- |
+| Admin | `admin@stallm.com` | `password` | Needs-attention panel, applications, renewals |
+| Tenant 1 | `tenant1@demo.test` | `password` | Lease ends in 45 days → Request renewal |
+| Tenant 2 | `tenant2@demo.test` | `password` | Renewal already requested |
+| Tenant 3 | `tenant3@demo.test` | `password` | Bill due next week |
+| Tenant 4 | `tenant4@demo.test` | `password` | Overdue bill |
+
+Before a live demo, run `php artisan cache:clear` so login and application rate limits from rehearsals are reset.
+
 ## ⏰ Cron Scheduler Setup (Production)
 
 Configure a server cron job to execute the Laravel Scheduler every minute:
