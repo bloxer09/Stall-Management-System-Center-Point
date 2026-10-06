@@ -2,14 +2,37 @@
 
 namespace App\Livewire\User;
 
+use App\Livewire\Concerns\RequestsLeaseRenewal;
 use App\Models\Invoice;
+use App\Models\StallApplication;
 use App\Models\StallMapping;
 use App\Models\Ticket;
+use App\Services\LeaseService;
 use Carbon\Carbon;
 use Livewire\Component;
 
 class UserDashboard extends Component
 {
+    use RequestsLeaseRenewal;
+
+    /**
+     * Applications the tenant made, matched by linked account or by the same email (any casing),
+     * so someone who registered first and applied later still sees their status.
+     */
+    private function myApplications()
+    {
+        $user = auth()->user();
+
+        return StallApplication::with('preferredStall')
+            ->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                    ->orWhereRaw('LOWER(applicant_email) = ?', [strtolower($user->email)]);
+            })
+            ->latest()
+            ->limit(5)
+            ->get();
+    }
+
     public function render()
     {
         $userId = auth()->id();
@@ -73,6 +96,12 @@ class UserDashboard extends Component
             'openTickets' => $openTickets,
             'openTicketsCount' => $openTicketsCount,
             'totalTicketsCount' => $totalTicketsCount,
+            'renewableIds' => $assignedLeases
+                ->filter(fn (StallMapping $lease) => app(LeaseService::class)->isRenewalEligible($lease))
+                ->pluck('id')
+                ->all(),
+            'renewalLease' => $this->renewalLease(),
+            'myApplications' => $this->myApplications(),
         ]);
     }
 }

@@ -159,6 +159,20 @@
                                 <span class="text-success font-bold text-[11px]">Active &bull; Continuous Good Standing</span>
                             @endif
                         </div>
+                        @if($lease->is_active)
+                            @php $daysLeft = (int) now()->startOfDay()->diffInDays($lease->end_date, false); @endphp
+                            <div class="flex justify-between items-center">
+                                <span class="text-base-content/60">Lease ends:</span>
+                                <span class="font-bold {{ $daysLeft <= 60 ? 'text-warning' : 'text-base-content/90' }}">
+                                    {{ $daysLeft > 0 ? "Ends in {$daysLeft} days" : ($daysLeft === 0 ? 'Ends today' : 'Ended') }}
+                                </span>
+                            </div>
+                            @if($lease->renewal_status === 'requested')
+                                <div class="text-[11px] font-bold text-warning">Renewal requested — awaiting review</div>
+                            @elseif($lease->renewal_status === 'rejected')
+                                <div class="text-[11px] font-bold text-error">Renewal not approved: <span class="font-medium">{{ $lease->renewal_rejection_reason }}</span></div>
+                            @endif
+                        @endif
                     </div>
 
                     <div class="pt-2 border-t border-base-200 flex items-center justify-between">
@@ -175,9 +189,14 @@
                             <span class="text-xs text-base-content/50 font-semibold">Active Unit</span>
                         @endif
 
-                        <a href="{{ route('user.leases') }}" wire:navigate class="btn btn-ghost btn-xs text-primary font-bold rounded-xl">
-                            Details &rarr;
-                        </a>
+                        <div class="flex items-center gap-1">
+                            @if(in_array($lease->id, $renewableIds, true))
+                                <button type="button" wire:click="openRenewal({{ $lease->id }})" class="btn btn-primary btn-xs rounded-xl font-bold">Request renewal</button>
+                            @endif
+                            <a href="{{ route('user.leases') }}" wire:navigate class="btn btn-ghost btn-xs text-primary font-bold rounded-xl">
+                                Details &rarr;
+                            </a>
+                        </div>
                     </div>
                 </div>
             @empty
@@ -185,14 +204,63 @@
                     <div class="w-12 h-12 rounded-2xl bg-base-200 text-base-content/40 flex items-center justify-center mx-auto">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                     </div>
-                    <h4 class="font-extrabold text-sm text-base-content">No active stall leases found</h4>
+                    <h4 class="font-extrabold text-sm text-base-content">You don't have a stall yet</h4>
                     <p class="text-xs text-base-content/60 max-w-sm mx-auto">
-                        You do not have any stall space assigned yet. Contact the administration office to lease a commercial retail space.
+                        Browse available stalls and apply online — we'll email you when it's reviewed.
                     </p>
+                    <div>
+                        <a href="{{ route('stalls.browse') }}" wire:navigate class="btn btn-primary btn-sm rounded-xl font-bold">Browse available stalls</a>
+                    </div>
                 </div>
             @endforelse
         </div>
     </div>
+
+    @if($nextDueInvoice || $myApplications->isNotEmpty())
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        @if($nextDueInvoice)
+            <div class="card bg-base-100 border {{ $nextDueInvoice->isOverdue() ? 'border-error/40' : 'border-base-300' }} rounded-3xl p-5 shadow-sm space-y-3">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-extrabold text-sm text-base-content">Next bill due</h3>
+                    @if($nextDueInvoice->isOverdue())
+                        <span data-overdue-badge class="badge badge-error text-white badge-sm font-bold uppercase">Overdue</span>
+                    @endif
+                </div>
+                <div class="flex items-end justify-between gap-3">
+                    <div>
+                        <div class="text-2xl font-black text-base-content">₱{{ number_format($nextDueInvoice->total_amount, 2) }}</div>
+                        <div class="text-xs text-base-content/60">
+                            Stall {{ $nextDueInvoice->stall->stall_number ?? '' }} &middot; due {{ $nextDueInvoice->due_date?->format('M d, Y') }}
+                        </div>
+                    </div>
+                    <a href="{{ route('user.payments') }}" wire:navigate class="btn btn-primary btn-sm rounded-xl font-bold">Pay now</a>
+                </div>
+            </div>
+        @endif
+
+        @if($myApplications->isNotEmpty())
+            <div class="card bg-base-100 border border-base-300 rounded-3xl p-5 shadow-sm space-y-3">
+                <h3 class="font-extrabold text-sm text-base-content">My applications</h3>
+                <ul class="divide-y divide-base-200">
+                    @foreach($myApplications as $application)
+                        <li class="py-2 text-xs flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <div class="font-bold text-base-content truncate">{{ $application->business_name }}</div>
+                                <div class="text-base-content/60">
+                                    {{ $application->preferredStall ? 'Stall ' . $application->preferredStall->stall_number : 'Any stall' }} &middot; {{ $application->created_at->format('M d, Y') }}
+                                </div>
+                                @if($application->status === 'rejected' && $application->rejection_reason)
+                                    <div class="text-error mt-0.5">{{ $application->rejection_reason }}</div>
+                                @endif
+                            </div>
+                            <span class="badge badge-sm font-bold uppercase {{ ['pending' => 'badge-warning', 'approved' => 'badge-success text-white', 'rejected' => 'badge-error text-white'][$application->status] ?? 'badge-ghost' }}">{{ $application->status }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+    </div>
+    @endif
 
     <!-- Bottom Section: Billing History & Support Inquiries -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -293,4 +361,5 @@
             </div>
         </div>
     </div>
+    @include('livewire.partials.renewal-modal')
 </div>
