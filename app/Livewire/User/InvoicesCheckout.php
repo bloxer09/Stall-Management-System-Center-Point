@@ -127,7 +127,10 @@ class InvoicesCheckout extends Component
             });
         }
 
-        if ($this->statusFilter) {
+        if ($this->statusFilter === 'overdue') {
+            // Overdue is computed (pending and past due), never a stored status.
+            $query->overdue();
+        } elseif ($this->statusFilter) {
             $query->where('status', $this->statusFilter);
         }
 

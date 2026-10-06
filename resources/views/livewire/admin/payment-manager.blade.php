@@ -85,6 +85,9 @@
                                     class="badge badge-sm font-bold uppercase {{ $p->status === 'paid' ? 'badge-success text-white' : ($p->status === 'pending' ? 'badge-warning' : 'badge-error text-white') }}">
                                     {{ $p->status }}
                                 </span>
+                                @if($p->isOverdue())
+                                    <span data-overdue-badge class="badge badge-sm badge-error text-white font-bold uppercase ml-1">Overdue</span>
+                                @endif
                             </td>
                             <td class="text-right">
                                 <button wire:click="openDetailModal({{ $p->id }})"

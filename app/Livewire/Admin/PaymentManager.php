@@ -18,6 +18,15 @@ class PaymentManager extends Component
     public $search = '';
     public $statusFilter = '';
 
+    public function mount(): void
+    {
+        // The admin dashboard links here with ?status=overdue.
+        $status = request()->query('status');
+        if (in_array($status, ['paid', 'pending', 'overdue'], true)) {
+            $this->statusFilter = $status;
+        }
+    }
+
     // Manual Payment Form
     public $showManualModal = false;
     public $showConfirmClose = false;
@@ -162,7 +171,10 @@ class PaymentManager extends Component
             });
         }
 
-        if ($this->statusFilter) {
+        if ($this->statusFilter === 'overdue') {
+            // Overdue is computed (pending and past due), never a stored status.
+            $query->overdue();
+        } elseif ($this->statusFilter) {
             $query->where('status', $this->statusFilter);
         }
 
