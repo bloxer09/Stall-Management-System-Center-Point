@@ -31,6 +31,9 @@ class DemoSeeder extends Seeder
         ['name' => 'Food Court', 'description' => 'Food counters with shared dining area.', 'rows' => 4, 'cols' => 5, 'prefix' => 'F', 'count' => 8, 'price' => 5000],
     ];
 
+    /** Stall numbers skipped because a real (non-demo) account already uses them. */
+    private array $protectedStalls = [];
+
     /** Ground floor stalls left off the grid so the grid editor has something to place. */
     private const UNPLACED = ['G-13', 'G-14'];
 
@@ -48,20 +51,33 @@ class DemoSeeder extends Seeder
         $stalls = $this->seedFloorsAndStalls();
         $tenants = $this->seedTenants();
 
-        $leases = [
-            $this->lease($tenants[1], $stalls['G-01'], now()->addDays(45)),
-            $this->lease($tenants[2], $stalls['G-02'], now()->addDays(120), ['renewal_status' => 'requested', 'requested_end_date' => now()->addDays(120)->addYear()->toDateString(), 'renewal_note' => 'Business is growing — we would like to stay another year.']),
-            $this->lease($tenants[3], $stalls['G-03'], now()->addYear()),
-            $this->lease($tenants[4], $stalls['G-04'], now()->addDays(200)),
+        $plans = [
+            1 => ['G-01', now()->addDays(45), []],
+            2 => ['G-02', now()->addDays(120), ['renewal_status' => 'requested', 'requested_end_date' => now()->addDays(120)->addYear()->toDateString(), 'renewal_note' => 'Business is growing — we would like to stay another year.']],
+            3 => ['G-03', now()->addYear(), []],
+            4 => ['G-04', now()->addDays(200), []],
         ];
+
+        $leases = [];
+        foreach ($plans as $n => [$stallNumber, $endDate, $extra]) {
+            if (in_array($stallNumber, $this->protectedStalls, true)) {
+                $this->command?->warn("Skipped demo tenant{$n}: Stall {$stallNumber} already belongs to a real account.");
+                continue;
+            }
+            $leases[$n] = $this->lease($tenants[$n], $stalls[$stallNumber], $endDate, $extra);
+        }
 
         foreach ($leases as $lease) {
             for ($monthsAgo = 1; $monthsAgo <= 6; $monthsAgo++) {
                 $this->paidInvoice($lease, now()->subMonthsNoOverflow($monthsAgo)->startOfMonth());
             }
         }
-        $this->pendingInvoice($leases[2], now()->addDays(7));   // tenant3: due next week
-        $this->pendingInvoice($leases[3], now()->subDays(10));  // tenant4: overdue
+        if (isset($leases[3])) {
+            $this->pendingInvoice($leases[3], now()->addDays(7));   // tenant3: due next week
+        }
+        if (isset($leases[4])) {
+            $this->pendingInvoice($leases[4], now()->subDays(10));  // tenant4: overdue
+        }
 
         $this->seedTickets($tenants, $admin);
         $this->seedApplications($stalls, $admin);
@@ -92,6 +108,14 @@ class DemoSeeder extends Seeder
                     $cell++;
                 }
 
+                $existing = Stall::where('stall_number', $number)->first();
+                if ($existing && $this->usedByRealAccount($existing)) {
+                    // Never repurpose a stall someone actually leases or is billed for.
+                    $this->protectedStalls[] = $number;
+                    $stalls[$number] = $existing;
+                    continue;
+                }
+
                 $stalls[$number] = Stall::updateOrCreate(
                     ['stall_number' => $number],
                     [
@@ -107,6 +131,14 @@ class DemoSeeder extends Seeder
         }
 
         return $stalls;
+    }
+
+    private function usedByRealAccount(Stall $stall): bool
+    {
+        $isReal = fn ($q) => $q->where('email', 'not like', '%@demo.test');
+
+        return StallMapping::where('stall_id', $stall->id)->whereHas('user', $isReal)->exists()
+            || Invoice::where('stall_id', $stall->id)->whereHas('user', $isReal)->exists();
     }
 
     private function statusFor(string $number): string
