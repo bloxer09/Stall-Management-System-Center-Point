@@ -55,11 +55,11 @@
                             </a>
                         @endif
                     @else
-                        <button type="button" onclick="Livewire.dispatch('open-login-modal')" class="btn btn-primary rounded-2xl font-bold px-8 shadow-md">
+                        <a href="{{ route('stalls.browse') }}" wire:navigate data-hero-primary class="btn btn-primary rounded-2xl font-bold px-8 shadow-md">
+                            Browse Available Stalls
+                        </a>
+                        <button type="button" onclick="Livewire.dispatch('open-login-modal')" class="btn btn-neutral text-white rounded-2xl font-bold px-7 border-white/20 hover:bg-white/20 backdrop-blur-sm">
                             Sign In
-                        </button>
-                        <button type="button" onclick="Livewire.dispatch('open-register-modal')" class="btn btn-neutral text-white rounded-2xl font-bold px-7 border-white/20 hover:bg-white/20 backdrop-blur-sm">
-                            Create Account
                         </button>
                     @endauth
                 </div>
@@ -68,20 +68,20 @@
             <!-- Quick Metrics Highlight Bar -->
             <div class="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6 mt-6 border-t border-white/10">
                 <div class="p-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10">
-                    <div class="text-xl font-black text-white">Commercial</div>
-                    <div class="text-xs font-bold text-slate-300 mt-0.5">3 Building Levels</div>
+                    <div class="text-xl font-black text-white">{{ $floors->count() }} {{ \Illuminate\Support\Str::plural('Floor', $floors->count()) }}</div>
+                    <div class="text-xs font-bold text-slate-300 mt-0.5">Building levels</div>
                 </div>
                 <div class="p-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10">
-                    <div class="text-xl font-black text-white">Digital</div>
-                    <div class="text-xs font-bold text-slate-300 mt-0.5">Leases &amp; Invoices</div>
+                    <div class="text-xl font-black text-white">{{ $floors->sum('available_count') }} Available {{ \Illuminate\Support\Str::plural('Stall', $floors->sum('available_count')) }}</div>
+                    <div class="text-xs font-bold text-slate-300 mt-0.5">Open for online applications</div>
                 </div>
                 <div class="p-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10">
                     <div class="text-xl font-black text-white">PayMongo</div>
                     <div class="text-xs font-bold text-slate-300 mt-0.5">GCash &amp; Card Payments</div>
                 </div>
                 <div class="p-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10">
-                    <div class="text-xl font-black text-white">24/7</div>
-                    <div class="text-xs font-bold text-slate-300 mt-0.5">Facility Maintenance</div>
+                    <div class="text-xl font-black text-white">{{ $floors->sum('stalls_count') }} Total {{ \Illuminate\Support\Str::plural('Stall', $floors->sum('stalls_count')) }}</div>
+                    <div class="text-xs font-bold text-slate-300 mt-0.5">Commercial units</div>
                 </div>
             </div>
         </div>
