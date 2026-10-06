@@ -21,12 +21,14 @@ class Invoice extends Model
         'paid_at',
         'billing_period',
         'notes',
+        'overdue_notified_at',
     ];
 
     protected $casts = [
         'total_amount' => 'decimal:2',
         'due_date' => 'date',
         'paid_at' => 'datetime',
+        'overdue_notified_at' => 'datetime',
     ];
 
     protected static function booted(): void
@@ -91,7 +93,8 @@ class Invoice extends Model
 
     public function isOverdue(): bool
     {
-        return $this->isPending() && $this->due_date && $this->due_date->isPast();
+        // Strictly before today: an invoice due today is not overdue yet.
+        return $this->isPending() && $this->due_date && $this->due_date->lt(today());
     }
 
     public function latestTransaction(): ?PaymentTransaction
