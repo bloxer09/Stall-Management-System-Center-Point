@@ -131,9 +131,10 @@ class LeaseService
     }
 
     /**
-     * Renew/maintain lease in good standing when ongoing monthly rental invoice is paid.
+     * Keep a lease in good standing when its monthly rental invoice is paid.
+     * Paying never moves end_date; leases are extended only through an approved renewal request.
      */
-    public function renewLeaseOnPayment(Invoice $invoice): ?StallMapping
+    public function markGoodStandingOnPayment(Invoice $invoice): ?StallMapping
     {
         $lease = StallMapping::where('user_id', $invoice->user_id)
             ->where('stall_id', $invoice->stall_id)
@@ -141,19 +142,10 @@ class LeaseService
             ->first();
 
         if ($lease) {
-            // If current end date has passed or is within 30 days, advance by 1 month
-            $newEndDate = $lease->end_date;
-            if ($newEndDate->isPast() || $newEndDate->diffInDays(now()) <= 30) {
-                $newEndDate = $newEndDate->copy()->addMonth();
-            }
-
-            $lease->update([
-                'payment_status' => 'good_standing',
-                'end_date' => $newEndDate,
-            ]);
+            $lease->update(['payment_status' => 'good_standing']);
 
             AuditLog::record(
-                "Lease #{$lease->id} renewed / maintained in Good Standing via Invoice #{$invoice->invoice_number}",
+                "Lease #{$lease->id} marked Good Standing via Invoice #{$invoice->invoice_number}",
                 'StallMapping',
                 $lease->id
             );

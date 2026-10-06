@@ -20,6 +20,8 @@ class StallMapping extends Model
         'contract_document',
         'renewal_status',
         'requested_end_date',
+        'renewal_note',
+        'renewal_rejection_reason',
     ];
 
     protected $casts = [

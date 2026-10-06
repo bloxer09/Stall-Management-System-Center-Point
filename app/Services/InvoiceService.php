@@ -94,8 +94,8 @@ class InvoiceService
             return;
         }
 
-        // 2. If it's a recurring monthly invoice for an active lease, maintain/renew good standing
-        app(LeaseService::class)->renewLeaseOnPayment($invoice);
+        // 2. If it's a recurring monthly invoice for an active lease, keep it in good standing
+        app(LeaseService::class)->markGoodStandingOnPayment($invoice);
     }
 
     /**
