@@ -36,4 +36,20 @@ class TicketParticipant extends Model
     {
         return $this->belongsTo(TicketMessage::class, 'last_read_message_id');
     }
+
+    /**
+     * First names of everyone except the viewer who typed on this ticket in the last 5 seconds.
+     *
+     * @return string[]
+     */
+    public static function typingNamesFor(int $ticketId, int $viewerId): array
+    {
+        return static::with('user:id,name')
+            ->where('ticket_id', $ticketId)
+            ->where('user_id', '!=', $viewerId)
+            ->where('typing_at', '>=', now()->subSeconds(5))
+            ->get()
+            ->map(fn (self $participant) => strtok((string) $participant->user?->name, ' ') ?: 'Someone')
+            ->all();
+    }
 }

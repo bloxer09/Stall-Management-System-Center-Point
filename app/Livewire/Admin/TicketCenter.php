@@ -141,12 +141,29 @@ class TicketCenter extends Component
         );
     }
 
+    /**
+     * Throttled from the browser (once per 2 seconds while typing); the tenant's
+     * 3-second poll shows "is typing…" while this timestamp is under 5 seconds old.
+     */
+    public function typing(): void
+    {
+        $ticket = $this->selectedTicketId ? Ticket::find($this->selectedTicketId) : null;
+        if (!$ticket) return;
+
+        TicketParticipant::updateOrCreate(
+            ['ticket_id' => $ticket->id, 'user_id' => Auth::id()],
+            ['typing_at' => now()]
+        );
+    }
+
     public function sendMessage(FileUploadService $uploader)
     {
         if (!$this->selectedTicketId) return;
 
         $ticket = Ticket::find($this->selectedTicketId);
         if (!$ticket) return;
+
+        TicketParticipant::where('ticket_id', $ticket->id)->where('user_id', Auth::id())->update(['typing_at' => null]);
 
         // Handler Lock Enforcement: Only assigned admin (or auto-claim if unassigned) can reply
         if ($ticket->assigned_to === null) {
@@ -268,6 +285,7 @@ class TicketCenter extends Component
             'selectedTicket' => $selectedTicket,
             'otherParticipant' => $otherParticipant,
             'staffUsers' => $staffUsers,
+            'typingNames' => $selectedTicket ? TicketParticipant::typingNamesFor($selectedTicket->id, Auth::id()) : [],
         ]);
     }
 }

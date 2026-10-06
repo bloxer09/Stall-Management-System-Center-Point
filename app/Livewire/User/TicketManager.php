@@ -192,12 +192,31 @@ class TicketManager extends Component
         );
     }
 
+    /**
+     * Throttled from the browser (once per 2 seconds while typing); the other side's
+     * 3-second poll shows "is typing…" while this timestamp is under 5 seconds old.
+     */
+    public function typing(): void
+    {
+        $ticket = $this->activeTicketId
+            ? Ticket::where('user_id', auth()->id())->find($this->activeTicketId)
+            : null;
+        if (!$ticket) return;
+
+        TicketParticipant::updateOrCreate(
+            ['ticket_id' => $ticket->id, 'user_id' => auth()->id()],
+            ['typing_at' => now()]
+        );
+    }
+
     public function sendMessage(FileUploadService $uploader)
     {
         if (!$this->activeTicketId) return;
 
         $ticket = Ticket::where('user_id', auth()->id())->find($this->activeTicketId);
         if (!$ticket) return;
+
+        TicketParticipant::where('ticket_id', $ticket->id)->where('user_id', auth()->id())->update(['typing_at' => null]);
 
         $this->validate([
             'message' => !empty($this->attachments) ? 'nullable|string' : 'required|string',
@@ -291,6 +310,7 @@ class TicketManager extends Component
             'activeTicket' => $activeTicket,
             'otherParticipant' => $otherParticipant,
             'myStalls' => $myStalls,
+            'typingNames' => $activeTicket ? TicketParticipant::typingNamesFor($activeTicket->id, auth()->id()) : [],
         ]);
     }
 }

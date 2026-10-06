@@ -245,6 +245,16 @@
                 </div>
 
                 <!-- Chat Reply Footer Form -->
+                @if(!empty($typingNames))
+                    <div class="flex items-center gap-2 px-4 pb-1 text-[11px] font-semibold text-base-content/60" aria-live="polite">
+                        <span class="inline-flex items-end gap-0.5 px-2 py-1.5 rounded-xl bg-base-200">
+                            <span class="w-1.5 h-1.5 rounded-full bg-base-content/50 animate-bounce"></span>
+                            <span class="w-1.5 h-1.5 rounded-full bg-base-content/50 animate-bounce [animation-delay:150ms]"></span>
+                            <span class="w-1.5 h-1.5 rounded-full bg-base-content/50 animate-bounce [animation-delay:300ms]"></span>
+                        </span>
+                        <span>{{ implode(', ', $typingNames) }} {{ count($typingNames) > 1 ? 'are' : 'is' }} typing…</span>
+                    </div>
+                @endif
                 @if($activeTicket->status !== 'closed')
                     <form wire:submit.prevent="sendMessage"
                         x-data="{
@@ -333,7 +343,7 @@
                                 </svg>
                                 <input type="file" wire:model="incomingAttachments" multiple class="hidden">
                             </label>
-                            <input type="text" wire:model="message" placeholder="Type a message or paste files..."
+                            <input type="text" wire:model="message" placeholder="Type a message or paste files..." x-data="{ lastTyping: 0 }" @input="if (Date.now() - lastTyping > 2000) { lastTyping = Date.now(); $wire.typing() }"
                                 class="input input-sm input-bordered flex-1 rounded-xl text-xs" />
                             <button type="submit" class="btn btn-primary btn-sm rounded-xl font-bold px-3">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
