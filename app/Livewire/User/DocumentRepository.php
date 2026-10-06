@@ -19,15 +19,16 @@ class DocumentRepository extends Component
             ->latest()
             ->get();
 
-        $paidReceipts = Invoice::with('stall')
+        // Every bill the tenant has had: paid ones link to their receipt, unpaid ones to checkout.
+        $statements = Invoice::with('stall')
             ->where('user_id', $userId)
-            ->where('status', 'paid')
-            ->latest('paid_at')
+            ->where('status', '!=', 'cancelled')
+            ->orderByDesc('due_date')
             ->get();
 
         return view('livewire.user.document-repository', [
             'leaseContracts' => $leaseContracts,
-            'paidReceipts' => $paidReceipts,
+            'statements' => $statements,
         ]);
     }
 }
