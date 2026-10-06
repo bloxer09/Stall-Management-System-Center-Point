@@ -132,7 +132,7 @@ class TicketManager extends Component
             'message' => $this->issue,
         ]);
 
-        $admins = \App\Models\User::whereIn('role', ['admin', 'staff'])->get();
+        $admins = \App\Models\User::where('role', 'admin')->get();
         foreach ($admins as $adm) {
             \App\Models\Notification::send(
                 $adm->id,
@@ -239,7 +239,7 @@ class TicketManager extends Component
                 route('admin.tickets')
             );
         } else {
-            $admins = \App\Models\User::whereIn('role', ['admin', 'staff'])->get();
+            $admins = \App\Models\User::where('role', 'admin')->get();
             foreach ($admins as $adm) {
                 \App\Models\Notification::send(
                     $adm->id,

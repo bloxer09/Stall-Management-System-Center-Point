@@ -27,7 +27,7 @@
 - **Lease Extensions**: Tenants can submit one-click extension requests with admin approval or rejection workflows.
 
 ### 💳 Billing, Online Payments & PDF Receipts
-- **Automated Monthly Invoices**: Artisan console command (`stallm:generate-invoices`) generating monthly invoices for active leases with zero N+1 queries.
+- **Automated Monthly Invoices**: Artisan console command (`billing:generate-invoices`) generating monthly invoices for active leases with zero N+1 queries.
 - **PayMongo Payment Gateway**: Multi-stall cart checkout supporting GCash, Maya, and Credit/Debit cards with webhook verification.
 - **Manual Office Payments**: Capability for admins to record cash/office payments with custom reference IDs.
 - **Scannable QR Code PDF Receipts**: Official PDF receipts generated via `Dompdf` featuring embedded SVG QR codes pointing to online authenticity verification endpoints (`/verify-receipt/{id}`).

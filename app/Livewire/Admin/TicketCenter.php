@@ -261,7 +261,7 @@ class TicketCenter extends Component
             }
         }
 
-        $staffUsers = User::whereIn('role', ['admin', 'staff'])->get();
+        $staffUsers = User::where('role', 'admin')->get();
 
         return view('livewire.admin.ticket-center', [
             'tickets' => $ticketsQuery->latest()->paginate(10),

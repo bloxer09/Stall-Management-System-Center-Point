@@ -12,3 +12,8 @@
 *.log
 .DS_Store
 Thumbs.db
+
+/storage/framework/testing/
+.phpunit.result.cache
+vite.config.js.timestamp-*
+/.superpowers/
