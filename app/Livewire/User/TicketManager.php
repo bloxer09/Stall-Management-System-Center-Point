@@ -7,6 +7,7 @@ use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\TicketParticipant;
 use App\Services\FileUploadService;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
@@ -48,10 +49,25 @@ class TicketManager extends Component
         }
     }
 
-    protected $rules = [
-        'stall_id' => 'nullable|exists:stalls,id',
-        'issue' => 'required|string|min:5',
-    ];
+    protected function rules(): array
+    {
+        $ownActiveStallIds = StallMapping::where('user_id', auth()->id())
+            ->where('is_active', true)
+            ->pluck('stall_id')
+            ->all();
+
+        return [
+            'stall_id' => ['nullable', Rule::in($ownActiveStallIds)],
+            'issue' => 'required|string|min:5',
+        ];
+    }
+
+    protected function messages(): array
+    {
+        return [
+            'stall_id.in' => 'You can only report issues for stalls you currently lease.',
+        ];
+    }
 
     public function updatingSearch()
     {
