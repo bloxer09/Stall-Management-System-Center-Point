@@ -119,6 +119,12 @@ class LeaseMappingManager extends Component
 
     public function mount(): void
     {
+        // The dashboard's "Renewal requests" card links here with ?status=renewal_requested.
+        $status = request()->query('status');
+        if (in_array($status, ['active', 'pending', 'inactive', 'renewal_requested'], true)) {
+            $this->statusFilter = $status;
+        }
+
         // "Assign stall" from an approved application arrives with ?user=&stall= to pre-fill the form.
         $userId = (int) request()->query('user');
         $stallId = (int) request()->query('stall');

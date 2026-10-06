@@ -7,7 +7,9 @@ use App\Models\Invoice;
 use App\Models\PaymentTransaction;
 use App\Models\Stall;
 use App\Models\StallLocation;
+use App\Models\StallApplication;
 use App\Models\StallMapping;
+use App\Models\Ticket;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
@@ -53,6 +55,21 @@ class AnalyticsDashboard extends Component
         AuditLog::record('Exported Analytics PDF Summary Report', 'Analytics', 1);
 
         return redirect()->route('admin.reports');
+    }
+
+    /**
+     * Work waiting on an admin, each linking to its pre-filtered list.
+     *
+     * @return array<int, array{label: string, count: int, url: string}>
+     */
+    private function attentionItems(): array
+    {
+        return [
+            ['label' => 'Pending applications', 'count' => StallApplication::where('status', 'pending')->count(), 'url' => url('/admin/applications')],
+            ['label' => 'Renewal requests', 'count' => StallMapping::where('is_active', true)->where('renewal_status', 'requested')->count(), 'url' => url('/admin/mappings?status=renewal_requested')],
+            ['label' => 'Overdue invoices', 'count' => Invoice::overdue()->count(), 'url' => url('/admin/payments?status=overdue')],
+            ['label' => 'Unassigned tickets', 'count' => Ticket::where('status', '!=', 'closed')->whereNull('assigned_to')->count(), 'url' => url('/admin/tickets?filter=unassigned')],
+        ];
     }
 
     public function render()
@@ -182,6 +199,7 @@ class AnalyticsDashboard extends Component
             ->get();
 
         return view('livewire.admin.analytics-dashboard', [
+            'attention' => $this->attentionItems(),
             'totalStalls' => $totalStalls,
             'occupiedStalls' => $occupiedStalls,
             'availableStalls' => $availableStalls,

@@ -24,6 +24,7 @@
             <div class="flex gap-2">
                 <select wire:model.live="statusFilter" class="select select-bordered rounded-2xl text-sm">
                     <option value="">All</option>
+                    <option value="unassigned">Unassigned</option>
                     <option value="open">Open</option>
                     <option value="in_progress">In Progress</option>
                     <option value="resolved">Resolved</option>

@@ -21,6 +21,14 @@ class TicketCenter extends Component
     public $search = '';
     public $statusFilter = '';
 
+    public function mount(): void
+    {
+        // The dashboard's "Unassigned tickets" card links here with ?filter=unassigned.
+        if (request()->query('filter') === 'unassigned') {
+            $this->statusFilter = 'unassigned';
+        }
+    }
+
     // Selected Ticket Chat Widget State
     public $selectedTicketId = null;
     public $showThreadModal = false;
@@ -262,7 +270,9 @@ class TicketCenter extends Component
             });
         }
 
-        if ($this->statusFilter) {
+        if ($this->statusFilter === 'unassigned') {
+            $ticketsQuery->where('status', '!=', 'closed')->whereNull('assigned_to');
+        } elseif ($this->statusFilter) {
             $ticketsQuery->where('status', $this->statusFilter);
         }
 

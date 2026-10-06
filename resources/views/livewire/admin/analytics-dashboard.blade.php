@@ -17,6 +17,25 @@
         </div>
     </div>
 
+    <!-- Needs Attention -->
+    @php $needsAttention = collect($attention)->sum('count'); @endphp
+    @if($needsAttention === 0)
+        <div class="alert bg-success/10 border border-success/30 rounded-2xl text-sm font-bold text-success">All caught up ✓ &mdash; nothing is waiting for review.</div>
+    @else
+        <div class="space-y-2">
+            <h2 class="text-xs font-extrabold uppercase tracking-wider text-base-content/60">Needs attention</h2>
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                @foreach($attention as $item)
+                    <a href="{{ $item['url'] }}" wire:navigate
+                       class="card bg-base-100 border rounded-2xl p-4 transition hover:shadow-md {{ $item['count'] > 0 ? 'border-warning/50' : 'border-base-300 opacity-70' }}">
+                        <span class="text-2xl font-black {{ $item['count'] > 0 ? 'text-warning' : 'text-base-content/50' }}" data-attention-count="{{ $item['count'] }}">{{ $item['count'] }}</span>
+                        <span class="text-xs font-bold text-base-content/70 mt-1">{{ $item['label'] }} &rarr;</span>
+                    </a>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     <!-- Summary KPI Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- Metric 1: Total Revenue -->
