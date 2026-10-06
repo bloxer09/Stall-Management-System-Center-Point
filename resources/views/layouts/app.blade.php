@@ -27,6 +27,15 @@
     </head>
     <body class="font-sans antialiased bg-base-200 text-base-content min-h-screen">
 
+        <script>
+            // With several modals open, Escape should only close the one on top (the last open in the DOM).
+            window.isTopModal = function (el) {
+                const mine = el.closest('.modal-open');
+                const open = document.querySelectorAll('.modal-open');
+                return !!mine && open[open.length - 1] === mine;
+            };
+        </script>
+
         <!-- Top Page Load Progress Bar -->
         <div id="page-progress-bar"
              class="fixed top-0 left-0 h-[2.5px] bg-primary z-[9999] transition-all duration-300 ease-out"
@@ -248,7 +257,7 @@
                 remove(id) { this.toasts = this.toasts.filter(t => t.id !== id); }
             }"
             x-on:notify.window="add($event.detail.type || 'success', $event.detail.message)"
-            aria-live="polite" role="status" class="fixed bottom-5 right-5 z-[9998] flex flex-col gap-2 items-end pointer-events-none"
+            role="status" class="fixed bottom-5 right-5 z-[9998] flex flex-col gap-2 items-end pointer-events-none"
             aria-live="polite">
             <template x-for="toast in toasts" :key="toast.id">
                 <div x-show="true"

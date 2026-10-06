@@ -72,7 +72,7 @@
     @if($selected)
         <div class="modal modal-open" role="dialog" aria-modal="true">
             <div class="modal-box rounded-3xl max-w-lg">
-                <button type="button" wire:click="closeDetail" class="btn btn-sm btn-circle btn-ghost absolute right-3 top-3" aria-label="Close" x-data x-on:keydown.escape.window="$wire.closeDetail()">✕</button>
+                <button type="button" wire:click="closeDetail" class="btn btn-sm btn-circle btn-ghost absolute right-3 top-3" aria-label="Close" x-data x-on:keydown.escape.window="isTopModal($el) && $wire.closeDetail()">✕</button>
                 <span class="badge badge-sm font-bold {{ $statusBadges[$selected->status] ?? 'badge-ghost' }}">{{ ucfirst($selected->status) }}</span>
                 <h3 class="text-xl font-black mt-2">{{ $selected->applicant_name }}</h3>
                 <p class="text-xs text-base-content/60">Submitted {{ $selected->created_at->format('M d, Y h:i A') }}</p>

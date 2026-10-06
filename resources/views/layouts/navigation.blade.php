@@ -50,7 +50,7 @@
         @endauth
 
         <!-- Light / Dark Mode Swap Toggle -->
-        <label aria-label="Toggle dark mode" title="Toggle dark mode" class="swap swap-rotate btn btn-ghost btn-circle btn-sm text-base-content/70"
+        <label aria-label="Toggle dark mode" class="swap swap-rotate btn btn-ghost btn-circle btn-sm text-base-content/70"
             title="Toggle Light / Dark Mode">
             <input type="checkbox" id="theme-toggle" class="theme-controller hidden" value="dark"
                 onchange="toggleAppTheme(this)" />

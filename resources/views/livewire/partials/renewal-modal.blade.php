@@ -1,7 +1,8 @@
     <!-- Modal: Lease Renewal Request -->
     @if($renewalLease)
         <div class="modal modal-open" role="dialog" aria-modal="true">
-            <div class="modal-box rounded-3xl max-w-md space-y-4">
+            <div class="modal-box rounded-3xl max-w-md space-y-4 relative">
+                <button type="button" wire:click="closeRenewal" aria-label="Close" x-data x-on:keydown.escape.window="isTopModal($el) && $wire.closeRenewal()" class="btn btn-sm btn-circle btn-ghost absolute right-3 top-3">✕</button>
                 <div>
                     <h3 class="font-black text-xl">Request lease renewal</h3>
                     <p class="text-xs text-base-content/60 mt-1">
