@@ -8,6 +8,7 @@ use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Symfony\Component\Mime\Email;
 
 class GenericNotificationMail extends Mailable
 {
@@ -25,6 +26,13 @@ class GenericNotificationMail extends Mailable
         $this->subjectText = $subjectText;
         $this->htmlContent = $htmlContent;
         $this->textContent = $textContent ?: trim(strip_tags(str_replace(['<br>', '<br/>', '<br />', '</p>'], "\n", $htmlContent)));
+
+        // Configure plain-text alternative directly on the underlying Symfony Message
+        $this->withSymfonyMessage(function (Email $message) {
+            if (!empty($this->textContent)) {
+                $message->text($this->textContent);
+            }
+        });
     }
 
     /**
@@ -32,8 +40,8 @@ class GenericNotificationMail extends Mailable
      */
     public function envelope(): Envelope
     {
-        $fromEmail = config('mail.from.address') ?? env('MAIL_FROM_ADDRESS', 'no-reply@stallm.com');
-        $fromName = config('mail.from.name') ?? env('MAIL_FROM_NAME', 'STALLM System');
+        $fromEmail = config('mail.from.address') ?: 'no-reply@stallm.com';
+        $fromName = config('mail.from.name') ?: 'Center Point Stall Management';
 
         return new Envelope(
             from: new Address($fromEmail, $fromName),
@@ -48,7 +56,6 @@ class GenericNotificationMail extends Mailable
     {
         return new Content(
             htmlString: $this->htmlContent,
-            textString: $this->textContent,
         );
     }
 }

@@ -140,9 +140,9 @@
                         A 6-digit security code was dispatched to <strong class="text-base-content">{{ $forgotEmail }}</strong>.
                     </div>
 
-                    @if(app()->environment('local') || !$isMailConfigured)
+                    @if(app()->environment('local') && !empty($generatedForgotOtp))
                     <div class="p-3 bg-warning/10 text-warning-content rounded-2xl text-xs border border-warning/30 font-medium text-center">
-                        <div class="font-bold uppercase text-[10px] text-warning">Development Reset Code</div>
+                        <div class="font-bold uppercase text-[10px] text-warning">Local Development Reset Code</div>
                         <div class="mt-1">Code: <span class="font-mono font-bold text-sm tracking-widest text-base-content">{{ $generatedForgotOtp }}</span></div>
                     </div>
                     @endif

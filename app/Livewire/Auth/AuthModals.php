@@ -94,7 +94,7 @@ class AuthModals extends Component
         }
 
         $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-        $this->generatedForgotOtp = $otp;
+        $this->generatedForgotOtp = app()->environment('local') ? $otp : null;
         $this->forgotUserId = $user->id;
 
         session([
