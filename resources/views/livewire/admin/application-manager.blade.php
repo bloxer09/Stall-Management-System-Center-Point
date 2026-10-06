@@ -22,7 +22,7 @@
             </select>
         </div>
 
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto" wire:loading.class="opacity-60" wire:target="search,statusFilter">
             <table class="table w-full text-left text-sm">
                 <thead>
                     <tr class="bg-base-200/40 text-base-content/70 font-bold uppercase text-xs">

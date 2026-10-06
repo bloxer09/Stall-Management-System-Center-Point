@@ -43,7 +43,7 @@
             </select>
         </div>
 
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto" wire:loading.class="opacity-60" wire:target="search,statusFilter">
             <table class="table w-full text-left text-xs">
                 <thead>
                     <tr class="bg-base-200/40 text-base-content/70">
@@ -186,7 +186,7 @@
                                 Download Receipt
                             </a>
                         @elseif($selectedInvoice->status !== 'paid')
-                            <button wire:click="markAsPaid({{ $selectedInvoice->id }})" wire:loading.attr="disabled" class="btn btn-success text-white btn-sm rounded-xl font-bold gap-1 shadow-xs">
+                            <button wire:click="markAsPaid({{ $selectedInvoice->id }})" wire:loading.attr="disabled" class="btn btn-success text-white btn-sm rounded-xl font-bold gap-1 shadow-xs" wire:target="markAsPaid"><span wire:loading wire:target="markAsPaid" class="loading loading-spinner loading-xs"></span>
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
                                 Mark as Paid
                             </button>
@@ -266,7 +266,7 @@
 
                     <div class="flex justify-end gap-2 pt-2 border-t border-base-200">
                         <button type="button" wire:click="requestCloseModal" class="btn btn-ghost rounded-xl font-bold">Cancel</button>
-                        <button type="submit" class="btn btn-primary rounded-xl font-bold">Save Cash Payment</button>
+                        <button type="submit" class="btn btn-primary rounded-xl font-bold" wire:loading.attr="disabled" wire:target="recordManualPayment"><span wire:loading wire:target="recordManualPayment" class="loading loading-spinner loading-xs"></span>Save Cash Payment</button>
                     </div>
                 </form>
             </div>

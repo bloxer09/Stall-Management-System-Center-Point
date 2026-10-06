@@ -13,7 +13,7 @@
                 </button>
                 <button wire:click="payWithPayMongo" wire:loading.attr="disabled"
                     {{ empty($selectedInvoiceIds) ? 'disabled' : '' }}
-                    class="btn btn-sm btn-primary rounded-xl font-bold shadow-xs gap-1.5">
+                    class="btn btn-sm btn-primary rounded-xl font-bold shadow-xs gap-1.5" wire:target="payWithPayMongo"><span wire:loading wire:target="payWithPayMongo" class="loading loading-spinner loading-xs"></span>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V8a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -176,7 +176,7 @@
                                 Download Receipt PDF
                             </a>
                         @elseif($selectedInvoice->status === 'pending')
-                            <button wire:click="paySingleInvoice({{ $selectedInvoice->id }})" wire:loading.attr="disabled" class="btn btn-primary btn-sm rounded-xl font-bold gap-1 shadow-xs">
+                            <button wire:click="paySingleInvoice({{ $selectedInvoice->id }})" wire:loading.attr="disabled" class="btn btn-primary btn-sm rounded-xl font-bold gap-1 shadow-xs" wire:target="paySingleInvoice"><span wire:loading wire:target="paySingleInvoice" class="loading loading-spinner loading-xs"></span>
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V8a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                                 Pay with PayMongo / GCash
                             </button>

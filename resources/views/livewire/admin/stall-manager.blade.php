@@ -46,7 +46,7 @@
             </div>
         </div>
 
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto" wire:loading.class="opacity-60" wire:target="search,locationFilter,statusFilter">
             <table class="table w-full text-sm">
                 <thead>
                     <tr class="bg-base-200/40 text-base-content/70">
@@ -190,7 +190,7 @@
 
                 <!-- Modal Actions Footer -->
                 <div class="flex items-center justify-between pt-3 border-t border-base-200">
-                    <button wire:click="deleteStall({{ $selectedStall->id }})" wire:confirm="Are you sure you want to delete stall {{ $selectedStall->stall_number }}?" class="btn btn-error btn-outline btn-sm rounded-xl font-bold gap-1">
+                    <button wire:click="deleteStall({{ $selectedStall->id }})" wire:confirm="Are you sure you want to delete stall {{ $selectedStall->stall_number }}?" class="btn btn-error btn-outline btn-sm rounded-xl font-bold gap-1" wire:loading.attr="disabled" wire:target="deleteStall"><span wire:loading wire:target="deleteStall" class="loading loading-spinner loading-xs"></span>
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                         Delete Stall
                     </button>
@@ -287,7 +287,7 @@
 
                     <div class="flex justify-end gap-2 pt-2 border-t border-base-200">
                         <button type="button" wire:click="closeModal" class="btn btn-ghost btn-sm rounded-xl font-bold">Cancel</button>
-                        <button type="submit" class="btn btn-primary btn-sm rounded-xl font-bold">Save Stall</button>
+                        <button type="submit" class="btn btn-primary btn-sm rounded-xl font-bold" wire:loading.attr="disabled" wire:target="saveStall"><span wire:loading wire:target="saveStall" class="loading loading-spinner loading-xs"></span>Save Stall</button>
                     </div>
                 </form>
             </div>

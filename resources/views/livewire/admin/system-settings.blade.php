@@ -108,7 +108,7 @@
         </div>
 
         <div class="flex justify-end pt-2">
-            <button type="submit" wire:loading.attr="disabled" class="btn btn-primary rounded-xl font-bold px-8 shadow-md">
+            <button type="submit" wire:loading.attr="disabled" class="btn btn-primary rounded-xl font-bold px-8 shadow-md" wire:target="saveSettings">
                 <span wire:loading wire:target="saveSettings" class="loading loading-spinner loading-xs mr-1"></span>
                 Save System Settings
             </button>

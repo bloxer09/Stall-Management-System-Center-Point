@@ -45,7 +45,7 @@
             </div>
         </div>
 
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto" wire:loading.class="opacity-60" wire:target="search,locationFilter,statusFilter">
             <table class="table w-full text-sm">
                 <thead>
                     <tr class="bg-base-200/40 text-base-content/70">
@@ -196,7 +196,7 @@
 
                     <div class="flex justify-end gap-2 pt-2 border-t border-base-200">
                         <button type="button" wire:click="closeModal" class="btn btn-ghost rounded-xl font-bold">Cancel</button>
-                        <button type="submit" class="btn btn-primary rounded-xl font-bold px-6 shadow-sm">
+                        <button type="submit" class="btn btn-primary rounded-xl font-bold px-6 shadow-sm" wire:loading.attr="disabled" wire:target="saveMapping"><span wire:loading wire:target="saveMapping" class="loading loading-spinner loading-xs"></span>
                             Assign Stall &amp; Generate Bill
                         </button>
                     </div>
@@ -239,7 +239,7 @@
                         <p class="text-base-content/80 text-[11px]">
                             Stall is reserved. If the tenant settled their deposit in cash at the administration office, you can confirm it below to immediately activate the lease.
                         </p>
-                        <button type="button" wire:click="recordInitialCashPayment({{ $selectedLease->id }})" class="btn btn-success text-white btn-sm rounded-xl font-bold w-full shadow-xs gap-1.5">
+                        <button type="button" wire:click="recordInitialCashPayment({{ $selectedLease->id }})" class="btn btn-success text-white btn-sm rounded-xl font-bold w-full shadow-xs gap-1.5" wire:loading.attr="disabled" wire:target="recordInitialCashPayment"><span wire:loading wire:target="recordInitialCashPayment" class="loading loading-spinner loading-xs"></span>
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                             Record Office Cash Payment (Activate Lease)
                         </button>
@@ -311,7 +311,7 @@
                 <div class="flex items-center justify-between gap-2 pt-3 border-t border-base-200">
                     <div>
                         @if($selectedLease->is_active || $selectedLease->payment_status === 'pending_initial')
-                            <button wire:click="terminateLease({{ $selectedLease->id }})" wire:confirm="Are you sure you want to terminate this lease agreement? The stall will become available." class="btn btn-outline btn-error btn-sm rounded-xl font-bold">
+                            <button wire:click="terminateLease({{ $selectedLease->id }})" wire:confirm="Are you sure you want to terminate this lease agreement? The stall will become available." class="btn btn-outline btn-error btn-sm rounded-xl font-bold" wire:loading.attr="disabled" wire:target="terminateLease"><span wire:loading wire:target="terminateLease" class="loading loading-spinner loading-xs"></span>
                                 Terminate Lease
                             </button>
                         @endif
