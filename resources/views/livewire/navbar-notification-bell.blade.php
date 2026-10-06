@@ -20,7 +20,7 @@
 
             <div class="max-h-64 overflow-y-auto space-y-2 py-1">
                 @forelse($notifications as $n)
-                    <div wire:click="markAsRead({{ data_get($n, 'id') }})" class="p-2.5 rounded-xl transition cursor-pointer text-xs {{ data_get($n, 'is_read') ? 'bg-base-100 opacity-60' : 'bg-primary/10 border-l-4 border-primary font-semibold' }}">
+                    <div wire:click="open({{ data_get($n, 'id') }})" class="p-2.5 rounded-xl transition cursor-pointer text-xs {{ data_get($n, 'is_read') ? 'bg-base-100 opacity-60' : 'bg-primary/10 border-l-4 border-primary font-semibold' }}">
                         <div class="font-bold text-base-content">{{ data_get($n, 'title') }}</div>
                         <div class="text-base-content/80 mt-0.5">{{ data_get($n, 'message') }}</div>
                         <div class="text-[10px] text-base-content/50 mt-1">{{ \Carbon\Carbon::parse(data_get($n, 'created_at'))->diffForHumans() }}</div>
