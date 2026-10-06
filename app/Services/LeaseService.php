@@ -17,6 +17,12 @@ class LeaseService
 {
     private const RENEWAL_WINDOW_DAYS = 60;
 
+    /**
+     * Whether the tenant email/SMS of the last approveRenewal()/rejectRenewal() call went out.
+     * The state change is never rolled back for a failed send; callers warn the admin instead.
+     */
+    public bool $lastNotificationSent = true;
+
     public function __construct(
         protected FileUploadService $fileUploader,
         protected MailService $mailer,
@@ -125,10 +131,11 @@ class LeaseService
         $message = "Your lease renewal for Stall {$stallNumber} was approved. Your lease now ends on {$until}.";
 
         Notification::send($tenant->id, 'renewal', 'Lease renewal approved', $message, route('user.leases'));
-        $this->mailer->sendEmail($tenant->email, $tenant->name, 'Your lease renewal was approved', '<p>Hello ' . e($tenant->name) . ',</p><p>' . e($message) . '</p>', $message);
+        $sent = $this->mailer->sendEmail($tenant->email, $tenant->name, 'Your lease renewal was approved', '<p>Hello ' . e($tenant->name) . ',</p><p>' . e($message) . '</p>', $message);
         if ($tenant->phone) {
-            $this->sms->sendSms($tenant->phone, "STALLM: {$message}");
+            $sent = $this->sms->sendSms($tenant->phone, "STALLM: {$message}") && $sent;
         }
+        $this->lastNotificationSent = $sent;
 
         return $lease;
     }
@@ -164,7 +171,7 @@ class LeaseService
         $message = "Your lease renewal request for Stall {$stallNumber} was not approved. Reason: {$reason}";
 
         Notification::send($tenant->id, 'renewal', 'Lease renewal not approved', $message, route('user.leases'));
-        $this->mailer->sendEmail($tenant->email, $tenant->name, 'Update on your lease renewal', '<p>Hello ' . e($tenant->name) . ',</p><p>' . e($message) . '</p>', $message);
+        $this->lastNotificationSent = $this->mailer->sendEmail($tenant->email, $tenant->name, 'Update on your lease renewal', '<p>Hello ' . e($tenant->name) . ',</p><p>' . e($message) . '</p>', $message);
 
         return $lease;
     }

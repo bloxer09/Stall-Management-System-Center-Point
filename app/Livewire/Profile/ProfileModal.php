@@ -74,7 +74,7 @@ class ProfileModal extends Component
     public function updateProfile(): void
     {
         $user = Auth::user();
-        if (!$user) return;
+        if (!$user || $this->blockedUntilVerified($user)) return;
 
         $this->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -107,7 +107,7 @@ class ProfileModal extends Component
     public function updatePassword(): void
     {
         $user = Auth::user();
-        if (!$user) return;
+        if (!$user || $this->blockedUntilVerified($user)) return;
 
         $this->validate([
             'current_password' => ['required', 'string', 'current_password'],
@@ -173,7 +173,7 @@ class ProfileModal extends Component
     public function disableTwoFactor(): void
     {
         $user = Auth::user();
-        if (!$user || !$user->hasTwoFactorEnabled()) {
+        if (!$user || !$user->hasTwoFactorEnabled() || $this->blockedUntilVerified($user)) {
             return;
         }
 
@@ -193,6 +193,20 @@ class ProfileModal extends Component
 
         $this->reset('twoFactorPassword');
         $this->dispatch('notify', type: 'success', message: 'Two-factor authentication is now off.');
+    }
+
+    /**
+     * This modal is rendered on every page, including ones outside the 2FA-protected admin routes.
+     * A session that has only passed the password step must not change the account's security settings.
+     */
+    private function blockedUntilVerified(User $user): bool
+    {
+        if ($user->hasTwoFactorEnabled() && !session('two_factor_verified')) {
+            $this->dispatch('notify', type: 'error', message: 'Finish two-step verification before changing your account.');
+            return true;
+        }
+
+        return false;
     }
 
     public function render()

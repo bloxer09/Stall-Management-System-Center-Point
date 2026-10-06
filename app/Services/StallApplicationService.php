@@ -18,6 +18,12 @@ use Illuminate\Validation\ValidationException;
 
 class StallApplicationService
 {
+    /**
+     * Whether the applicant email of the last reject() call went out. A failed send never
+     * undoes the review; the caller warns the admin instead.
+     */
+    public bool $lastNotificationSent = true;
+
     public function __construct(
         protected MailService $mailer,
         protected FileUploadService $uploader,
@@ -94,24 +100,33 @@ class StallApplicationService
      * Approve an application: link (or create) the applicant's tenant account.
      * The admin assigns the stall afterwards in Lease Mappings.
      *
-     * @return array{application: StallApplication, user: User, created: bool, emailSent: bool}
+     * @return array{application: StallApplication, user: User, created: bool, emailSent: bool, phoneDropped: bool}
      *
-     * @throws DomainException when the application was already reviewed.
+     * @throws DomainException when the application was already reviewed, or its email belongs to an admin.
      */
     public function approve(StallApplication $application, User $admin): array
     {
-        [$application, $user, $created] = DB::transaction(function () use ($application, $admin) {
+        [$application, $user, $created, $phoneDropped] = DB::transaction(function () use ($application, $admin) {
             $locked = $this->lockPending($application);
             $email = Str::lower(trim($locked->applicant_email));
 
             $user = User::whereRaw('LOWER(email) = ?', [$email])->first();
             $created = false;
+            $phoneDropped = false;
+
+            if ($user && $user->role !== 'user') {
+                throw new DomainException('This email belongs to an admin account and cannot be used for a tenant application.');
+            }
 
             if (!$user) {
+                // users.phone is unique: if another account already uses this number, create the tenant without it.
+                $phone = trim((string) $locked->applicant_phone);
+                $phoneDropped = $phone !== '' && User::where('phone', $phone)->exists();
+
                 $user = User::create([
                     'name' => $locked->applicant_name,
                     'email' => $email,
-                    'phone' => $locked->applicant_phone,
+                    'phone' => $phoneDropped || $phone === '' ? null : $phone,
                     'password' => Hash::make(Str::random(40)),
                     'role' => 'user',
                     'email_verified_at' => now(),
@@ -134,7 +149,7 @@ class StallApplicationService
                 $admin->id
             );
 
-            return [$locked, $user, $created];
+            return [$locked, $user, $created, $phoneDropped];
         });
 
         $stallNumber = $application->preferredStall?->stall_number;
@@ -163,7 +178,7 @@ class StallApplicationService
             Notification::send($user->id, 'application', 'Application approved', "Your application{$stallText} was approved.", route('user.dashboard'));
         }
 
-        return ['application' => $application, 'user' => $user, 'created' => $created, 'emailSent' => $emailSent];
+        return ['application' => $application, 'user' => $user, 'created' => $created, 'emailSent' => $emailSent, 'phoneDropped' => $phoneDropped];
     }
 
     /**
@@ -203,7 +218,7 @@ class StallApplicationService
         });
 
         $stallNumber = $application->preferredStall?->stall_number;
-        $this->mailer->sendEmail(
+        $this->lastNotificationSent = $this->mailer->sendEmail(
             $application->applicant_email,
             $application->applicant_name,
             'Update on your stall application',

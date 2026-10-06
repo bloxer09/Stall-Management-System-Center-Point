@@ -62,6 +62,9 @@ class ApplicationManager extends Component
         if (!$result['emailSent']) {
             $this->dispatch('notify', type: 'warning', message: 'The approval was saved, but the email to the applicant could not be sent.');
         }
+        if ($result['phoneDropped']) {
+            $this->dispatch('notify', type: 'warning', message: 'The applicant\'s phone number is already used by another account, so the new tenant account was created without a phone number.');
+        }
     }
 
     public function reject(StallApplicationService $applications): void
@@ -80,7 +83,11 @@ class ApplicationManager extends Component
             return;
         }
 
-        $this->dispatch('notify', type: 'success', message: 'Application rejected and the applicant was notified.');
+        if ($applications->lastNotificationSent) {
+            $this->dispatch('notify', type: 'success', message: 'Application rejected and the applicant was notified.');
+        } else {
+            $this->dispatch('notify', type: 'warning', message: 'Application rejected, but the email to the applicant could not be sent.');
+        }
         $this->closeDetail();
     }
 

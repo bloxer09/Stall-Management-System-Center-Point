@@ -100,6 +100,7 @@ class TwoFactorEnrollmentTest extends TestCase
     public function test_disable_requires_correct_password(): void
     {
         $admin = $this->admin(['two_factor_enabled' => true, 'two_factor_confirmed_at' => now()]);
+        session(['two_factor_verified' => true]);
 
         $this->securityTab($admin)
             ->set('twoFactorPassword', 'wrong-pass')
@@ -121,6 +122,7 @@ class TwoFactorEnrollmentTest extends TestCase
     public function test_cannot_clear_phone_while_2fa_enabled(): void
     {
         $admin = $this->admin(['two_factor_enabled' => true, 'two_factor_confirmed_at' => now()]);
+        session(['two_factor_verified' => true]);
 
         Livewire::actingAs($admin)
             ->test(ProfileModal::class)

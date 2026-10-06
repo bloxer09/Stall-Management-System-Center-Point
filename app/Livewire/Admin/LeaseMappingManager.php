@@ -82,7 +82,7 @@ class LeaseMappingManager extends Component
             return;
         }
 
-        $this->dispatch('notify', type: 'success', message: 'Renewal approved. The tenant was notified.');
+        $this->notifyRenewalOutcome($leaseService, 'Renewal approved.');
         $this->closeDetailModal();
     }
 
@@ -98,8 +98,17 @@ class LeaseMappingManager extends Component
             return;
         }
 
-        $this->dispatch('notify', type: 'success', message: 'Renewal rejected. The tenant was notified.');
+        $this->notifyRenewalOutcome($leaseService, 'Renewal rejected.');
         $this->closeDetailModal();
+    }
+
+    private function notifyRenewalOutcome(LeaseService $leaseService, string $done): void
+    {
+        if ($leaseService->lastNotificationSent) {
+            $this->dispatch('notify', type: 'success', message: "{$done} The tenant was notified.");
+        } else {
+            $this->dispatch('notify', type: 'warning', message: "{$done} The tenant email or SMS could not be sent.");
+        }
     }
 
     public function closeDetailModal()

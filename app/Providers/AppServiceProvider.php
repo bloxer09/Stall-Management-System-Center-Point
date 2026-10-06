@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Http\Middleware\RequiresTwoFactor;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
@@ -22,5 +24,11 @@ class AppServiceProvider extends ServiceProvider
         Livewire::addPersistentMiddleware([
             RequiresTwoFactor::class,
         ]);
+
+        // Every login (password, Google, Facebook, set-password, remember-me) starts unverified,
+        // so a second user signing in on the same session never inherits the first user's 2FA pass.
+        Event::listen(Login::class, function () {
+            session()->forget('two_factor_verified');
+        });
     }
 }
