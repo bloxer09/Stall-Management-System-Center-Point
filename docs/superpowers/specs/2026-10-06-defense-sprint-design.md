@@ -48,10 +48,10 @@ Already fixed and only re-verified by existing code (no work): webhook rejects r
 
 ### Public side
 
-- **Route** `GET /stalls` (`stalls.browse`), no auth. Livewire component `Public\StallBrowser`.
+- **Route** `GET /stalls` (`stalls.browse`), no auth. Livewire component `Portal\StallBrowser`.
 - Floor tabs from `StallLocation` ordered by `sort_order`. Each floor renders a read-only grid using `grid_rows`/`grid_cols` and each stall's `grid_row`/`grid_col`, colored by status (available / reserved / occupied / maintenance). Stalls without a grid position are listed below the grid.
 - Clicking an **available** stall opens a detail panel (number, floor, monthly price, description, image) with **Apply for this stall**. Non-available stalls show their status only.
-- **Apply form** (modal, component `Public\StallApplicationForm` or a form object inside `StallBrowser`): `applicant_name` (required, ≤100), `applicant_email` (required, email, ≤120), `applicant_phone` (required, ≤30), `business_name` (required, ≤150), `business_type` (required, ≤100), `message` (optional, ≤1000), `document` (optional, pdf/jpg/jpeg/png, ≤5 MB). `preferred_stall_id` comes from the clicked stall and is re-checked server-side to be `available`.
+- **Apply form** (modal inside `Portal\StallBrowser`, backed by the Livewire form object `App\Livewire\Forms\StallApplicationForm`): `applicant_name` (required, ≤100), `applicant_email` (required, email, ≤120), `applicant_phone` (required, ≤30), `business_name` (required, ≤150), `business_type` (required, ≤100), `message` (optional, ≤1000), `document` (optional, pdf/jpg/jpeg/png, ≤5 MB). `preferred_stall_id` comes from the clicked stall and is re-checked server-side to be `available`.
 - **Abuse controls:** honeypot field (silently accepts and discards when filled); rate limit 3 submissions per IP per hour; reject a second **pending** application with the same email for the same stall.
 - **On submit:** store the document via `FileUploadService` on the private `local` disk; create `stall_applications` row with `status = pending`; email the applicant a confirmation via `MailService`; `Notification::send` to every admin with a link to `/admin/applications`.
 - Applying does **not** change the stall's status.
