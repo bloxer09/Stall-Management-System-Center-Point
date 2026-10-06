@@ -60,6 +60,12 @@ Route::post('/payment/paymongo-webhook', [PayMongoWebhookController::class, 'han
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth')->group(function () {
+    Route::get('/two-factor', function () {
+        return view('pages.auth.two-factor');
+    })->name('two-factor.challenge');
+});
+
+Route::middleware(['auth', '2fa'])->group(function () {
     Route::get('/receipt/{id}/pdf', [ReceiptVerificationController::class, 'downloadPdf'])->name('receipt.pdf');
     Route::get('/files/contract/{id}', [FileController::class, 'downloadContract'])->name('file.contract');
     Route::get('/files/ticket-attachment/{id}', [FileController::class, 'downloadTicketAttachment'])->name('file.ticket-attachment');
@@ -98,7 +104,7 @@ Route::middleware(['auth', 'role:user'])->prefix('user')->name('user.')->group(f
 | Admin Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'role:admin', '2fa'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', function () {
         return view('pages.admin.dashboard');
     })->name('dashboard');
