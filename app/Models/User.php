@@ -36,12 +36,22 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'phone_verified_at' => 'datetime',
             'password' => 'hashed',
+            'two_factor_enabled' => 'boolean',
+            'two_factor_confirmed_at' => 'datetime',
         ];
     }
 
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+
+    /**
+     * Two-factor authentication applies to admin accounts only.
+     */
+    public function hasTwoFactorEnabled(): bool
+    {
+        return $this->isAdmin() && (bool) $this->two_factor_enabled;
     }
 
     public function isUser(): bool
