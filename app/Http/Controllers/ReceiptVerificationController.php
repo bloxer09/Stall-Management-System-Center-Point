@@ -9,9 +9,11 @@ use Illuminate\View\View;
 
 class ReceiptVerificationController extends Controller
 {
-    public function verify(int $id): View
+    public function verify(string $token): View
     {
-        $payment = Invoice::with(['user', 'stall.location', 'transactions', 'items'])->findOrFail($id);
+        $payment = Invoice::with(['user', 'stall.location', 'transactions', 'items'])
+            ->where('verification_token', $token)
+            ->firstOrFail();
         return view('pages.verify_receipt', [
             'payment' => $payment,
         ]);

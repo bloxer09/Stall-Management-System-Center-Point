@@ -13,7 +13,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
                     <div class="p-4 bg-base-200 rounded-2xl border border-base-300">
                         <span class="text-base-content/60 block text-xs font-bold uppercase">Receipt Number</span>
-                        <span class="text-lg font-mono font-bold text-base-content">#{{ str_pad($payment->id, 8, '0', STR_PAD_LEFT) }}</span>
+                        <span class="text-lg font-mono font-bold text-base-content">{{ $payment->invoice_number }}</span>
                     </div>
                     <div class="p-4 bg-base-200 rounded-2xl border border-base-300">
                         <span class="text-base-content/60 block text-xs font-bold uppercase">Payment Status</span>
@@ -29,7 +29,7 @@
                     </div>
                     <div class="p-4 bg-base-200 rounded-2xl border border-base-300">
                         <span class="text-base-content/60 block text-xs font-bold uppercase">Amount Paid</span>
-                        <span class="text-xl font-black text-primary">₱{{ number_format($payment->amount, 2) }}</span>
+                        <span class="text-xl font-black text-primary">₱{{ number_format($payment->total_amount, 2) }}</span>
                     </div>
                     <div class="p-4 bg-base-200 rounded-2xl border border-base-300">
                         <span class="text-base-content/60 block text-xs font-bold uppercase">Paid At</span>

@@ -17,7 +17,9 @@ Route::get('/', function () {
     return view('pages.home');
 })->name('home');
 
-Route::get('/verify-receipt/{id}', [ReceiptVerificationController::class, 'verify'])->name('receipt.verify');
+Route::get('/verify-receipt/{token}', [ReceiptVerificationController::class, 'verify'])
+    ->whereUuid('token')
+    ->name('receipt.verify');
 
 Route::get('/privacy-policy', function () {
     return view('pages.privacy');

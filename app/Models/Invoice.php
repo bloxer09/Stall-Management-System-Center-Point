@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Invoice extends Model
 {
@@ -11,6 +12,7 @@ class Invoice extends Model
 
     protected $fillable = [
         'invoice_number',
+        'verification_token',
         'user_id',
         'stall_id',
         'total_amount',
@@ -26,6 +28,13 @@ class Invoice extends Model
         'due_date' => 'date',
         'paid_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Invoice $invoice) {
+            $invoice->verification_token ??= (string) Str::uuid();
+        });
+    }
 
     public function user()
     {
