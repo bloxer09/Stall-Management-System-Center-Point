@@ -21,6 +21,10 @@ Route::get('/verify-receipt/{token}', [ReceiptVerificationController::class, 've
     ->whereUuid('token')
     ->name('receipt.verify');
 
+Route::get('/stalls', function () {
+    return view('pages.stalls');
+})->name('stalls.browse');
+
 Route::get('/privacy-policy', function () {
     return view('pages.privacy');
 })->name('privacy');

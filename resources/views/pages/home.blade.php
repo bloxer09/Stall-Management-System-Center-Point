@@ -5,6 +5,7 @@
         $platformAddress = \App\Models\Setting::get('platform_address', 'Pagadian City, Zamboanga del Sur');
         $supportEmail = \App\Models\Setting::get('support_email', 'support@stallm.com');
         $supportPhone = \App\Models\Setting::get('support_phone', '09171112233');
+        $floors = \App\Models\StallLocation::withCount(['stalls', 'stalls as available_count' => fn ($q) => $q->where('status', 'available')])->orderBy('sort_order')->get();
     @endphp
 
     <div class="space-y-10 py-2">
@@ -93,59 +94,35 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <!-- Ground Floor -->
-                <div class="card bg-base-100 border border-base-300 rounded-3xl p-6 shadow-sm hover:shadow-md transition space-y-3">
-                    <div class="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-black text-lg">
-                        GF
+                @forelse($floors as $floor)
+                    <div class="card bg-base-100 border border-base-300 rounded-3xl p-6 shadow-sm hover:shadow-md transition space-y-3">
+                        <div class="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-black text-lg">
+                            {{ strtoupper(\Illuminate\Support\Str::substr($floor->name, 0, 2)) }}
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-black text-base-content">{{ $floor->name }}</h3>
+                            @if($floor->description)
+                                <p class="text-xs text-base-content/70 mt-1.5 leading-relaxed">{{ $floor->description }}</p>
+                            @endif
+                        </div>
+                        <div class="pt-2 border-t border-base-200 flex items-center justify-between text-xs text-base-content/60 font-semibold">
+                            <span>{{ $floor->available_count }} of {{ $floor->stalls_count }} available</span>
+                            @if($floor->available_count > 0)
+                                <span class="badge badge-sm badge-success badge-outline font-bold">Open</span>
+                            @else
+                                <span class="badge badge-sm badge-ghost font-bold">Full</span>
+                            @endif
+                        </div>
                     </div>
-                    <div>
-                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-primary">Level 1 &bull; Retail</span>
-                        <h3 class="text-lg font-black text-base-content mt-0.5">Ground Floor Arcade</h3>
-                        <p class="text-xs text-base-content/70 mt-1.5 leading-relaxed">
-                            Prime high foot-traffic zone featuring retail storefronts, customer kiosks, convenience stores, and merchandise spaces.
-                        </p>
+                @empty
+                    <div class="md:col-span-3 card bg-base-100 border border-base-300 rounded-3xl p-8 text-center text-sm text-base-content/60">
+                        Floor information will be published soon.
                     </div>
-                    <div class="pt-2 border-t border-base-200 flex items-center justify-between text-xs text-base-content/60 font-semibold">
-                        <span>Main Street Entrance</span>
-                        <span class="badge badge-sm badge-ghost font-bold">Prime Spaces</span>
-                    </div>
-                </div>
+                @endforelse
+            </div>
 
-                <!-- Second Floor -->
-                <div class="card bg-base-100 border border-base-300 rounded-3xl p-6 shadow-sm hover:shadow-md transition space-y-3">
-                    <div class="w-12 h-12 rounded-2xl bg-secondary/10 text-secondary flex items-center justify-center font-black text-lg">
-                        2F
-                    </div>
-                    <div>
-                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-secondary">Level 2 &bull; Mezzanine</span>
-                        <h3 class="text-lg font-black text-base-content mt-0.5">Second Floor Mezzanine</h3>
-                        <p class="text-xs text-base-content/70 mt-1.5 leading-relaxed">
-                            Specialty commercial zone accommodating fashion boutiques, electronics, pharmacies, office services, and specialty retail.
-                        </p>
-                    </div>
-                    <div class="pt-2 border-t border-base-200 flex items-center justify-between text-xs text-base-content/60 font-semibold">
-                        <span>Specialty &amp; Apparel</span>
-                        <span class="badge badge-sm badge-ghost font-bold">Standard Spaces</span>
-                    </div>
-                </div>
-
-                <!-- Food Court -->
-                <div class="card bg-base-100 border border-base-300 rounded-3xl p-6 shadow-sm hover:shadow-md transition space-y-3">
-                    <div class="w-12 h-12 rounded-2xl bg-accent/10 text-accent flex items-center justify-center font-black text-lg">
-                        FC
-                    </div>
-                    <div>
-                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-accent">Dining &amp; Refreshments</span>
-                        <h3 class="text-lg font-black text-base-content mt-0.5">Food Court Zone</h3>
-                        <p class="text-xs text-base-content/70 mt-1.5 leading-relaxed">
-                            Communal dining space equipped with dedicated food preparation counters, utility connections, and dining seating.
-                        </p>
-                    </div>
-                    <div class="pt-2 border-t border-base-200 flex items-center justify-between text-xs text-base-content/60 font-semibold">
-                        <span>Dining Hall Access</span>
-                        <span class="badge badge-sm badge-ghost font-bold">Food Counters</span>
-                    </div>
-                </div>
+            <div>
+                <a href="{{ route('stalls.browse') }}" wire:navigate class="btn btn-primary rounded-xl font-bold">Browse available stalls</a>
             </div>
         </div>
 

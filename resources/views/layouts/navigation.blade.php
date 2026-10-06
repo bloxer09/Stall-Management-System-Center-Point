@@ -30,6 +30,12 @@
 
     <!-- Right Top Header Controls -->
     <div class="flex items-center gap-2 sm:gap-3">
+        @if(!request()->routeIs('admin.*') && !request()->routeIs('user.*'))
+            <a href="{{ route('stalls.browse') }}" wire:navigate
+                class="btn btn-ghost btn-sm font-semibold text-base-content/80 {{ request()->routeIs('stalls.browse') ? 'text-primary' : '' }}">
+                Browse Stalls
+            </a>
+        @endif
         <!-- Quick Dashboard Link when on public pages -->
         @auth
             @if(!request()->routeIs('admin.*') && !request()->routeIs('user.*'))
