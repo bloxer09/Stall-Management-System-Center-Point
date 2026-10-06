@@ -77,7 +77,7 @@ class FlagOverdueInvoicesTest extends TestCase
 
         $adminNotes = Notification::where('user_id', $this->admin->id)->get();
         $this->assertCount(1, $adminNotes);
-        $this->assertSame('1 invoice(s) became overdue today', $adminNotes[0]->message);
+        $this->assertSame('1 invoice(s) are newly overdue', $adminNotes[0]->message);
         $this->assertSame(url('/admin/payments?status=overdue'), $adminNotes[0]->link);
     }
 
@@ -111,5 +111,26 @@ class FlagOverdueInvoicesTest extends TestCase
         app(InvoiceService::class)->markAsPaid($invoice->fresh(), 'office_cash');
 
         $this->assertSame('good_standing', $this->lease->fresh()->payment_status);
+    }
+
+    public function test_notice_is_not_sent_when_the_database_write_fails(): void
+    {
+        $invoice = $this->invoice(now()->subDays(3)->toDateString());
+        // Simulate the stamp failing: the lease/notification writes must roll back and nothing must be emailed.
+        \App\Models\Invoice::saving(function ($model) {
+            if ($model->isDirty('overdue_notified_at')) {
+                throw new \RuntimeException('database unavailable');
+            }
+        });
+
+        try {
+            $this->artisan('stallm:flag-overdue');
+        } catch (\RuntimeException) {
+        }
+
+        $this->assertSame('good_standing', $this->lease->fresh()->payment_status);
+        $this->assertSame(0, Notification::where('user_id', $this->tenant->id)->count());
+        Mail::assertNothingSent();
+        $this->assertNull($invoice->fresh()->overdue_notified_at);
     }
 }

@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\MailService;
 use App\Services\SmsService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 
 class FlagOverdueInvoices extends Command
 {
@@ -25,30 +26,39 @@ class FlagOverdueInvoices extends Command
             ->get();
 
         foreach ($invoices as $invoice) {
-            StallMapping::where('user_id', $invoice->user_id)
-                ->where('stall_id', $invoice->stall_id)
-                ->where('is_active', true)
-                ->update(['payment_status' => 'past_due']);
-
             $tenant = $invoice->user;
-            if ($tenant) {
-                $message = "Your invoice {$invoice->invoice_number} for Stall {$invoice->stall?->stall_number} was due on "
-                    . $invoice->due_date->format('M d, Y') . ' and is now overdue. Please pay as soon as possible.';
+            $message = "Your invoice {$invoice->invoice_number} for Stall {$invoice->stall?->stall_number} was due on "
+                . $invoice->due_date->format('M d, Y') . ' and is now overdue. Please pay as soon as possible.';
 
-                Notification::send($tenant->id, 'warning', 'Invoice overdue', $message, route('user.payments'));
+            // Lease status, in-app notice and the "notified" stamp succeed or fail together,
+            // so a failure can never leave an invoice notified twice or half-flagged.
+            DB::transaction(function () use ($invoice, $tenant, $message) {
+                StallMapping::where('user_id', $invoice->user_id)
+                    ->where('stall_id', $invoice->stall_id)
+                    ->where('is_active', true)
+                    ->update(['payment_status' => 'past_due']);
+
+                if ($tenant) {
+                    Notification::send($tenant->id, 'warning', 'Invoice overdue', $message, route('user.payments'));
+                }
+
+                $invoice->forceFill(['overdue_notified_at' => now()])->save();
+            });
+
+            // External sends happen only after the commit; they cannot be rolled back.
+            if ($tenant) {
                 $mailer->sendEmail($tenant->email, $tenant->name, 'Your invoice is overdue', '<p>Hello ' . e($tenant->name) . ',</p><p>' . e($message) . '</p>', $message);
                 if ($tenant->phone) {
                     $sms->sendSms($tenant->phone, "STALLM: {$message}");
                 }
             }
-
-            $invoice->forceFill(['overdue_notified_at' => now()])->save();
         }
 
         $count = $invoices->count();
         if ($count > 0) {
+            // "Newly overdue" stays accurate on the first run, which also picks up older unpaid bills.
             foreach (User::where('role', 'admin')->pluck('id') as $adminId) {
-                Notification::send($adminId, 'warning', 'Overdue invoices', "{$count} invoice(s) became overdue today", url('/admin/payments?status=overdue'));
+                Notification::send($adminId, 'warning', 'Overdue invoices', "{$count} invoice(s) are newly overdue", url('/admin/payments?status=overdue'));
             }
         }
 
