@@ -98,6 +98,45 @@
                     <p class="text-sm text-base-content/70 mt-3">{{ $selectedStall->description }}</p>
                 @endif
 
+                @if($submitted)
+                    <div class="alert alert-success rounded-2xl mt-5 text-sm">
+                        <span><strong>Application submitted.</strong> We emailed you a confirmation. The office will review it and get back to you.</span>
+                    </div>
+                @elseif($showApply && $selectedStall->status === 'available')
+                    <form wire:submit="submitApplication" class="space-y-3 mt-5">
+                        <div class="hidden" aria-hidden="true">
+                            <label>Website <input type="text" wire:model="form.website" tabindex="-1" autocomplete="off"></label>
+                        </div>
+                        @foreach([
+                            'applicant_name' => ['Full name', 'text', 'name'],
+                            'applicant_email' => ['Email', 'email', 'email'],
+                            'applicant_phone' => ['Mobile number', 'tel', 'tel'],
+                            'business_name' => ['Business name', 'text', 'organization'],
+                            'business_type' => ['Business type (e.g. Retail, Food)', 'text', 'off'],
+                        ] as $field => [$label, $type, $autocomplete])
+                            <label class="form-control w-full">
+                                <span class="label-text text-xs font-bold">{{ $label }}</span>
+                                <input type="{{ $type }}" wire:model="form.{{ $field }}" autocomplete="{{ $autocomplete }}" class="input input-bordered input-sm rounded-xl w-full @error('form.' . $field) input-error @enderror">
+                                @error('form.' . $field) <span class="text-error text-xs mt-1">{{ $message }}</span> @enderror
+                            </label>
+                        @endforeach
+                        <label class="form-control w-full">
+                            <span class="label-text text-xs font-bold">Message (optional)</span>
+                            <textarea wire:model="form.message" rows="2" class="textarea textarea-bordered rounded-xl text-sm w-full"></textarea>
+                            @error('form.message') <span class="text-error text-xs mt-1">{{ $message }}</span> @enderror
+                        </label>
+                        <label class="form-control w-full">
+                            <span class="label-text text-xs font-bold">Supporting document (optional, PDF/JPG/PNG, max 5 MB)</span>
+                            <input type="file" wire:model="form.document" accept=".pdf,.jpg,.jpeg,.png" class="file-input file-input-bordered file-input-sm rounded-xl w-full">
+                            <span wire:loading wire:target="form.document" class="text-xs text-base-content/60 mt-1">Uploading…</span>
+                            @error('form.document') <span class="text-error text-xs mt-1">{{ $message }}</span> @enderror
+                        </label>
+                        <button type="submit" class="btn btn-primary rounded-xl font-bold w-full" wire:loading.attr="disabled" wire:target="submitApplication,form.document">
+                            <span wire:loading.remove wire:target="submitApplication">Submit application</span>
+                            <span wire:loading wire:target="submitApplication">Submitting…</span>
+                        </button>
+                    </form>
+                @else
                 <div class="modal-action">
                     @if($selectedStall->status === 'available')
                         <button type="button" wire:click="openApply" class="btn btn-primary rounded-xl font-bold w-full">Apply for this stall</button>
@@ -105,6 +144,7 @@
                         <span class="badge badge-lg font-bold w-full py-4">{{ ucfirst($selectedStall->status) }} &mdash; not open for applications</span>
                     @endif
                 </div>
+                @endif
             </div>
             <div class="modal-backdrop" wire:click="closeStall"></div>
         </div>

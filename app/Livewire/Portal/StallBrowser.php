@@ -2,12 +2,20 @@
 
 namespace App\Livewire\Portal;
 
+use App\Livewire\Forms\StallApplicationForm;
 use App\Models\Stall;
 use App\Models\StallLocation;
+use App\Services\StallApplicationService;
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class StallBrowser extends Component
 {
+    use WithFileUploads;
+
+    public StallApplicationForm $form;
+    public bool $submitted = false;
     public ?int $activeLocationId = null;
     public ?int $selectedStallId = null;
     public bool $showApply = false;
@@ -36,7 +44,46 @@ class StallBrowser extends Component
 
     public function openApply(): void
     {
+        $this->resetValidation();
+        $this->submitted = false;
         $this->showApply = $this->selectedStallId !== null;
+    }
+
+    public function submitApplication(StallApplicationService $applications): void
+    {
+        if (!$this->selectedStallId) {
+            return;
+        }
+
+        // Bots fill the hidden field; pretend success so they learn nothing.
+        if ($this->form->website !== '') {
+            $this->finishSubmission();
+            return;
+        }
+
+        $this->form->applicant_email = trim($this->form->applicant_email);
+        $this->form->validate();
+
+        try {
+            $applications->submit(
+                $this->form->payload() + ['preferred_stall_id' => $this->selectedStallId],
+                $this->form->document,
+                request()->ip()
+            );
+        } catch (ValidationException $e) {
+            foreach ($e->errors() as $field => $messages) {
+                $this->addError('form.' . $field, $messages[0]);
+            }
+            return;
+        }
+
+        $this->finishSubmission();
+    }
+
+    private function finishSubmission(): void
+    {
+        $this->form->reset();
+        $this->submitted = true;
     }
 
     public function render()

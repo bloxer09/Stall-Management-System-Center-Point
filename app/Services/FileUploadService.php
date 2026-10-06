@@ -14,6 +14,12 @@ class FileUploadService
         return $file->storeAs('contracts', $filename, 'local');
     }
 
+    public function uploadApplicationDocument(UploadedFile $file): string
+    {
+        $filename = 'application_' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+        return $file->storeAs('application_documents', $filename, 'local');
+    }
+
     public function uploadTicketAttachment(UploadedFile $file): string
     {
         $filename = 'ticket_' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
