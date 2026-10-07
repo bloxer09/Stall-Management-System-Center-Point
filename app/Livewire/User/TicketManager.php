@@ -244,7 +244,7 @@ class TicketManager extends Component
             'user_id' => auth()->id(),
             'message' => $messageContent,
             'attachment_path' => $attachmentPathValue,
-            'reply_to_message_id' => $this->replyToMessageId,
+            'reply_to_message_id' => TicketMessage::replyTargetIn($this->replyToMessageId, (int) $ticket->id),
         ]);
 
         $ticket->touch();

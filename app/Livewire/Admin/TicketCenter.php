@@ -214,7 +214,7 @@ class TicketCenter extends Component
             'user_id' => Auth::id(),
             'message' => $messageContent,
             'attachment_path' => $attachmentPathValue,
-            'reply_to_message_id' => $this->replyToMessageId,
+            'reply_to_message_id' => TicketMessage::replyTargetIn($this->replyToMessageId, (int) $ticket->id),
         ]);
 
         $ticket->touch();
