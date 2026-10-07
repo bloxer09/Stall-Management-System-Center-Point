@@ -4,6 +4,7 @@ namespace App\Livewire\Admin;
 
 use App\Models\AuditLog;
 use App\Models\Setting;
+use App\Services\BackupService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
@@ -83,8 +84,28 @@ class SystemSettings extends Component
         $this->dispatch('notify', type: 'success', message: 'System settings saved successfully.');
     }
 
-    public function render()
+    public function createBackup(BackupService $backups): void
     {
-        return view('livewire.admin.system-settings');
+        $name = $backups->create();
+        AuditLog::record("Created database backup {$name}", 'Backup');
+        $this->dispatch('notify', type: 'success', message: "Backup {$name} created.");
+    }
+
+    public function deleteBackup(string $name, BackupService $backups): void
+    {
+        if (!$backups->delete($name)) {
+            $this->dispatch('notify', type: 'error', message: 'That backup no longer exists.');
+            return;
+        }
+
+        AuditLog::record("Deleted database backup {$name}", 'Backup');
+        $this->dispatch('notify', type: 'success', message: "Backup {$name} deleted.");
+    }
+
+    public function render(BackupService $backups)
+    {
+        return view('livewire.admin.system-settings', [
+            'backups' => $backups->list(),
+        ]);
     }
 }

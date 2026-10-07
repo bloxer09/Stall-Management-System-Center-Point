@@ -142,6 +142,10 @@ Route::middleware(['auth', 'role:admin', '2fa'])->prefix('admin')->name('admin.'
         return view('pages.admin.tickets');
     })->name('tickets');
 
+    Route::get('/backups/{name}', [\App\Http\Controllers\BackupController::class, 'download'])
+        ->where('name', '[^/]+')
+        ->name('backups.download');
+
     Route::get('/calendar', function () {
         return view('pages.admin.calendar');
     })->name('calendar');

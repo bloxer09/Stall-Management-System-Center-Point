@@ -114,4 +114,47 @@
             </button>
         </div>
     </form>
+
+    <!-- Database backups (outside the settings form: these act immediately) -->
+    <div class="card bg-base-100 rounded-3xl border border-base-300 shadow-md p-6 space-y-4">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div>
+                <h2 class="text-base font-black text-base-content uppercase tracking-wider">Database Backups</h2>
+                <p class="text-xs text-base-content/60 mt-1">A backup runs automatically every day at 2:00 AM; the latest 14 are kept. Backups contain all data, including password hashes — store downloads securely.</p>
+            </div>
+            <button type="button" wire:click="createBackup" class="btn btn-primary btn-sm rounded-xl font-bold shrink-0" wire:loading.attr="disabled" wire:target="createBackup"><span wire:loading wire:target="createBackup" class="loading loading-spinner loading-xs"></span>
+                Create backup now
+            </button>
+        </div>
+
+        <div class="overflow-x-auto border border-base-200 rounded-xl">
+            <table class="table table-sm w-full text-sm">
+                <thead>
+                    <tr class="text-base-content/70">
+                        <th>File</th>
+                        <th>Created</th>
+                        <th class="text-right">Size</th>
+                        <th class="text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($backups as $backup)
+                        <tr wire:key="backup-{{ $backup['name'] }}">
+                            <td class="font-mono text-xs">{{ $backup['name'] }}</td>
+                            <td class="text-xs">{{ $backup['created']->format('M d, Y g:i A') }}</td>
+                            <td class="text-right text-xs">{{ number_format($backup['size'] / 1024, 1) }} KB</td>
+                            <td class="text-right space-x-1">
+                                <a href="{{ route('admin.backups.download', $backup['name']) }}" class="btn btn-xs btn-outline rounded-lg font-bold">Download</a>
+                                <button type="button" wire:click="deleteBackup('{{ $backup['name'] }}')" wire:confirm="Delete {{ $backup['name'] }}? This cannot be undone." class="btn btn-xs btn-ghost text-error rounded-lg font-bold">Delete</button>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="4" class="text-center py-6 text-base-content/50">No backups yet.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        <p class="text-xs text-base-content/60">To restore a <code>.sql</code> backup: <code class="font-mono">mysql -u USER -p DATABASE &lt; backup-file.sql</code></p>
+    </div>
 </div>
