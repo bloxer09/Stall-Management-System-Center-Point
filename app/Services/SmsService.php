@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Mail\GenericNotificationMail;
+use App\Models\Setting;
 use GuzzleHttp\Client;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -51,8 +52,14 @@ class SmsService
     /**
      * Dispatch SMS with automatic local catcher and production Semaphore gateway routing.
      */
-    public function sendSms(string $number, string $message): bool
+    public function sendSms(string $number, string $message, bool $essential = false): bool
     {
+        // System Settings can turn SMS off; essential texts (admin 2FA codes) still go out,
+        // otherwise admins with two-factor on could never sign in.
+        if (!$essential && !$this->enabled()) {
+            return false;
+        }
+
         // 1. Local Development: Laravel SMS Catcher + Mailpit + Logs
         if ($this->isLocal()) {
             return $this->captureLocalSms($number, $message);
@@ -60,6 +67,19 @@ class SmsService
 
         // 2. Production: Dispatch via Semaphore SMS Gateway
         return $this->sendViaSemaphore($number, $message);
+    }
+
+    /**
+     * The System Settings switch. If settings cannot be read (fresh install, no table yet),
+     * SMS stays on as it always was.
+     */
+    public function enabled(): bool
+    {
+        try {
+            return Setting::get('sms_enabled', '1') === '1';
+        } catch (\Throwable) {
+            return true;
+        }
     }
 
     /**

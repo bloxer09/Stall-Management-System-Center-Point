@@ -107,6 +107,18 @@
             </div>
         </div>
 
+        <!-- Notifications -->
+        <div class="card bg-base-100 rounded-3xl border border-base-300 shadow-md p-6 space-y-3">
+            <h2 class="text-base font-black text-base-content uppercase tracking-wider">Notifications</h2>
+            <label class="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" wire:model="sms_enabled" class="toggle toggle-primary mt-0.5">
+                <span>
+                    <span class="font-bold text-sm text-base-content">Send SMS notifications</span>
+                    <span class="block text-xs text-base-content/60">Reminders, overdue notices, renewals and reset codes by text. Admin two-factor codes are always sent.</span>
+                </span>
+            </label>
+        </div>
+
         <div class="flex justify-end pt-2">
             <button type="submit" wire:loading.attr="disabled" class="btn btn-primary rounded-xl font-bold px-8 shadow-md" wire:target="saveSettings">
                 <span wire:loading wire:target="saveSettings" class="loading loading-spinner loading-xs mr-1"></span>

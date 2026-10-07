@@ -39,7 +39,7 @@ class TwoFactorService
             'expires_at' => now()->addMinutes(10),
         ]);
 
-        return $this->sms->sendSms((string) $user->phone, "Your STALLM verification code is {$code}. It expires in 10 minutes.");
+        return $this->sms->sendSms((string) $user->phone, "Your STALLM verification code is {$code}. It expires in 10 minutes.", essential: true);
     }
 
     public function secondsUntilResend(User $user): int

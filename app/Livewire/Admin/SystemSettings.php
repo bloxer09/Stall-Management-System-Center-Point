@@ -22,6 +22,7 @@ class SystemSettings extends Component
     public string $support_phone = '';
     public string $privacy_policy = '';
     public string $terms_conditions = '';
+    public bool $sms_enabled = true;
 
     // Landing Background Image
     public $landing_bg_image = null;
@@ -36,6 +37,7 @@ class SystemSettings extends Component
         $this->existing_landing_bg_image = Setting::get('landing_bg_image');
         $this->privacy_policy = Setting::get('privacy_policy', "Center Point Commercial Stall Management Privacy Policy\n\n1. Data Collection\nWe collect tenant names, contact numbers, email addresses, and stall lease information required for property administration.\n\n2. Data Protection\nTenant payment transactions and personal credentials are encrypted using industry-standard protocols.\n\n3. Contact Information\nFor privacy inquiries, contact admin@stallm.com.");
         $this->terms_conditions = Setting::get('terms_conditions', self::DEFAULT_TERMS);
+        $this->sms_enabled = Setting::get('sms_enabled', '1') === '1';
     }
 
     public function removeLandingBg(): void
@@ -58,6 +60,7 @@ class SystemSettings extends Component
             'privacy_policy' => 'required|string|min:20',
             'terms_conditions' => 'required|string|min:20',
             'landing_bg_image' => 'nullable|image|max:10240',
+            'sms_enabled' => 'boolean',
         ]);
 
         if ($this->landing_bg_image) {
@@ -73,6 +76,12 @@ class SystemSettings extends Component
         Setting::set('support_phone', $this->support_phone);
         Setting::set('privacy_policy', $this->privacy_policy);
         Setting::set('terms_conditions', $this->terms_conditions);
+
+        $smsWas = Setting::get('sms_enabled', '1') === '1';
+        Setting::set('sms_enabled', $this->sms_enabled ? '1' : '0');
+        if ($smsWas !== $this->sms_enabled) {
+            AuditLog::record('Turned SMS notifications ' . ($this->sms_enabled ? 'on' : 'off'), 'Setting');
+        }
 
         AuditLog::log(
             Auth::id(),
