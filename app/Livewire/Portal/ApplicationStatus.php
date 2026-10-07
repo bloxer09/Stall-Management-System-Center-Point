@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Portal;
 
+use App\Livewire\Concerns\VerifiesTurnstile;
 use App\Models\StallApplication;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
@@ -9,6 +10,8 @@ use Livewire\Component;
 
 class ApplicationStatus extends Component
 {
+    use VerifiesTurnstile;
+
     public string $reference = '';
     public string $email = '';
 
@@ -21,6 +24,11 @@ class ApplicationStatus extends Component
             'reference' => 'required|string|max:30',
             'email' => 'required|string|max:120',
         ]);
+
+        if (!$this->passesTurnstile('reference')) {
+            $this->result = null;
+            return;
+        }
 
         $key = 'app-status:' . request()->ip();
         if (RateLimiter::tooManyAttempts($key, 10)) {

@@ -111,6 +111,7 @@
                 </div>
                 @error('terms') <span class="text-xs text-error block font-medium">{{ $message }}</span> @enderror
 
+                <x-turnstile />
                 <button type="submit" class="btn btn-primary w-full rounded-xl font-bold text-sm shadow-sm" wire:loading.attr="disabled">
                     <span wire:loading.remove wire:target="processRegister">Create Account</span>
                     <span wire:loading wire:target="processRegister" class="loading loading-spinner loading-xs"></span>
@@ -129,6 +130,7 @@
                         @error('forgotEmail') <span class="text-xs text-error mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
 
+                    <x-turnstile />
                     <button type="submit" class="btn btn-primary w-full rounded-xl font-bold text-sm shadow-sm" wire:loading.attr="disabled">
                         <span wire:loading.remove wire:target="processForgotPasswordRequest">Send Reset Code</span>
                         <span wire:loading wire:target="processForgotPasswordRequest" class="loading loading-spinner loading-xs"></span>

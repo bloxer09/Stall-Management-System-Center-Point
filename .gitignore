@@ -20,3 +20,6 @@ vite.config.js.timestamp-*
 
 # Database backups contain all data, including password hashes
 /storage/app/backups/
+
+# Same file as storage/app/public/.htaccess, seen through the public/storage link
+/public/storage/.htaccess

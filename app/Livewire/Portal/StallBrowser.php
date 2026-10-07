@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Portal;
 
+use App\Livewire\Concerns\VerifiesTurnstile;
 use App\Livewire\Forms\StallApplicationForm;
 use App\Models\Stall;
 use App\Models\StallLocation;
@@ -15,7 +16,7 @@ use Livewire\WithFileUploads;
 
 class StallBrowser extends Component
 {
-    use WithFileUploads;
+    use WithFileUploads, VerifiesTurnstile;
 
     public StallApplicationForm $form;
     public bool $submitted = false;
@@ -64,7 +65,7 @@ class StallBrowser extends Component
     public function joinWaitlist(): void
     {
         $stall = Stall::find($this->selectedStallId);
-        if (!$stall) {
+        if (!$stall || !$this->passesTurnstile('waitlistEmail')) {
             return;
         }
 
@@ -123,6 +124,10 @@ class StallBrowser extends Component
         // Bots fill the hidden field; pretend success so they learn nothing.
         if ($this->form->website !== '') {
             $this->finishSubmission();
+            return;
+        }
+
+        if (!$this->passesTurnstile('form.applicant_email')) {
             return;
         }
 

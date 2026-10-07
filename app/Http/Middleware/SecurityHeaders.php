@@ -74,7 +74,7 @@ class SecurityHeaders
             "font-src 'self' https://fonts.gstatic.com data:",
             "img-src 'self' data: blob: https:",
             "connect-src 'self'",
-            "frame-src 'self' https://challenges.cloudflare.com",
+            "frame-src 'self'{$turnstile}",
             "object-src 'none'",
             "base-uri 'self'",
             "form-action 'self'",

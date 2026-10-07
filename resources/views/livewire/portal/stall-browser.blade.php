@@ -131,6 +131,7 @@
                             <span wire:loading wire:target="form.document" class="text-xs text-base-content/60 mt-1">Uploading…</span>
                             @error('form.document') <span class="text-error text-xs mt-1">{{ $message }}</span> @enderror
                         </label>
+                        <x-turnstile />
                         <button type="submit" class="btn btn-primary rounded-xl font-bold w-full" wire:loading.attr="disabled" wire:target="submitApplication,form.document">
                             <span wire:loading.remove wire:target="submitApplication">Submit application</span>
                             <span wire:loading wire:target="submitApplication">Submitting…</span>
@@ -151,6 +152,7 @@
                                     @error('waitlistName') <span class="text-error text-xs">{{ $message }}</span> @enderror
                                     <input type="email" wire:model="waitlistEmail" maxlength="120" placeholder="Your email" aria-label="Your email" class="input input-bordered input-sm rounded-xl w-full">
                                     @error('waitlistEmail') <span class="text-error text-xs">{{ $message }}</span> @enderror
+                                    <x-turnstile />
                                     <button type="submit" class="btn btn-primary btn-sm rounded-xl font-bold w-full" wire:loading.attr="disabled" wire:target="joinWaitlist"><span wire:loading wire:target="joinWaitlist" class="loading loading-spinner loading-xs"></span>
                                         Notify me
                                     </button>

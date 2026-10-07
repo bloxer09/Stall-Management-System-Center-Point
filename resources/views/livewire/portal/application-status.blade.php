@@ -14,6 +14,7 @@
                 <input id="statusEmail" type="email" wire:model="email" maxlength="120" autocomplete="email" class="input input-bordered w-full rounded-xl text-sm" placeholder="you@example.com">
                 @error('email') <p class="text-error text-xs mt-1">{{ $message }}</p> @enderror
             </div>
+            <x-turnstile />
             <button type="submit" class="btn btn-primary rounded-xl font-bold w-full" wire:loading.attr="disabled" wire:target="lookup"><span wire:loading wire:target="lookup" class="loading loading-spinner loading-xs"></span>
                 Check status
             </button>

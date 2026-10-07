@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Auth;
 
+use App\Livewire\Concerns\VerifiesTurnstile;
 use App\Http\Middleware\EnsureAccountActive;
 use App\Models\User;
 use App\Services\MailService;
@@ -18,6 +19,8 @@ use Livewire\Component;
 
 class AuthModals extends Component
 {
+    use VerifiesTurnstile;
+
     public bool $isOpen = false;
     public string $activeTab = 'login'; // login, register, forgot
 
@@ -90,6 +93,10 @@ class AuthModals extends Component
         $this->validate([
             'forgotEmail' => 'required|email',
         ]);
+
+        if (!$this->passesTurnstile('forgotEmail')) {
+            return;
+        }
 
         // Limits reset emails/texts to one inbox (and SMS costs) per email + connection.
         $throttleKey = 'forgot:' . Str::lower($this->forgotEmail) . '|' . request()->ip();
@@ -241,6 +248,10 @@ class AuthModals extends Component
 
     public function processRegister()
     {
+        if (!$this->passesTurnstile('regEmail')) {
+            return;
+        }
+
         // Every attempt counts, so a bot cannot mass-create accounts from one connection.
         $throttleKey = 'register:' . request()->ip();
         if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
