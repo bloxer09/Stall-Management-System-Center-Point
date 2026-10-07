@@ -9,6 +9,7 @@ use App\Models\Notification;
 use App\Models\Stall;
 use App\Models\StallMapping;
 use App\Models\User;
+use DomainException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -321,18 +322,43 @@ class LeaseService
         return (float) Invoice::where('user_id', $lease->user_id)
             ->where('stall_id', $lease->stall_id)
             ->where('status', 'pending')
+            // A reservation's first bill is voided on termination, so it is not owed.
+            ->when($lease->isPendingInitial() && $lease->initial_invoice_id, fn ($q) => $q->whereKeyNot($lease->initial_invoice_id))
             ->sum('total_amount');
+    }
+
+    public function canTerminate(StallMapping $lease): bool
+    {
+        return $lease->is_active || $lease->isPendingInitial();
     }
 
     /**
      * Terminate an active or reserved lease and make the stall available again.
      * Unpaid invoices are kept: the tenant still owes them, so the lease stays past due.
+     * An unpaid reservation's initial invoice is cancelled instead: the stall was never occupied.
+     *
+     * @throws DomainException when the lease has already ended.
      */
     public function terminateLease(StallMapping $lease, string $reason): StallMapping
     {
+        if (!$this->canTerminate($lease)) {
+            throw new DomainException('This lease has already ended.');
+        }
+
         $balance = $this->unpaidBalance($lease);
 
         DB::transaction(function () use ($lease, $reason, $balance) {
+            if ($lease->isPendingInitial() && $lease->initial_invoice_id) {
+                $initial = Invoice::whereKey($lease->initial_invoice_id)->where('status', 'pending')->first();
+                if ($initial) {
+                    $initial->update([
+                        'status' => 'cancelled',
+                        'notes' => trim(($initial->notes ? $initial->notes . ' | ' : '') . 'Cancelled: reservation terminated'),
+                    ]);
+                    AuditLog::record("Cancelled invoice #{$initial->invoice_number} (reservation terminated)", 'Invoice', $initial->id);
+                }
+            }
+
             $lease->update([
                 'is_active' => false,
                 'payment_status' => $balance > 0 ? 'past_due' : 'settled',

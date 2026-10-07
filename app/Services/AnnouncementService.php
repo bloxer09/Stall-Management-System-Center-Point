@@ -21,6 +21,7 @@ class AnnouncementService
     public function recipients(?int $locationId): Collection
     {
         return User::where('role', 'user')
+            ->whereNull('deactivated_at')
             ->whereHas('mappings', function ($q) use ($locationId) {
                 $q->where('is_active', true);
                 if ($locationId) {

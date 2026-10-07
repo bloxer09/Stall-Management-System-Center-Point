@@ -20,8 +20,10 @@ class AppServiceProvider extends ServiceProvider
     {
         Schema::defaultStringLength(191);
 
-        // Livewire actions on admin pages go to /livewire/update; re-apply the 2FA gate there too.
+        // Livewire actions go to /livewire/update; re-apply the page's role, 2FA and active-account
+        // gates there too, so a replayed admin snapshot cannot run admin actions for a tenant.
         Livewire::addPersistentMiddleware([
+            \App\Http\Middleware\CheckRole::class,
             RequiresTwoFactor::class,
             \App\Http\Middleware\EnsureAccountActive::class,
         ]);

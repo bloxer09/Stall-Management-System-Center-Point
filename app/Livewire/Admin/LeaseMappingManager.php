@@ -212,6 +212,13 @@ class LeaseMappingManager extends Component
     public function terminateLease(LeaseService $leaseService)
     {
         $lease = StallMapping::findOrFail($this->terminateId);
+        if (!$leaseService->canTerminate($lease)) {
+            // e.g. terminated meanwhile from another tab.
+            $this->terminateId = null;
+            $this->dispatch('notify', type: 'error', message: 'This lease has already ended.');
+            return;
+        }
+
         // Recomputed here so a payment made while the modal was open is respected.
         $this->terminateBalance = $leaseService->unpaidBalance($lease);
 

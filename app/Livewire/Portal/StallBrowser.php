@@ -6,6 +6,7 @@ use App\Livewire\Forms\StallApplicationForm;
 use App\Models\Stall;
 use App\Models\StallLocation;
 use App\Services\StallApplicationService;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -78,11 +79,6 @@ class StallBrowser extends Component
             return;
         }
 
-        if ($stall->waitlist()->where('email', $this->waitlistEmail)->exists()) {
-            $this->addError('waitlistEmail', "You're already on the list for this stall.");
-            return;
-        }
-
         $key = 'stall-waitlist:' . request()->ip();
         if (RateLimiter::tooManyAttempts($key, 5)) {
             $minutes = (int) ceil(RateLimiter::availableIn($key) / 60);
@@ -91,7 +87,22 @@ class StallBrowser extends Component
         }
         RateLimiter::hit($key, 3600);
 
-        $stall->waitlist()->create(['name' => trim($this->waitlistName), 'email' => $this->waitlistEmail]);
+        $existing = $stall->waitlist()->where('email', $this->waitlistEmail)->first();
+        if ($existing && $existing->notified_at === null) {
+            $this->addError('waitlistEmail', "You're already on the list for this stall.");
+            return;
+        }
+
+        if ($existing) {
+            // Emailed last time the stall opened, but it was taken again: wait for the next opening.
+            $existing->forceFill(['name' => trim($this->waitlistName), 'notified_at' => null])->save();
+        } else {
+            try {
+                $stall->waitlist()->create(['name' => trim($this->waitlistName), 'email' => $this->waitlistEmail]);
+            } catch (UniqueConstraintViolationException) {
+                // Double submit: the first request already added them.
+            }
+        }
         $this->reset(['waitlistName', 'waitlistEmail']);
         $this->waitlistJoined = true;
     }

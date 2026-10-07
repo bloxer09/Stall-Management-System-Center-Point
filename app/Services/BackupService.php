@@ -6,6 +6,8 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
+use RuntimeException;
+use Throwable;
 
 /**
  * Database backups written by PHP alone (mysqldump is not guaranteed on Windows hosts).
@@ -13,7 +15,7 @@ use Illuminate\Support\Facades\Schema;
  */
 class BackupService
 {
-    private const NAME_PATTERN = '/^backup-[0-9-]+\.(sql|sqlite)$/';
+    private const NAME_PATTERN = '/^backup-[0-9-]+\.(sql|sqlite)\z/';
     private const CHUNK = 500;
 
     private string $dir;
@@ -42,13 +44,18 @@ class BackupService
         }
 
         $name = $this->freshName('sql');
-        $handle = fopen($this->dir . '/' . $name, 'w');
+        $path = $this->dir . '/' . $name;
+        $handle = fopen($path, 'w');
+        if ($handle === false) {
+            throw new RuntimeException("Cannot write backup file {$name}.");
+        }
 
         try {
             fwrite($handle, '-- ' . config('app.name') . ' database backup, ' . now()->toDateTimeString() . "\n");
-            fwrite($handle, $driver === 'mysql' ? "SET FOREIGN_KEY_CHECKS=0;\n\n" : "PRAGMA foreign_keys=OFF;\n\n");
+            fwrite($handle, self::preamble($driver) . "\n");
 
-            foreach (Schema::getTableListing(schemaQualified: false) as $table) {
+            // Only this app's database: with no schema, MySQL would list every database the user can see.
+            foreach (Schema::getTableListing(Schema::getCurrentSchemaListing(), false) as $table) {
                 fwrite($handle, "DROP TABLE IF EXISTS " . $this->quoteIdentifier($table, $driver) . ";\n");
                 fwrite($handle, $this->createStatement($table, $driver) . ";\n");
                 $this->writeRows($handle, $table, $driver);
@@ -56,11 +63,27 @@ class BackupService
             }
 
             fwrite($handle, $driver === 'mysql' ? "SET FOREIGN_KEY_CHECKS=1;\n" : "PRAGMA foreign_keys=ON;\n");
-        } finally {
+        } catch (Throwable $e) {
+            // Never leave a half-written file that would be listed and counted as a good backup.
             fclose($handle);
+            File::delete($path);
+            throw $e;
         }
 
+        fclose($handle);
+
         return $name;
+    }
+
+    /**
+     * Statements at the top of a .sql backup. SET NAMES makes the mysql client restore text
+     * (₱, ñ) correctly whatever its default character set is.
+     */
+    public static function preamble(string $driver): string
+    {
+        return $driver === 'mysql'
+            ? "SET NAMES utf8mb4;\nSET FOREIGN_KEY_CHECKS=0;\n"
+            : "PRAGMA foreign_keys=OFF;\n";
     }
 
     /**
@@ -153,7 +176,7 @@ class BackupService
     /**
      * @param  resource  $handle
      */
-    private function writeRows($handle, string $table, string $driver): void
+    protected function writeRows($handle, string $table, string $driver): void
     {
         $columns = Schema::getColumnListing($table);
         if ($columns === []) {

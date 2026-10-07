@@ -23,8 +23,9 @@ class StallObserver implements ShouldHandleEventsAfterCommit
 
         $link = url('/stalls');
         foreach ($stall->waitlist()->whereNull('notified_at')->get() as $entry) {
+            $sent = false;
             try {
-                $this->mailer->sendEmail(
+                $sent = $this->mailer->sendEmail(
                     $entry->email,
                     $entry->name,
                     "Stall {$stall->stall_number} is now available",
@@ -38,7 +39,10 @@ class StallObserver implements ShouldHandleEventsAfterCommit
                 report($e);
             }
 
-            $entry->forceFill(['notified_at' => now()])->save();
+            // Only stamp a delivered email; a failed one is tried again the next time the stall opens.
+            if ($sent) {
+                $entry->forceFill(['notified_at' => now()])->save();
+            }
         }
     }
 }
