@@ -1,0 +1,163 @@
+{
+  "versions": {
+    "php": "8.3.33",
+    "laravel": "12.64.0",
+    "livewire": "3.8.10",
+    "socialite": "5.29.0",
+    "dompdf": "3.1.6",
+    "phpspreadsheet": "5.9.0",
+    "phpunit": "11.5.56",
+    "tailwindcss": "3.4.19",
+    "daisyui": "4.12.24",
+    "vite": "5.4.21",
+    "alpinejs": "bundled with Livewire 3.8.10",
+    "chartjs": "4.5.1"
+  },
+  "roles": [
+    "Administrator",
+    "Tenant",
+    "Visitor (not signed in)"
+  ],
+  "schedule": [
+    {
+      "command": "billing:generate-invoices",
+      "when": "monthlyOn(1, '00:00')"
+    },
+    {
+      "command": "stallm:send-reminders",
+      "when": "dailyAt('08:00')"
+    },
+    {
+      "command": "stallm:notify-expiring-leases",
+      "when": "dailyAt('07:00')"
+    },
+    {
+      "command": "stallm:flag-overdue",
+      "when": "dailyAt('08:30')"
+    },
+    {
+      "command": "stallm:backup",
+      "when": "dailyAt('02:00')"
+    }
+  ],
+  "routes": {
+    "admin": [
+      "admin/analytics",
+      "admin/announcements",
+      "admin/applications",
+      "admin/audit-logs",
+      "admin/backups/{name}",
+      "admin/calendar",
+      "admin/dashboard",
+      "admin/error-logs",
+      "admin/floors",
+      "admin/grid-editor",
+      "admin/mappings",
+      "admin/payments",
+      "admin/reports",
+      "admin/settings",
+      "admin/stalls",
+      "admin/tenants",
+      "admin/tickets"
+    ],
+    "tenant": [
+      "user/dashboard",
+      "user/documents",
+      "user/leases",
+      "user/payments",
+      "user/tickets"
+    ],
+    "public": [
+      "/",
+      "account/set-password/{user}",
+      "application-status",
+      "auth/facebook",
+      "auth/facebook/callback",
+      "auth/google",
+      "auth/google/callback",
+      "files/application-document/{id}",
+      "files/contract/{id}",
+      "files/ticket-attachment/{id}",
+      "login",
+      "privacy-policy",
+      "receipt/{id}/pdf",
+      "register",
+      "stalls",
+      "statement/{user}/pdf",
+      "terms-and-conditions",
+      "two-factor",
+      "verify-receipt/{token}"
+    ]
+  },
+  "tests": {
+    "passed": 340,
+    "assertions": 1271,
+    "by_file": {
+      "ErrorLogServiceTest": 0,
+      "InvoiceOverdueTest": 0,
+      "InvoiceServiceTest": 0,
+      "LeaseRenewalTest": 0,
+      "LeaseServiceTest": 0,
+      "ServicesTest": 0,
+      "TransactionServiceTest": 0,
+      "TwoFactorServiceTest": 0,
+      "AccessibilityMarkupTest": 0,
+      "AdminAttentionPanelTest": 0,
+      "AnnouncementTest": 0,
+      "ApplicationApprovalTest": 0,
+      "ApplicationReviewTest": 0,
+      "ApplicationStatusTest": 0,
+      "AuthHardeningTest": 0,
+      "AuthTest": 0,
+      "BackupTest": 0,
+      "CalendarTest": 0,
+      "ContentSecurityPolicyTest": 0,
+      "DemoSeederSafetyTest": 0,
+      "DemoSeederTest": 0,
+      "DocumentRepositoryTest": 0,
+      "FinalReviewFixesTest": 0,
+      "FlagOverdueInvoicesTest": 0,
+      "FrontendReviewFixesTest": 0,
+      "GlobalSearchTest": 0,
+      "HardeningMinorsTest": 0,
+      "HardeningReviewFixesTest": 0,
+      "HomePageTest": 0,
+      "LeaseExpiryNotificationTest": 0,
+      "LeaseRenewalUiTest": 0,
+      "LeaseTerminationTest": 0,
+      "LegacyOverdueStatusMigrationTest": 0,
+      "LoadingStatesTest": 0,
+      "LoginThrottleTest": 0,
+      "MailServiceTest": 0,
+      "MarkupCleanupTest": 0,
+      "NavigationLinksTest": 0,
+      "NotificationLinkTest": 0,
+      "OverdueDisplayTest": 0,
+      "PaymentChannelsCardTest": 0,
+      "ProfileModalTest": 0,
+      "ReceiptVerificationTest": 0,
+      "ResetTwoFactorCommandTest": 0,
+      "ReviewFixesTest": 0,
+      "SecurityHeadersTest": 0,
+      "SecurityLogTest": 0,
+      "SettingAndUserTest": 0,
+      "SmsSwitchTest": 0,
+      "StallApplicationSubmitTest": 0,
+      "StallBrowserTest": 0,
+      "StallGridEditorTest": 0,
+      "StallSystemTest": 0,
+      "StallWaitlistTest": 0,
+      "StatementTest": 0,
+      "SystemSettingsTest": 0,
+      "TenantAccountsTest": 0,
+      "TenantDashboardTest": 0,
+      "TermsWordingTest": 0,
+      "TicketStallScopeTest": 0,
+      "TurnstileTest": 0,
+      "TwoFactorChallengeTest": 0,
+      "TwoFactorEnrollmentTest": 0,
+      "TypingIndicatorTest": 0,
+      "UploadAndReplySecurityTest": 0
+    }
+  }
+}
