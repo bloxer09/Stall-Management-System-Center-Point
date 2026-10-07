@@ -85,7 +85,7 @@ SLIDES = [
     ('TENANT PORTAL', [
         'Announcements and upcoming due dates',
         'Leases, renewals, and invoices in one place',
-        'Support tickets with real-time chat',
+        'Support tickets with live chat',
         'Documents, receipts, and statements',
     ], '30-tenant-dashboard.png'),
     ('ADMINISTRATION', [

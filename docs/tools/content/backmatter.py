@@ -231,4 +231,4 @@ def apply(b):
             ('Tertiary', 'West Prime Horizon Institute, Inc.', '[Year]'),
             ('Secondary', '[School]', '[Year]'),
             ('Primary', '[School]', '[Year]'),
-        ], f'Educational background of {member}.', like_table=b.doc.tables[2])
+        ], f"Educational background of {member.rstrip('.')}.", like_table=b.doc.tables[2])

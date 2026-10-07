@@ -229,7 +229,7 @@ class Builder:
 
 def main():
     b = Builder(SRC)
-    for name in ['content.ch1', 'content.ch2', 'content.ch3', 'content.ch4', 'content.ch5', 'content.backmatter']:
+    for name in ['content.ch1', 'content.ch2', 'content.ch3', 'content.ch4', 'content.ch5', 'content.backmatter', 'content.review_fixes']:
         try:
             module = importlib.import_module(name)
         except ModuleNotFoundError as e:

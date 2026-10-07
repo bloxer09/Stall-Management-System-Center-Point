@@ -120,7 +120,8 @@ def apply(b):
     ], like=numbered)
 
     # --- Recommendations
-    last_rec = b.find('Integration with Local Government Regulatory Systems')
+    # after the original last recommendation, so the back matter follows the whole list
+    last_rec = b.find('Comprehensive User Acceptance Testing with a Larger Sample')
     b.after_many(last_rec, [
         'Off-site Backup Storage — Automatically copy the encrypted daily backups to cloud storage or another server so a copy survives a server failure.',
         'Livewire 4 Upgrade — Upgrading to Livewire 4 would allow the Content-Security-Policy to drop its remaining allowance for runtime-evaluated code.',
