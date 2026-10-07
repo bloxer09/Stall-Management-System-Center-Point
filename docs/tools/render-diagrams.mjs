@@ -19,6 +19,7 @@ const JOBS = [
     ['thesis-figures.drawio', 'System Flowchart for Tenant', 'fig-flowchart-tenant.png'],
     ['thesis-figures.drawio', 'Use Case Diagram', 'fig-use-case.png'],
     ['thesis-figures.drawio', 'Content Diagram', 'fig-content-diagram.png'],
+    ['thesis-figures.drawio', 'System Architecture', 'fig-architecture.png'],
 ];
 
 mkdirSync(OUT, { recursive: true });

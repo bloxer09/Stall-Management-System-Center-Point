@@ -203,7 +203,43 @@ for (title, leaves), x in zip(groups, gx):
         lf = cd.node('page_leaf', leaf, x + 60, 240 + i * 62, 240, 44)
         cd.edge(g, lf, kind='tree', points=[(x + 30, 263 + i * 62)])
 
-pages = [admin, tenant, uc, cd]
+# ---------------------------------------------------------------- System architecture (layers)
+STYLE['layer'] = 'rounded=1;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#94A3B8;verticalAlign=top;fontStyle=1;fontSize=14;align=left;spacingLeft=12;spacingTop=6;'
+STYLE['box'] = 'rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6366F1;fontSize=12;'
+STYLE['ext'] = 'rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;fontSize=12;'
+STYLE['db'] = 'shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=12;'
+ar = Page('System Architecture')
+layers = [
+    ('Users (web browser)', ['Visitor\n(not signed in)', 'Tenant', 'Administrator']),
+    ('Security layer', ['HTTPS, security headers\n& Content-Security-Policy', 'Rate limiting &\noptional Turnstile CAPTCHA', 'Role, 2FA & active-account\nchecks on every request', 'CSRF protection &\nsafe file uploads']),
+    ('Presentation (Laravel Blade + Livewire 3 + Alpine.js)', ['Public portal', 'Tenant portal', 'Admin panel', 'Notification bell\n& global search']),
+    ('Business logic (Laravel 12 services)', ['Leases & applications', 'Invoices, payments\n& statements', 'Announcements &\nwaitlist', 'Backups &\nsecurity log']),
+]
+y = 20
+prev_ids = None
+prev_layer = None
+for title, boxes in layers:
+    layer = ar.node('layer', title, 20, y, 1000, 130)
+    if prev_layer:
+        # layer-to-layer arrows run through the gap between layers, never through a box
+        ar.edge(prev_layer, layer, extra='exitX=0.5;exitY=1;entryX=0.5;entryY=0;')
+    prev_layer = layer
+    ids = []
+    w = (1000 - 40 - 20 * (len(boxes) - 1)) / len(boxes)
+    for i, text in enumerate(boxes):
+        ids.append(ar.node('box', text, 40 + i * (w + 20), y + 40, w, 70))
+    prev_ids = ids
+    y += 160
+data_layer = ar.node('layer', 'Data and external services', 20, y, 1000, 150)
+ar.edge(prev_layer, data_layer, extra='exitX=0.5;exitY=1;entryX=0.5;entryY=0;')
+db = ar.node('db', 'MySQL database', 40, y + 40, 170, 90)
+ar.node('db', 'Encrypted\nbackups (daily)', 230, y + 40, 150, 90)
+for i, text in enumerate(['PayMongo\n(GCash, Maya, cards)', 'Mailjet email', 'Semaphore SMS', 'Google / Facebook\nsign-in']):
+    ar.node('ext', text, 400 + i * 155, y + 50, 140, 70)
+sched = ar.node('auto', 'Laravel scheduler: invoices, reminders,\noverdue flags, lease alerts, backups', 1060, 500, 230, 90)
+ar.edge(sched, prev_ids[-1])
+
+pages = [admin, tenant, uc, cd, ar]
 xml = '<mxfile host="app.diagrams.net" type="device">' + ''.join(p.xml(i) for i, p in enumerate(pages)) + '</mxfile>'
 open(OUT, 'w', encoding='utf-8').write(xml)
 print('wrote', OUT, [p.name for p in pages])

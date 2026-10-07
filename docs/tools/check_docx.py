@@ -10,7 +10,7 @@ from docx import Document
 from docx.shared import Inches
 
 DOC = 'docs/updated.docx'
-OUTDATED = re.compile(r'\b(utility|utilities|meter(ed)?|staff|late fee|surcharge|laravel 13)\b', re.I)
+OUTDATED = re.compile(r'\b(utility|meter(ed)?|staff|late fee|surcharge|laravel 13)\b', re.I)
 TEXT_WIDTH = Inches(6.0)
 
 d = Document(DOC)
