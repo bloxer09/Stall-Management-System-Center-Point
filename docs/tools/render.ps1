@@ -21,9 +21,11 @@ if ($Pptx) {
 if ($Docx) {
     $word = New-Object -ComObject Word.Application
     $word.Visible = $false
-    $doc = $word.Documents.Open((Resolve-Path $Docx).Path)
+    $word.DisplayAlerts = 0          # never wait on a dialog nobody can see
+    $word.Options.UpdateLinksAtOpen = $false
+    # Open(FileName, ConfirmConversions, ReadOnly, AddToRecentFiles, ..., Visible=false, OpenAndRepair=false, ..., NoEncodingDialog=true)
+    $doc = $word.Documents.Open((Resolve-Path $Docx).Path, $false, $false, $false, '', '', $true, '', '', 0, 0, $false, $false, 0, $true)
     foreach ($toc in $doc.TablesOfContents) { $toc.Update() }
-    $doc.Fields.Update() | Out-Null
     $doc.Save()
     $pdf = Join-Path (Resolve-Path $Out).Path "manuscript.pdf"
     $doc.ExportAsFixedFormat($pdf, 17)
