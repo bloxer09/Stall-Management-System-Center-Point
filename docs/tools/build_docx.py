@@ -72,23 +72,28 @@ class Builder:
     def delete_prefix(self, prefix, after=None):
         self.delete(self.find(prefix, after))
 
-    def after(self, anchor, text, like=None, mark=True):
-        """Insert a new paragraph after anchor, formatted like `like` (default: the anchor)."""
+    def after(self, anchor, text, like=None, mark=True, plain=False):
+        """Insert a new paragraph after anchor, formatted like `like` (default: the anchor).
+
+        plain=True drops list numbering (for typed step numbers that must restart at 1)."""
         src = like if like is not None else anchor
         new = copy.deepcopy(src._p)
         anchor._p.addnext(new)
         from docx.text.paragraph import Paragraph
         p = Paragraph(new, anchor._parent)
+        if plain and p._p.pPr is not None and p._p.pPr.numPr is not None:
+            p._p.pPr.remove(p._p.pPr.numPr)
+        p.paragraph_format.page_break_before = False
         # drop pictures / page breaks copied from the template
         for r in list(p.runs):
             if r._r.findall('.//{http://schemas.openxmlformats.org/wordprocessingml/2006/main}drawing') or r._r.findall('.//{http://schemas.openxmlformats.org/wordprocessingml/2006/main}br'):
                 r._r.getparent().remove(r._r)
         return self.set(p, text, mark)
 
-    def after_many(self, anchor, texts, like=None, mark=True):
+    def after_many(self, anchor, texts, like=None, mark=True, plain=False):
         last = anchor
         for t in texts:
-            last = self.after(last, t, like=like, mark=mark)
+            last = self.after(last, t, like=like, mark=mark, plain=plain)
         return last
 
     def replace_everywhere(self, pairs, mark=True, include_tables=True):
@@ -148,7 +153,7 @@ class Builder:
         return cap
 
     def heading_after(self, anchor, text, like, page_break=False, mark=True):
-        h = self.after(anchor, text, like=like, mark=mark)
+        h = self.after(anchor, text, like=like, mark=mark, plain=True)
         h.paragraph_format.page_break_before = page_break
         return h
 
@@ -233,6 +238,13 @@ def main():
             raise
         module.apply(b)
         print('applied', name)
+    # Original figures wider than the text area are scaled down to fit the margins.
+    limit = Inches(TEXT_WIDTH_IN)
+    for shape in b.doc.inline_shapes:
+        if shape.width > limit:
+            ratio = limit / shape.width
+            shape.height = int(shape.height * ratio)
+            shape.width = limit
     b.save()
     print('wrote', OUT, '| figures:', b.figure_no)
 
