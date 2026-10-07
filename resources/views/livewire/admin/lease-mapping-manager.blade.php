@@ -307,11 +307,18 @@
                     </div>
                 @endif
 
+                @if($selectedLease->terminated_at)
+                    <div class="p-3 rounded-xl bg-error/10 border border-error/20 text-xs">
+                        <div class="font-bold text-error uppercase tracking-wider">Terminated {{ $selectedLease->terminated_at->format('M d, Y') }}</div>
+                        <p class="mt-1 text-base-content/80">{{ $selectedLease->termination_reason }}</p>
+                    </div>
+                @endif
+
                 <!-- Modal Actions -->
                 <div class="flex items-center justify-between gap-2 pt-3 border-t border-base-200">
                     <div>
                         @if($selectedLease->is_active || $selectedLease->payment_status === 'pending_initial')
-                            <button wire:click="terminateLease({{ $selectedLease->id }})" wire:confirm="Are you sure you want to terminate this lease agreement? The stall will become available." class="btn btn-outline btn-error btn-sm rounded-xl font-bold" wire:loading.attr="disabled" wire:target="terminateLease"><span wire:loading wire:target="terminateLease" class="loading loading-spinner loading-xs"></span>
+                            <button wire:click="openTerminate({{ $selectedLease->id }})" class="btn btn-outline btn-error btn-sm rounded-xl font-bold" wire:loading.attr="disabled" wire:target="openTerminate"><span wire:loading wire:target="openTerminate" class="loading loading-spinner loading-xs"></span>
                                 Terminate Lease
                             </button>
                         @endif
@@ -320,6 +327,45 @@
                 </div>
             </div>
             <form method="dialog" class="modal-backdrop"><button wire:click="closeDetailModal">close</button></form>
+        </dialog>
+    @endif
+    @if($terminateId)
+        <dialog class="modal modal-open">
+            <div class="modal-box max-w-md rounded-2xl">
+                <button wire:click="closeTerminate" class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4" aria-label="Close" x-data x-on:keydown.escape.window="isTopModal($el) && $wire.closeTerminate()">✕</button>
+                <h3 class="font-black text-lg text-base-content">Terminate lease</h3>
+                <p class="text-xs text-base-content/60 mt-1">The stall becomes available and the tenant is notified with your reason.</p>
+
+                <form wire:submit="terminateLease" class="space-y-4 mt-4">
+                    <div>
+                        <label for="terminationReason" class="label text-xs font-bold">Reason</label>
+                        <textarea id="terminationReason" wire:model="terminationReason" rows="3" maxlength="500" class="textarea textarea-bordered w-full rounded-xl text-sm" placeholder="e.g. Tenant closed the business at the end of the month."></textarea>
+                        @error('terminationReason') <p class="text-error text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    @if($terminateBalance > 0)
+                        <div class="p-3 rounded-xl bg-warning/15 border border-warning/30 text-xs space-y-2">
+                            <div class="font-bold text-base-content">Unpaid balance: ₱{{ number_format($terminateBalance, 2) }}</div>
+                            <p class="text-base-content/70">Unpaid invoices are kept and stay visible in Payments.</p>
+                            <label class="flex items-start gap-2 cursor-pointer">
+                                <input type="checkbox" wire:model="acknowledgeBalance" class="checkbox checkbox-sm checkbox-warning mt-0.5">
+                                <span>I understand ₱{{ number_format($terminateBalance, 2) }} stays owed by the tenant.</span>
+                            </label>
+                            @error('acknowledgeBalance') <p class="text-error">{{ $message }}</p> @enderror
+                        </div>
+                    @else
+                        <p class="text-xs text-success font-bold">No unpaid balance on this lease.</p>
+                    @endif
+
+                    <div class="flex justify-end gap-2 pt-2">
+                        <button type="button" wire:click="closeTerminate" class="btn btn-ghost btn-sm rounded-xl font-bold">Cancel</button>
+                        <button type="submit" class="btn btn-error btn-sm rounded-xl font-bold" wire:loading.attr="disabled" wire:target="terminateLease"><span wire:loading wire:target="terminateLease" class="loading loading-spinner loading-xs"></span>
+                            Terminate Lease
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <form method="dialog" class="modal-backdrop"><button wire:click="closeTerminate">close</button></form>
         </dialog>
     @endif
 </div>

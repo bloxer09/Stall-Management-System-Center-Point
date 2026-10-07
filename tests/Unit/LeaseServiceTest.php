@@ -141,7 +141,7 @@ class LeaseServiceTest extends TestCase
 
         $this->assertEquals('reserved', $this->stall->fresh()->status);
 
-        $this->leaseService->terminateLease($lease);
+        $this->leaseService->terminateLease($lease, "Lease ended for testing.");
 
         $this->assertFalse($lease->fresh()->is_active);
         $this->assertEquals('available', $this->stall->fresh()->status);

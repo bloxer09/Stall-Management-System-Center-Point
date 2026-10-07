@@ -22,6 +22,8 @@ class StallMapping extends Model
         'requested_end_date',
         'renewal_note',
         'renewal_rejection_reason',
+        'termination_reason',
+        'terminated_at',
     ];
 
     protected $casts = [
@@ -29,6 +31,7 @@ class StallMapping extends Model
         'end_date' => 'date',
         'requested_end_date' => 'date',
         'is_active' => 'boolean',
+        'terminated_at' => 'datetime',
     ];
 
     public function user()

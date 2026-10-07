@@ -31,6 +31,12 @@ class LeaseMappingManager extends Component
     public string $renewalEndDate = '';
     public string $renewalRejectReason = '';
 
+    // Termination modal
+    public ?int $terminateId = null;
+    public float $terminateBalance = 0;
+    public string $terminationReason = '';
+    public bool $acknowledgeBalance = false;
+
     public function updatingSearch()
     {
         $this->resetPage();
@@ -185,11 +191,38 @@ class LeaseMappingManager extends Component
         $this->closeDetailModal();
     }
 
-    public function terminateLease($mappingId, \App\Services\LeaseService $leaseService)
+    public function openTerminate(int $id, LeaseService $leaseService): void
     {
-        $mapping = StallMapping::findOrFail($mappingId);
-        $leaseService->terminateLease($mapping);
-        $this->dispatch('notify', type: 'success', message: 'Lease terminated successfully. Stall is now available.');
+        $this->resetValidation();
+        $lease = StallMapping::findOrFail($id);
+        $this->terminateId = $lease->id;
+        $this->terminateBalance = $leaseService->unpaidBalance($lease);
+        $this->terminationReason = '';
+        $this->acknowledgeBalance = false;
+    }
+
+    public function closeTerminate(): void
+    {
+        $this->terminateId = null;
+        $this->resetValidation(['terminationReason', 'acknowledgeBalance']);
+    }
+
+    public function terminateLease(LeaseService $leaseService)
+    {
+        $lease = StallMapping::findOrFail($this->terminateId);
+        // Recomputed here so a payment made while the modal was open is respected.
+        $this->terminateBalance = $leaseService->unpaidBalance($lease);
+
+        $this->validate([
+            'terminationReason' => 'required|string|min:10|max:500',
+            'acknowledgeBalance' => $this->terminateBalance > 0 ? 'accepted' : 'nullable',
+        ], [
+            'acknowledgeBalance.accepted' => 'Confirm that the unpaid balance stays owed by the tenant.',
+        ]);
+
+        $leaseService->terminateLease($lease, trim($this->terminationReason));
+        $this->dispatch('notify', type: 'success', message: 'Lease terminated. Stall is now available.');
+        $this->terminateId = null;
         $this->closeDetailModal();
     }
 

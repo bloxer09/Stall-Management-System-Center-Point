@@ -314,23 +314,50 @@ class LeaseService
     }
 
     /**
-     * Terminate an active or reserved lease and make the stall available again.
+     * What the tenant still owes on this lease: pending invoices for the same tenant and stall.
      */
-    public function terminateLease(StallMapping $lease): StallMapping
+    public function unpaidBalance(StallMapping $lease): float
     {
-        DB::transaction(function () use ($lease) {
+        return (float) Invoice::where('user_id', $lease->user_id)
+            ->where('stall_id', $lease->stall_id)
+            ->where('status', 'pending')
+            ->sum('total_amount');
+    }
+
+    /**
+     * Terminate an active or reserved lease and make the stall available again.
+     * Unpaid invoices are kept: the tenant still owes them, so the lease stays past due.
+     */
+    public function terminateLease(StallMapping $lease, string $reason): StallMapping
+    {
+        $balance = $this->unpaidBalance($lease);
+
+        DB::transaction(function () use ($lease, $reason, $balance) {
             $lease->update([
                 'is_active' => false,
-                'payment_status' => 'settled',
+                'payment_status' => $balance > 0 ? 'past_due' : 'settled',
+                'termination_reason' => $reason,
+                'terminated_at' => now(),
             ]);
             Stall::where('id', $lease->stall_id)->update(['status' => 'available']);
         });
 
         AuditLog::record(
-            "Terminated lease mapping #{$lease->id}",
+            "Terminated lease mapping #{$lease->id}: {$reason}",
             'StallMapping',
             $lease->id
         );
+
+        $tenant = $lease->user;
+        if ($tenant) {
+            $stallNumber = $lease->stall?->stall_number;
+            $message = "Your lease for Stall {$stallNumber} has been terminated. Reason: {$reason}";
+            if ($balance > 0) {
+                $message .= ' An unpaid balance of PHP ' . number_format($balance, 2) . ' remains on your account.';
+            }
+            Notification::send($tenant->id, 'lease', 'Lease terminated', $message, route('user.leases'));
+            $this->mailer->sendEmail($tenant->email, $tenant->name, 'Your lease has been terminated', '<p>Hello ' . e($tenant->name) . ',</p><p>' . e($message) . '</p>', $message);
+        }
 
         return $lease;
     }
