@@ -13,6 +13,8 @@ class SystemSettings extends Component
 {
     use WithFileUploads;
 
+    public const DEFAULT_TERMS = "Center Point Commercial Stall Rental Terms and Conditions\n\n1. Lease Agreement\nTenants agree to comply with monthly rental payment schedules and building floor plan regulations.\n\n2. Payments\nRent is billed monthly. Invoices not paid by their due date are flagged as overdue.\n\n3. Termination\nLease termination or renewal requests must be submitted at least 30 days prior to contract expiration.";
+
     public string $platform_name = '';
     public string $platform_address = '';
     public string $support_email = '';
@@ -32,7 +34,7 @@ class SystemSettings extends Component
         $this->support_phone = Setting::get('support_phone', '09171112233');
         $this->existing_landing_bg_image = Setting::get('landing_bg_image');
         $this->privacy_policy = Setting::get('privacy_policy', "Center Point Commercial Stall Management Privacy Policy\n\n1. Data Collection\nWe collect tenant names, contact numbers, email addresses, and stall lease information required for property administration.\n\n2. Data Protection\nTenant payment transactions and personal credentials are encrypted using industry-standard protocols.\n\n3. Contact Information\nFor privacy inquiries, contact admin@stallm.com.");
-        $this->terms_conditions = Setting::get('terms_conditions', "Center Point Commercial Stall Rental Terms and Conditions\n\n1. Lease Agreement\nTenants agree to comply with monthly rental payment schedules and building floor plan regulations.\n\n2. Utility Metering\nSub-metered electricity and water consumption are billed monthly based on official meter readings.\n\n3. Termination\nLease termination or renewal requests must be submitted at least 30 days prior to contract expiration.");
+        $this->terms_conditions = Setting::get('terms_conditions', self::DEFAULT_TERMS);
     }
 
     public function removeLandingBg(): void
