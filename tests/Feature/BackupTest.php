@@ -45,11 +45,50 @@ class BackupTest extends TestCase
     {
         $name = app(BackupService::class)->create();
 
-        $this->assertMatchesRegularExpression('/^backup-[0-9-]+\.(sql|sqlite)$/', $name);
-        $sql = File::get($this->dir . '/' . $name);
+        $this->assertMatchesRegularExpression('/^backup-[0-9-]+\.(sql|sqlite)\.enc$/', $name);
+        $sql = app(BackupService::class)->read($name);
         $this->assertStringContainsString('CREATE TABLE', $sql);
         $this->assertStringContainsString('INSERT INTO', $sql);
         $this->assertStringContainsString('Backup Admin', $sql);
+    }
+
+    public function test_backup_encrypted_at_rest(): void
+    {
+        $name = app(BackupService::class)->create();
+        $raw = File::get($this->dir . '/' . $name);
+
+        $this->assertStringEndsWith('.enc', $name);
+        $this->assertStringNotContainsString('CREATE TABLE', $raw);
+        $this->assertStringNotContainsString('Backup Admin', $raw);
+        $this->assertCount(1, File::files($this->dir), 'the unencrypted file must not be left behind');
+    }
+
+    public function test_encrypted_backup_downloads_original_sql(): void
+    {
+        $service = app(BackupService::class);
+        $name = $service->create();
+        $plain = substr($name, 0, -4);
+
+        $response = $this->actingAs($this->admin)->get('/admin/backups/' . $name);
+
+        $response->assertOk()->assertDownload($plain);
+        $this->assertSame($service->read($name), $response->streamedContent());
+        $this->assertStringContainsString('CREATE TABLE', $response->streamedContent());
+    }
+
+    public function test_legacy_plain_backup_still_downloads(): void
+    {
+        $this->fakeBackups(1);
+
+        $this->assertSame('-- test', app(BackupService::class)->read('backup-2026-09-01-020000.sql'));
+        $this->actingAs($this->admin)->get('/admin/backups/backup-2026-09-01-020000.sql')
+            ->assertOk()->assertDownload('backup-2026-09-01-020000.sql');
+    }
+
+    public function test_settings_note_mentions_app_key(): void
+    {
+        Livewire::actingAs($this->admin)->test(SystemSettings::class)
+            ->assertSee('Encrypted with the app key — keep a copy of APP_KEY to restore.');
     }
 
     public function test_prune_keeps_fourteen(): void

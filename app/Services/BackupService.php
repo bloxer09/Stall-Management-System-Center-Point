@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
@@ -15,7 +16,7 @@ use Throwable;
  */
 class BackupService
 {
-    private const NAME_PATTERN = '/^backup-[0-9-]+\.(sql|sqlite)\z/';
+    private const NAME_PATTERN = '/^backup-[0-9-]+\.(sql|sqlite)(\.enc)?\z/';
     private const CHUNK = 500;
 
     private string $dir;
@@ -26,9 +27,49 @@ class BackupService
     }
 
     /**
-     * Write a new backup and return its file name.
+     * Write a new backup, encrypted at rest with the app key, and return its file name
+     * (backup-….sql.enc / .sqlite.enc). The unencrypted file never stays on disk.
      */
     public function create(): string
+    {
+        $plain = $this->writePlain();
+        $plainPath = $this->dir . '/' . $plain;
+
+        try {
+            File::put($plainPath . '.enc', Crypt::encryptString(File::get($plainPath)));
+        } catch (Throwable $e) {
+            File::delete($plainPath . '.enc');
+            throw $e;
+        } finally {
+            File::delete($plainPath);
+        }
+
+        return $plain . '.enc';
+    }
+
+    /**
+     * Contents of a backup: decrypted for .enc files, as-is for older unencrypted ones.
+     * Null for an invalid name or a missing file.
+     */
+    public function read(string $name): ?string
+    {
+        $path = $this->path($name);
+        if ($path === null) {
+            return null;
+        }
+
+        $contents = File::get($path);
+
+        return str_ends_with($name, '.enc') ? Crypt::decryptString($contents) : $contents;
+    }
+
+    /** The file name a download is saved as: the backup name without ".enc". */
+    public function plainName(string $name): string
+    {
+        return str_ends_with($name, '.enc') ? substr($name, 0, -4) : $name;
+    }
+
+    private function writePlain(): string
     {
         File::ensureDirectoryExists($this->dir);
 
@@ -177,7 +218,7 @@ class BackupService
     {
         $base = 'backup-' . now()->format('Y-m-d-His');
         $name = "{$base}.{$extension}";
-        for ($i = 2; is_file($this->dir . '/' . $name); $i++) {
+        for ($i = 2; is_file($this->dir . '/' . $name) || is_file($this->dir . '/' . $name . '.enc'); $i++) {
             $name = "{$base}-{$i}.{$extension}";
         }
 

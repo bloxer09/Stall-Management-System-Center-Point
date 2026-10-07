@@ -132,7 +132,7 @@
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
                 <h2 class="text-base font-black text-base-content uppercase tracking-wider">Database Backups</h2>
-                <p class="text-xs text-base-content/60 mt-1">A backup runs automatically every day at 2:00 AM; the latest 14 are kept. Backups contain all data, including password hashes — store downloads securely.</p>
+                <p class="text-xs text-base-content/60 mt-1">A backup runs automatically every day at 2:00 AM; the latest 14 are kept. Backups contain all data, including password hashes — store downloads securely. Encrypted with the app key — keep a copy of APP_KEY to restore.</p>
             </div>
             <button type="button" wire:click="createBackup" class="btn btn-primary btn-sm rounded-xl font-bold shrink-0" wire:loading.attr="disabled" wire:target="createBackup"><span wire:loading wire:target="createBackup" class="loading loading-spinner loading-xs"></span>
                 Create backup now

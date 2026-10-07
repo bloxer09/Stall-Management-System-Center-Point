@@ -56,7 +56,8 @@ class FinalReviewFixesTest extends TestCase
 
         $dir = storage_path('framework/testing/backups-' . uniqid());
         try {
-            $sql = File::get($dir . '/' . (new BackupService($dir))->create());
+            $service = new BackupService($dir);
+            $sql = $service->read($service->create());
             $this->assertStringContainsString('CREATE TABLE', $sql);
         } finally {
             File::deleteDirectory($dir);

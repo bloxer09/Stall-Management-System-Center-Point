@@ -137,7 +137,8 @@ class HardeningMinorsTest extends TestCase
         $dir = storage_path('framework/testing/backups-' . uniqid());
 
         try {
-            $sql = File::get($dir . '/' . (new BackupService($dir))->create());
+            $service = new BackupService($dir);
+            $sql = $service->read($service->create());
             $this->assertLessThan(strpos($sql, 'Ordered 9'), strpos($sql, 'Ordered 4'));
         } finally {
             File::deleteDirectory($dir);
