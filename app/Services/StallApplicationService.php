@@ -195,6 +195,24 @@ class StallApplicationService
         ]);
     }
 
+    /**
+     * Email the tenant a fresh set-password link (admin "resend"). Returns whether the email went out.
+     */
+    public function sendSetPasswordLink(User $user): bool
+    {
+        $link = $this->setPasswordUrl($user);
+
+        return $this->mailer->sendEmail(
+            $user->email,
+            $user->name,
+            'Set your password',
+            '<p>Hello ' . e($user->name) . ',</p>'
+                . '<p>The office sent you a link to set your account password.</p>'
+                . '<p><a href="' . e($link) . '">Set your password</a>. This link expires in 72 hours.</p>',
+            "Hello {$user->name}, set your account password here (expires in 72 hours): {$link}"
+        );
+    }
+
     public static function passwordFingerprint(User $user): string
     {
         return substr(sha1((string) $user->password), 0, 12);

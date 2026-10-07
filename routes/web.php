@@ -141,6 +141,10 @@ Route::middleware(['auth', 'role:admin', '2fa'])->prefix('admin')->name('admin.'
         return view('pages.admin.tickets');
     })->name('tickets');
 
+    Route::get('/tenants', function () {
+        return view('pages.admin.tenants');
+    })->name('tenants');
+
     Route::get('/announcements', function () {
         return view('pages.admin.announcements');
     })->name('announcements');

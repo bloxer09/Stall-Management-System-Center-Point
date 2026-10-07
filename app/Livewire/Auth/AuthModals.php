@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Auth;
 
+use App\Http\Middleware\EnsureAccountActive;
 use App\Models\User;
 use App\Services\MailService;
 use App\Services\SmsService;
@@ -198,6 +199,12 @@ class AuthModals extends Component
         }
 
         RateLimiter::clear($throttleKey);
+
+        if ($user->isDeactivated()) {
+            $this->addError('loginEmail', EnsureAccountActive::MESSAGE);
+            return;
+        }
+
         Auth::login($user, $this->remember);
         session()->regenerate();
         $this->forceCloseModal();

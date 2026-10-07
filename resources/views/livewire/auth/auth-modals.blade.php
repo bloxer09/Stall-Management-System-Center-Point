@@ -201,7 +201,7 @@
                 <p class="font-bold text-sm text-base-content">1. Lease & Facility Agreement</p>
                 <p>All stall leases and occupancies managed through the {{ \App\Models\Setting::get('platform_name', 'STALLM') }} platform are subject to facility verification and management regulations.</p>
                 <p class="font-bold text-sm text-base-content">2. Payment & Monthly Invoicing Terms</p>
-                <p>Invoices for stall monthly rental must be settled on or before the designated due date via supported channels (PayMongo, Cash, or Direct Transfer). Failure to pay on time may result in late penalties or lease suspension.</p>
+                <p>Invoices for stall monthly rental must be settled on or before the designated due date via supported channels (PayMongo, Cash, or Direct Transfer). Invoices not paid by their due date are flagged as overdue.</p>
                 <p class="font-bold text-sm text-base-content">3. Acceptable Use & Conduct</p>
                 <p>Tenants agree to operate strictly within designated stall boundaries and comply with building health, sanitation, safety, and fire code regulations at all times.</p>
             </div>

@@ -23,6 +23,7 @@ class AppServiceProvider extends ServiceProvider
         // Livewire actions on admin pages go to /livewire/update; re-apply the 2FA gate there too.
         Livewire::addPersistentMiddleware([
             RequiresTwoFactor::class,
+            \App\Http\Middleware\EnsureAccountActive::class,
         ]);
 
         // Every login (password, Google, Facebook, set-password, remember-me) starts unverified,

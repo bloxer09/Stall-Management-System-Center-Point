@@ -17,6 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
             '2fa' => \App\Http\Middleware\RequiresTwoFactor::class,
         ]);
 
+        $middleware->appendToGroup('web', \App\Http\Middleware\EnsureAccountActive::class);
+
         $middleware->validateCsrfTokens(except: [
             '/payment/paymongo-webhook',
         ]);

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Middleware\EnsureAccountActive;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -63,6 +64,10 @@ class OAuthController extends Controller
                     'profile_picture' => $user->profile_picture ?? $googleUser->getAvatar(),
                     'email_verified_at' => $user->email_verified_at ?? now(),
                 ]);
+            }
+
+            if ($user->isDeactivated()) {
+                return redirect()->route('home')->with('error', EnsureAccountActive::MESSAGE);
             }
 
             Auth::login($user);
@@ -129,6 +134,10 @@ class OAuthController extends Controller
                     'profile_picture' => $user->profile_picture ?? $facebookUser->getAvatar(),
                     'email_verified_at' => $user->email_verified_at ?? now(),
                 ]);
+            }
+
+            if ($user->isDeactivated()) {
+                return redirect()->route('home')->with('error', EnsureAccountActive::MESSAGE);
             }
 
             Auth::login($user);
