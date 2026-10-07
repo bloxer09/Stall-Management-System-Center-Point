@@ -4,12 +4,13 @@ namespace App\Livewire\User;
 
 use App\Models\Invoice;
 use App\Models\StallMapping;
+use App\Services\StatementService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 class DocumentRepository extends Component
 {
-    public function render()
+    public function render(StatementService $statementService)
     {
         $userId = Auth::id();
 
@@ -29,6 +30,7 @@ class DocumentRepository extends Component
         return view('livewire.user.document-repository', [
             'leaseContracts' => $leaseContracts,
             'statements' => $statements,
+            'accountStatement' => $statementService->forUser(Auth::user()),
         ]);
     }
 }

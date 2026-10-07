@@ -74,4 +74,16 @@
             <div class="p-4 border-t border-base-200">{{ $tenants->links() }}</div>
         @endif
     </div>
+
+    @if($statementUser)
+        <dialog class="modal modal-open">
+            <div class="modal-box max-w-3xl rounded-2xl">
+                <button wire:click="closeStatement" class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4" aria-label="Close" x-data x-on:keydown.escape.window="isTopModal($el) && $wire.closeStatement()">✕</button>
+                <h3 class="font-black text-lg text-base-content">Statement of account</h3>
+                <p class="text-xs text-base-content/60 mt-1 mb-4">{{ $statementUser->name }} &middot; {{ $statementUser->email }}</p>
+                @include('livewire.partials.statement-table', ['statement' => $statement, 'pdfUrl' => route('statement.pdf', $statementUser)])
+            </div>
+            <form method="dialog" class="modal-backdrop"><button wire:click="closeStatement">close</button></form>
+        </dialog>
+    @endif
 </div>

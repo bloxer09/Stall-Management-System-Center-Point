@@ -71,6 +71,7 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth', '2fa'])->group(function () {
     Route::get('/receipt/{id}/pdf', [ReceiptVerificationController::class, 'downloadPdf'])->name('receipt.pdf');
+    Route::get('/statement/{user}/pdf', [\App\Http\Controllers\StatementController::class, 'pdf'])->name('statement.pdf');
     Route::get('/files/contract/{id}', [FileController::class, 'downloadContract'])->name('file.contract');
     Route::get('/files/ticket-attachment/{id}', [FileController::class, 'downloadTicketAttachment'])->name('file.ticket-attachment');
     Route::get('/files/application-document/{id}', [FileController::class, 'downloadApplicationDocument'])->name('file.application-document');

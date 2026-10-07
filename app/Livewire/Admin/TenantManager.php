@@ -6,6 +6,7 @@ use App\Models\AuditLog;
 use App\Models\User;
 use App\Services\MailService;
 use App\Services\StallApplicationService;
+use App\Services\StatementService;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -108,8 +109,12 @@ class TenantManager extends Component
             ->orderBy('name')
             ->paginate(15);
 
+        $statementUser = $this->statementUserId ? User::find($this->statementUserId) : null;
+
         return view('livewire.admin.tenant-manager', [
             'tenants' => $tenants,
+            'statementUser' => $statementUser,
+            'statement' => $statementUser ? app(StatementService::class)->forUser($statementUser) : null,
         ]);
     }
 }

@@ -5,6 +5,20 @@
         <p class="text-xs text-base-content/60 mt-1">Download your lease contracts, billing statements, and payment receipts.</p>
     </div>
 
+    <!-- Account statement -->
+    <div class="card bg-base-100 border border-base-300 shadow-md rounded-3xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h2 class="text-sm font-black text-base-content uppercase tracking-wider">Account statement</h2>
+            <p class="text-[10px] text-base-content/50">All your charges and payments with a running balance</p>
+            <div class="flex flex-wrap gap-4 mt-3 text-sm">
+                <span>Charges: <strong>₱{{ number_format($accountStatement['charges'], 2) }}</strong></span>
+                <span>Payments: <strong class="text-success">₱{{ number_format($accountStatement['payments'], 2) }}</strong></span>
+                <span>Balance due: <strong class="{{ $accountStatement['balance'] > 0 ? 'text-error' : '' }}">₱{{ number_format($accountStatement['balance'], 2) }}</strong></span>
+            </div>
+        </div>
+        <a href="{{ route('statement.pdf', auth()->user()) }}" target="_blank" class="btn btn-sm btn-primary rounded-xl font-bold shrink-0">Download PDF</a>
+    </div>
+
     <!-- Section 1: Lease Contracts -->
     <div class="card bg-base-100 border border-base-300 shadow-md rounded-3xl overflow-hidden">
         <div class="p-5 border-b border-base-300 bg-base-200/30 flex items-center gap-3">
