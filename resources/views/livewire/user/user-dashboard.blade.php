@@ -110,6 +110,23 @@
         </div>
     </div>
 
+    @if($announcements->isNotEmpty())
+        <div class="card bg-base-100 border border-base-300 rounded-3xl p-6 shadow-sm space-y-3">
+            <h2 class="font-extrabold text-base text-base-content">Announcements</h2>
+            <ul class="divide-y divide-base-200">
+                @foreach($announcements as $announcement)
+                    <li class="py-3 first:pt-0 last:pb-0" wire:key="dash-announcement-{{ $announcement->id }}">
+                        <div class="flex flex-wrap items-baseline justify-between gap-2">
+                            <span class="font-bold text-sm text-base-content">{{ $announcement->title }}</span>
+                            <span class="text-[11px] text-base-content/50">{{ $announcement->created_at->format('M d, Y') }}</span>
+                        </div>
+                        <p class="text-sm text-base-content/75 whitespace-pre-line mt-1">{{ $announcement->body }}</p>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <!-- Commercial Leases Overview -->
     <div class="space-y-4">
         <div class="flex justify-between items-center">

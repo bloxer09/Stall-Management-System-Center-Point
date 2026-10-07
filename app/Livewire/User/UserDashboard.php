@@ -3,6 +3,7 @@
 namespace App\Livewire\User;
 
 use App\Livewire\Concerns\RequestsLeaseRenewal;
+use App\Models\Announcement;
 use App\Models\Invoice;
 use App\Models\StallApplication;
 use App\Models\StallMapping;
@@ -78,7 +79,10 @@ class UserDashboard extends Component
         $openTicketsCount = Ticket::where('user_id', $userId)->where('status', '!=', 'closed')->count();
         $totalTicketsCount = Ticket::where('user_id', $userId)->count();
 
+        $announcements = Announcement::visibleTo(auth()->user())->latest()->limit(3)->get();
+
         return view('livewire.user.user-dashboard', [
+            'announcements' => $announcements,
             'assignedLeases' => $assignedLeases,
             'activeLeasesCount' => $activeLeasesCount,
             'pendingLeasesCount' => $pendingLeasesCount,
