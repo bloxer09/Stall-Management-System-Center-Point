@@ -5,6 +5,7 @@ namespace App\Livewire\Auth;
 use App\Http\Middleware\EnsureAccountActive;
 use App\Models\User;
 use App\Services\MailService;
+use App\Services\SecurityLog;
 use App\Services\SmsService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -169,6 +170,7 @@ class AuthModals extends Component
             if ($user) {
                 $user->password = Hash::make($this->newPassword);
                 $user->save();
+                SecurityLog::record('password reset', $user->id, 'via emailed code');
 
                 session()->forget(['forgot_otp_hash', 'forgot_otp_user_id', 'forgot_otp_expires_at']);
                 $this->forgotStep = 'success';
@@ -204,6 +206,7 @@ class AuthModals extends Component
 
         if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
             $seconds = RateLimiter::availableIn($throttleKey);
+            SecurityLog::record('login locked out', User::where('email', $this->loginEmail)->value('id'), 'email: ' . Str::lower($this->loginEmail));
             $this->addError('loginEmail', "Too many login attempts. Please try again in {$seconds} seconds.");
             return;
         }
@@ -212,6 +215,7 @@ class AuthModals extends Component
 
         if (!$user || !Hash::check($this->loginPassword, $user->password)) {
             RateLimiter::hit($throttleKey, 60);
+            SecurityLog::record('login failed', $user?->id, 'email: ' . Str::lower($this->loginEmail));
             $this->addError('loginEmail', 'The provided credentials do not match our records.');
             return;
         }
@@ -219,12 +223,14 @@ class AuthModals extends Component
         RateLimiter::clear($throttleKey);
 
         if ($user->isDeactivated()) {
+            SecurityLog::record('sign-in refused (deactivated)', $user->id, 'method: password');
             $this->addError('loginEmail', EnsureAccountActive::MESSAGE);
             return;
         }
 
         Auth::login($user, $this->remember);
         session()->regenerate();
+        SecurityLog::record('login succeeded', $user->id, 'method: password');
         $this->forceCloseModal();
 
         if ($user->isAdmin()) {

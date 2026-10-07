@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Middleware\EnsureAccountActive;
 use App\Models\User;
+use App\Services\SecurityLog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -67,10 +68,12 @@ class OAuthController extends Controller
             }
 
             if ($user->isDeactivated()) {
+                SecurityLog::record('sign-in refused (deactivated)', $user->id, 'method: google');
                 return redirect()->route('home')->with('error', EnsureAccountActive::MESSAGE);
             }
 
             Auth::login($user);
+            SecurityLog::record('login succeeded', $user->id, 'method: google');
 
             if ($user->isAdmin()) {
                 return redirect()->route('admin.dashboard');
@@ -137,10 +140,12 @@ class OAuthController extends Controller
             }
 
             if ($user->isDeactivated()) {
+                SecurityLog::record('sign-in refused (deactivated)', $user->id, 'method: facebook');
                 return redirect()->route('home')->with('error', EnsureAccountActive::MESSAGE);
             }
 
             Auth::login($user);
+            SecurityLog::record('login succeeded', $user->id, 'method: facebook');
 
             if ($user->isAdmin()) {
                 return redirect()->route('admin.dashboard');

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Auth;
 
+use App\Services\SecurityLog;
 use App\Services\TwoFactorService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
@@ -39,8 +40,10 @@ class TwoFactorChallenge extends Component
 
         $remaining = $twoFactor->attemptsRemaining($user);
         if ($remaining === 0) {
+            SecurityLog::record('2FA lockout', $user->id);
             return $this->logOut('Too many attempts. Please sign in again.');
         }
+        SecurityLog::record('2FA code failed', $user->id, "{$remaining} attempt(s) left");
 
         $this->code = '';
         $this->addError('code', "That code is incorrect or has expired. {$remaining} " . ($remaining === 1 ? 'attempt' : 'attempts') . ' left.');
