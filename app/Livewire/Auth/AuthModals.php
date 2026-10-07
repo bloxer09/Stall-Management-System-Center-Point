@@ -46,7 +46,6 @@ class AuthModals extends Component
     public string $newPasswordConfirmation = '';
     public string $forgotStep = 'request'; // request, verify, success
     public ?string $generatedForgotOtp = null;
-    public ?int $forgotUserId = null;
 
     public function mount()
     {
@@ -111,11 +110,11 @@ class AuthModals extends Component
         if (!$user) {
             // Same next step as a real account, so the form never reveals who is registered.
             // The decoy session makes any code entered fail as "invalid", exactly like a wrong code.
-            $this->forgotUserId = null;
             $this->generatedForgotOtp = null;
             session([
                 'forgot_otp_hash' => hash('sha256', Str::random(40)),
                 'forgot_otp_user_id' => null,
+                'forgot_otp_key' => sha1(Str::lower($this->forgotEmail)),
                 'forgot_otp_expires_at' => now()->addMinutes(10)->timestamp,
             ]);
             $this->forgotStep = 'verify';
@@ -124,16 +123,17 @@ class AuthModals extends Component
 
         $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         $this->generatedForgotOtp = app()->environment('local') ? $otp : null;
-        $this->forgotUserId = $user->id;
 
+        // The account id stays server-side (session only): nothing the browser receives may
+        // differ between a registered and an unknown email.
         session([
             'forgot_otp_hash' => hash('sha256', $otp),
             'forgot_otp_user_id' => $user->id,
+            'forgot_otp_key' => sha1(Str::lower($this->forgotEmail)),
             'forgot_otp_expires_at' => now()->addMinutes(10)->timestamp,
         ]);
 
-        $sent = $mailer->sendOtp($user->email, $user->name, $otp);
-        $this->isMailConfigured = $sent;
+        $mailer->sendOtp($user->email, $user->name, $otp);
 
         if ($user->phone) {
             try {
@@ -153,7 +153,9 @@ class AuthModals extends Component
             'newPassword' => ['required', 'string', Password::defaults(), 'same:newPasswordConfirmation'],
         ]);
 
-        $key = 'forgot-otp:' . ($this->forgotUserId ?? 'guest');
+        // Keyed by the requested email for real and decoy resets alike, so one email's lockout
+        // says nothing about another.
+        $key = 'forgot-otp:' . session('forgot_otp_key', 'none');
         if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($key, 5)) {
             $seconds = \Illuminate\Support\Facades\RateLimiter::availableIn($key);
             $this->addError('forgotOtpInput', "Too many invalid OTP attempts. Please try again in {$seconds} seconds.");
@@ -171,15 +173,15 @@ class AuthModals extends Component
         $sessionUserId = session('forgot_otp_user_id');
         $inputHash = hash('sha256', $this->forgotOtpInput);
 
-        if (hash_equals($sessionHash ?? '', $inputHash) && $this->forgotUserId === $sessionUserId) {
+        if ($sessionUserId !== null && hash_equals($sessionHash ?? '', $inputHash)) {
             \Illuminate\Support\Facades\RateLimiter::clear($key);
-            $user = User::find($this->forgotUserId);
+            $user = User::find($sessionUserId);
             if ($user) {
                 $user->password = Hash::make($this->newPassword);
                 $user->save();
                 SecurityLog::record('password reset', $user->id, 'via emailed code');
 
-                session()->forget(['forgot_otp_hash', 'forgot_otp_user_id', 'forgot_otp_expires_at']);
+                session()->forget(['forgot_otp_hash', 'forgot_otp_user_id', 'forgot_otp_key', 'forgot_otp_expires_at']);
                 $this->forgotStep = 'success';
                 return;
             }
@@ -252,14 +254,14 @@ class AuthModals extends Component
             return;
         }
 
-        // Every attempt counts, so a bot cannot mass-create accounts from one connection.
+        // Caps new accounts per connection. Only successful sign-ups count, so form mistakes
+        // (or a live demo of the password rule on localhost) never lock registration.
         $throttleKey = 'register:' . request()->ip();
         if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
             $minutes = (int) ceil(RateLimiter::availableIn($throttleKey) / 60);
             $this->addError('regEmail', "Too many sign-up attempts. Please try again in {$minutes} minutes.");
             return;
         }
-        RateLimiter::hit($throttleKey, 3600);
 
         $this->validate([
             'regName' => 'required|string|max:100',
@@ -278,6 +280,7 @@ class AuthModals extends Component
             'email_verified_at' => now(),
         ]);
 
+        RateLimiter::hit($throttleKey, 3600);
         Auth::login($user);
         $this->forceCloseModal();
         return redirect()->route('user.dashboard');

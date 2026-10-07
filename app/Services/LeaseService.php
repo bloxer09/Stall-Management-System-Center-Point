@@ -133,7 +133,8 @@ class LeaseService
 
         Notification::send($tenant->id, 'renewal', 'Lease renewal approved', $message, route('user.leases'));
         $sent = $this->mailer->sendEmail($tenant->email, $tenant->name, 'Your lease renewal was approved', '<p>Hello ' . e($tenant->name) . ',</p><p>' . e($message) . '</p>', $message);
-        if ($tenant->phone) {
+        // SMS switched off in System Settings is a choice, not a delivery failure.
+        if ($tenant->phone && $this->sms->enabled()) {
             $sent = $this->sms->sendSms($tenant->phone, "STALLM: {$message}") && $sent;
         }
         $this->lastNotificationSent = $sent;

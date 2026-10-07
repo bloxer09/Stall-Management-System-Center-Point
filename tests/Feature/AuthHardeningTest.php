@@ -83,16 +83,6 @@ class AuthHardeningTest extends TestCase
             ->call('processRegister');
     }
 
-    public function test_registration_rate_limited(): void
-    {
-        for ($i = 1; $i <= 5; $i++) {
-            $this->register("bad{$i}@mail.com", 'short', "0917000000{$i}");
-        }
-
-        $this->register('good@mail.com', 'Passw0rd99', '09170000099')->assertHasErrors('regEmail');
-        $this->assertNull(User::where('email', 'good@mail.com')->first());
-    }
-
     public function test_password_rule_on_all_forms(): void
     {
         // Register

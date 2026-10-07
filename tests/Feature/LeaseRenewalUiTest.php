@@ -28,7 +28,7 @@ class LeaseRenewalUiTest extends TestCase
         parent::setUp();
 
         Mail::fake();
-        $this->mock(SmsService::class)->shouldReceive('sendSms')->andReturn(true);
+        $this->mock(SmsService::class, fn ($m) => $m->shouldReceive('enabled')->andReturn(true))->shouldReceive('sendSms')->andReturn(true);
         $this->admin = User::factory()->create(['role' => 'admin']);
         $this->tenant = User::factory()->create(['role' => 'user']);
     }

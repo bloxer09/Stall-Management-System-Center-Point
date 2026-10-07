@@ -29,7 +29,7 @@ class LeaseRenewalTest extends TestCase
         parent::setUp();
 
         Mail::fake();
-        $this->mock(SmsService::class)->shouldReceive('sendSms')->andReturnUsing(function ($n, $m) {
+        $this->mock(SmsService::class, fn ($m) => $m->shouldReceive('enabled')->andReturn(true))->shouldReceive('sendSms')->andReturnUsing(function ($n, $m) {
             $this->sms[] = $m;
             return true;
         });

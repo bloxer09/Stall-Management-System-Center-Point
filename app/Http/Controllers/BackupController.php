@@ -12,11 +12,14 @@ class BackupController extends Controller
     {
         abort_if($backups->path($name) === null, 404);
 
+        // Decrypt before any header is sent: a backup that cannot be decrypted (e.g. APP_KEY
+        // changed) must fail with an error, never download as an empty or partial file.
+        $contents = $backups->read($name);
+
         AuditLog::record("Downloaded database backup {$name}", 'Backup');
 
-        // Decrypted on the fly: the admin gets a normal, restorable .sql / .sqlite file.
-        return response()->streamDownload(function () use ($backups, $name) {
-            echo $backups->read($name);
+        return response()->streamDownload(function () use ($contents) {
+            echo $contents;
         }, $backups->plainName($name), ['Content-Type' => 'application/octet-stream']);
     }
 }
