@@ -141,7 +141,24 @@
                     @if($selectedStall->status === 'available')
                         <button type="button" wire:click="openApply" class="btn btn-primary rounded-xl font-bold w-full">Apply for this stall</button>
                     @else
-                        <span class="badge badge-lg font-bold w-full py-4">{{ ucfirst($selectedStall->status) }} &mdash; not open for applications</span>
+                        <div class="w-full space-y-3">
+                            <span class="badge badge-lg font-bold w-full py-4">{{ ucfirst($selectedStall->status) }} &mdash; not open for applications</span>
+                            @if($waitlistJoined)
+                                <div class="alert alert-success rounded-2xl text-sm"><span>You're on the list. We'll email you when Stall {{ $selectedStall->stall_number }} opens up.</span></div>
+                            @elseif($showWaitlist)
+                                <form wire:submit="joinWaitlist" class="space-y-2">
+                                    <input type="text" wire:model="waitlistName" maxlength="100" placeholder="Your name" aria-label="Your name" class="input input-bordered input-sm rounded-xl w-full">
+                                    @error('waitlistName') <span class="text-error text-xs">{{ $message }}</span> @enderror
+                                    <input type="email" wire:model="waitlistEmail" maxlength="120" placeholder="Your email" aria-label="Your email" class="input input-bordered input-sm rounded-xl w-full">
+                                    @error('waitlistEmail') <span class="text-error text-xs">{{ $message }}</span> @enderror
+                                    <button type="submit" class="btn btn-primary btn-sm rounded-xl font-bold w-full" wire:loading.attr="disabled" wire:target="joinWaitlist"><span wire:loading wire:target="joinWaitlist" class="loading loading-spinner loading-xs"></span>
+                                        Notify me
+                                    </button>
+                                </form>
+                            @else
+                                <button type="button" wire:click="openWaitlist" class="btn btn-outline btn-primary rounded-xl font-bold w-full">Notify me when available</button>
+                            @endif
+                        </div>
                     @endif
                 </div>
                 @endif

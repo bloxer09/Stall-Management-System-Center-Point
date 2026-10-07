@@ -6,6 +6,8 @@ use App\Livewire\Forms\StallApplicationForm;
 use App\Models\Stall;
 use App\Models\StallLocation;
 use App\Services\StallApplicationService;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -20,6 +22,12 @@ class StallBrowser extends Component
     public ?int $activeLocationId = null;
     public ?int $selectedStallId = null;
     public bool $showApply = false;
+
+    // "Notify me when available" for a stall that is taken
+    public bool $showWaitlist = false;
+    public bool $waitlistJoined = false;
+    public string $waitlistName = '';
+    public string $waitlistEmail = '';
 
     public function mount(): void
     {
@@ -41,6 +49,51 @@ class StallBrowser extends Component
     {
         $this->selectedStallId = null;
         $this->showApply = false;
+        $this->showWaitlist = false;
+        $this->waitlistJoined = false;
+    }
+
+    public function openWaitlist(): void
+    {
+        $this->resetValidation();
+        $this->waitlistJoined = false;
+        $this->showWaitlist = $this->selectedStallId !== null;
+    }
+
+    public function joinWaitlist(): void
+    {
+        $stall = Stall::find($this->selectedStallId);
+        if (!$stall) {
+            return;
+        }
+
+        $this->waitlistEmail = Str::lower(trim($this->waitlistEmail));
+        $this->validate([
+            'waitlistName' => 'required|string|max:100',
+            'waitlistEmail' => 'required|email|max:120',
+        ]);
+
+        if ($stall->status === 'available') {
+            $this->addError('waitlistEmail', 'This stall is open — apply instead.');
+            return;
+        }
+
+        if ($stall->waitlist()->where('email', $this->waitlistEmail)->exists()) {
+            $this->addError('waitlistEmail', "You're already on the list for this stall.");
+            return;
+        }
+
+        $key = 'stall-waitlist:' . request()->ip();
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            $minutes = (int) ceil(RateLimiter::availableIn($key) / 60);
+            $this->addError('waitlistEmail', "Too many sign-ups from your connection. Please try again in {$minutes} minutes.");
+            return;
+        }
+        RateLimiter::hit($key, 3600);
+
+        $stall->waitlist()->create(['name' => trim($this->waitlistName), 'email' => $this->waitlistEmail]);
+        $this->reset(['waitlistName', 'waitlistEmail']);
+        $this->waitlistJoined = true;
     }
 
     public function openApply(): void

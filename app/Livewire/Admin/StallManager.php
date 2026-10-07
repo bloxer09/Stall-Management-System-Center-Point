@@ -128,7 +128,8 @@ class StallManager extends Component
 
     public function render()
     {
-        $query = Stall::with(['location', 'currentLease.user']);
+        $query = Stall::with(['location', 'currentLease.user'])
+            ->withCount(['waitlist as waiting_count' => fn ($q) => $q->whereNull('notified_at')]);
 
         if ($this->search) {
             $query->where('stall_number', 'like', "%{$this->search}%");

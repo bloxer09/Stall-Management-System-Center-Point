@@ -339,7 +339,8 @@ class LeaseService
                 'termination_reason' => $reason,
                 'terminated_at' => now(),
             ]);
-            Stall::where('id', $lease->stall_id)->update(['status' => 'available']);
+            // Model update (not a query update) so StallObserver emails the stall's waitlist.
+            Stall::find($lease->stall_id)?->update(['status' => 'available']);
         });
 
         AuditLog::record(

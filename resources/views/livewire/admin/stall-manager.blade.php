@@ -67,7 +67,7 @@
                                     class="w-12 h-12 rounded-2xl object-cover border border-base-300 shadow-xs cursor-pointer hover:scale-110 transition"
                                     alt="Stall Photo" title="Click to view full image">
                             </td>
-                            <td class="font-extrabold text-base-content">{{ $stall->stall_number }}</td>
+                            <td class="font-extrabold text-base-content">{{ $stall->stall_number }}@if($stall->waiting_count > 0)<span class="badge badge-sm badge-accent font-bold ml-2" title="People waiting to be emailed when this stall opens">Waitlist {{ $stall->waiting_count }}</span>@endif</td>
                             <td>
                                 @if($stall->location)
                                     <span class="badge badge-primary font-bold text-xs">{{ $stall->location->name }}</span>
