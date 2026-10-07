@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Announcement;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\PaymentTransaction;
@@ -9,6 +10,7 @@ use App\Models\Stall;
 use App\Models\StallApplication;
 use App\Models\StallLocation;
 use App\Models\StallMapping;
+use App\Models\StallWaitlist;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\User;
@@ -81,6 +83,33 @@ class DemoSeeder extends Seeder
 
         $this->seedTickets($tenants, $admin);
         $this->seedApplications($stalls, $admin);
+        $this->seedAnnouncements($admin);
+        $this->seedWaitlist($stalls);
+    }
+
+    private function seedAnnouncements(User $admin): void
+    {
+        Announcement::firstOrCreate(
+            ['title' => 'Scheduled water interruption'],
+            ['body' => "Water supply will be interrupted on Saturday from 8:00 AM to 12:00 NN for pipe maintenance.\nPlease store water ahead of time.", 'posted_by' => $admin->id]
+        );
+        Announcement::firstOrCreate(
+            ['title' => 'Ground floor hallway repainting'],
+            ['body' => 'The ground floor hallway will be repainted next week after closing hours. Kindly keep the area in front of your stall clear.', 'stall_location_id' => StallLocation::orderBy('sort_order')->value('id'), 'posted_by' => $admin->id]
+        );
+    }
+
+    /** @param array<string, Stall> $stalls */
+    private function seedWaitlist(array $stalls): void
+    {
+        // A visitor waiting for an occupied stall, so the waitlist badge shows in the demo.
+        $stall = Stall::where('status', 'occupied')->whereIn('id', collect($stalls)->pluck('id'))->orderBy('stall_number')->first();
+        if ($stall) {
+            StallWaitlist::firstOrCreate(
+                ['stall_id' => $stall->id, 'email' => 'joy.navarro@example.com'],
+                ['name' => 'Joy Navarro']
+            );
+        }
     }
 
     /** @return array<string, Stall> keyed by stall number */

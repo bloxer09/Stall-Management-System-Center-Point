@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Models\Announcement;
 use App\Models\Invoice;
 use App\Models\Stall;
 use App\Models\StallApplication;
 use App\Models\StallLocation;
 use App\Models\StallMapping;
+use App\Models\StallWaitlist;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\LeaseService;
@@ -29,6 +31,8 @@ class DemoSeederTest extends TestCase
             'invoices' => Invoice::count(),
             'tickets' => Ticket::count(),
             'applications' => StallApplication::count(),
+            'announcements' => Announcement::count(),
+            'waitlist' => StallWaitlist::count(),
         ];
     }
 
@@ -53,6 +57,8 @@ class DemoSeederTest extends TestCase
         $this->assertSame(1, StallApplication::where('status', 'rejected')->count());
         $this->assertSame(1, Ticket::where('status', 'closed')->count());
         $this->assertSame(1, Ticket::where('status', '!=', 'closed')->count());
+        $this->assertSame(2, Announcement::count());
+        $this->assertSame(1, StallWaitlist::whereNull('notified_at')->count());
 
         foreach (Stall::whereNotNull('grid_row')->with('location')->get() as $stall) {
             $this->assertTrue($stall->grid_row >= 1 && $stall->grid_row <= $stall->location->grid_rows, "Stall {$stall->stall_number} row out of grid");
