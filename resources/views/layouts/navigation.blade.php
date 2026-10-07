@@ -30,6 +30,11 @@
 
     <!-- Right Top Header Controls -->
     <div class="flex items-center gap-2 sm:gap-3">
+        @auth
+            @if(auth()->user()->isAdmin() && request()->routeIs('admin.*'))
+                <livewire:admin.global-search />
+            @endif
+        @endauth
         @if(!request()->routeIs('admin.*') && !request()->routeIs('user.*'))
             <a href="{{ route('stalls.browse') }}" wire:navigate
                 class="btn btn-ghost btn-sm font-semibold text-base-content/80 {{ request()->routeIs('stalls.browse') ? 'text-primary' : '' }}">

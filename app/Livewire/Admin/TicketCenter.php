@@ -27,6 +27,12 @@ class TicketCenter extends Component
         if (request()->query('filter') === 'unassigned') {
             $this->statusFilter = 'unassigned';
         }
+
+        // Global search links here with ?ticket={id} to open that conversation.
+        $ticketId = (string) request()->query('ticket', '');
+        if (ctype_digit($ticketId) && Ticket::whereKey((int) $ticketId)->exists()) {
+            $this->openThreadModal((int) $ticketId);
+        }
     }
 
     // Selected Ticket Chat Widget State
