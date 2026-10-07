@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -84,15 +85,32 @@ class AuthModals extends Component
 
     public function processForgotPasswordRequest(MailService $mailer, SmsService $smsService)
     {
+        $this->forgotEmail = trim($this->forgotEmail);
         $this->validate([
-            'forgotEmail' => 'required|email|exists:users,email',
-        ], [
-            'forgotEmail.exists' => 'No account found with this email address.',
+            'forgotEmail' => 'required|email',
         ]);
+
+        // Limits reset emails/texts to one inbox (and SMS costs) per email + connection.
+        $throttleKey = 'forgot:' . Str::lower($this->forgotEmail) . '|' . request()->ip();
+        if (RateLimiter::tooManyAttempts($throttleKey, 3)) {
+            $minutes = (int) ceil(RateLimiter::availableIn($throttleKey) / 60);
+            $this->addError('forgotEmail', "Too many reset requests. Please try again in {$minutes} minutes.");
+            return;
+        }
+        RateLimiter::hit($throttleKey, 600);
 
         $user = User::where('email', $this->forgotEmail)->first();
         if (!$user) {
-            $this->addError('forgotEmail', 'No account found with this email address.');
+            // Same next step as a real account, so the form never reveals who is registered.
+            // The decoy session makes any code entered fail as "invalid", exactly like a wrong code.
+            $this->forgotUserId = null;
+            $this->generatedForgotOtp = null;
+            session([
+                'forgot_otp_hash' => hash('sha256', Str::random(40)),
+                'forgot_otp_user_id' => null,
+                'forgot_otp_expires_at' => now()->addMinutes(10)->timestamp,
+            ]);
+            $this->forgotStep = 'verify';
             return;
         }
 
@@ -124,7 +142,7 @@ class AuthModals extends Component
     {
         $this->validate([
             'forgotOtpInput' => 'required|numeric|digits:6',
-            'newPassword' => 'required|string|min:8|same:newPasswordConfirmation',
+            'newPassword' => ['required', 'string', Password::defaults(), 'same:newPasswordConfirmation'],
         ]);
 
         $key = 'forgot-otp:' . ($this->forgotUserId ?? 'guest');
@@ -217,11 +235,20 @@ class AuthModals extends Component
 
     public function processRegister()
     {
+        // Every attempt counts, so a bot cannot mass-create accounts from one connection.
+        $throttleKey = 'register:' . request()->ip();
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $minutes = (int) ceil(RateLimiter::availableIn($throttleKey) / 60);
+            $this->addError('regEmail', "Too many sign-up attempts. Please try again in {$minutes} minutes.");
+            return;
+        }
+        RateLimiter::hit($throttleKey, 3600);
+
         $this->validate([
             'regName' => 'required|string|max:100',
             'regEmail' => 'required|email|max:120|unique:users,email',
             'regPhone' => 'required|string|max:30|unique:users,phone',
-            'regPassword' => 'required|string|min:8|same:regPasswordConfirmation',
+            'regPassword' => ['required', 'string', Password::defaults(), 'same:regPasswordConfirmation'],
             'terms' => 'accepted',
         ]);
 

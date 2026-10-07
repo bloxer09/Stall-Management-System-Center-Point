@@ -60,12 +60,12 @@ class ProfileModalTest extends TestCase
             ->test(ProfileModal::class)
             ->call('openModal', 'password')
             ->set('current_password', 'old-password-123')
-            ->set('password', 'new-secret-password')
-            ->set('password_confirmation', 'new-secret-password')
+            ->set('password', 'new-secret-passw0rd')
+            ->set('password_confirmation', 'new-secret-passw0rd')
             ->call('updatePassword')
             ->assertDispatched('notify');
 
         $user->refresh();
-        $this->assertTrue(Hash::check('new-secret-password', $user->password));
+        $this->assertTrue(Hash::check('new-secret-passw0rd', $user->password));
     }
 }

@@ -6,6 +6,7 @@ use App\Models\AuditLog;
 use App\Models\User;
 use App\Services\TwoFactorService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -111,7 +112,7 @@ class ProfileModal extends Component
 
         $this->validate([
             'current_password' => ['required', 'string', 'current_password'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => ['required', 'string', Password::defaults(), 'confirmed'],
         ]);
 
         $user->update([

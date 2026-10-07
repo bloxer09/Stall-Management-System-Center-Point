@@ -137,7 +137,7 @@
                 @elseif($forgotStep === 'verify')
                 <form wire:submit="verifyForgotPasswordOtp" class="space-y-4">
                     <div class="p-3 bg-base-200 text-base-content/80 rounded-2xl text-xs font-medium border border-base-300 text-center">
-                        A 6-digit security code was dispatched to <strong class="text-base-content">{{ $forgotEmail }}</strong>.
+                        If an account exists for that email, we sent a 6-digit code.
                     </div>
 
                     @if(app()->environment('local') && !empty($generatedForgotOtp))

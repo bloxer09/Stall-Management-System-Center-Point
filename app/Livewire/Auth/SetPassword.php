@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Services\StallApplicationService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 
@@ -46,7 +47,7 @@ class SetPassword extends Component
         }
 
         $this->validate([
-            'password' => 'required|string|min:8|confirmed',
+            'password' => ['required', 'string', Password::defaults(), 'confirmed'],
         ]);
 
         $user->forceFill(['password' => Hash::make($this->password)])->save();

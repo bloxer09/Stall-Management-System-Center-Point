@@ -101,7 +101,7 @@
 
                 <div class="form-control">
                     <label class="label"><span class="label-text font-bold text-xs uppercase">New Password *</span></label>
-                    <input wire:model.live="password" type="password" required placeholder="Minimum 8 characters" class="input input-bordered rounded-xl text-sm" />
+                    <input wire:model.live="password" type="password" required placeholder="8+ characters with letters and numbers" class="input input-bordered rounded-xl text-sm" />
                     <x-password-strength model="password" />
                     @error('password') <span class="text-xs text-error mt-1">{{ $message }}</span> @enderror
                 </div>

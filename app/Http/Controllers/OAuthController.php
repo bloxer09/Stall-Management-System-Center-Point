@@ -51,7 +51,7 @@ class OAuthController extends Controller
                 $user = User::create([
                     'name' => $googleUser->getName() ?? 'Google User',
                     'email' => $googleUser->getEmail(),
-                    'phone' => '09' . rand(100000001, 999999999),
+                    'phone' => null, // added later in Profile; a random number could collide with a real one
                     'google_id' => $googleUser->getId(),
                     'profile_picture' => $googleUser->getAvatar(),
                     'password' => Hash::make(Str::random(16)),
@@ -121,7 +121,7 @@ class OAuthController extends Controller
                 $user = User::create([
                     'name' => $facebookUser->getName() ?? 'Facebook User',
                     'email' => $facebookUser->getEmail() ?? 'fb_' . $facebookUser->getId() . '@stallm.local',
-                    'phone' => '09' . rand(100000001, 999999999),
+                    'phone' => null, // added later in Profile; a random number could collide with a real one
                     'facebook_id' => $facebookUser->getId(),
                     'profile_picture' => $facebookUser->getAvatar(),
                     'password' => Hash::make(Str::random(16)),
