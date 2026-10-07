@@ -54,7 +54,7 @@ def routes():
 
 
 def tests():
-    out = subprocess.run(['php', 'artisan', 'test'], capture_output=True, text=True, cwd=ROOT)
+    out = subprocess.run(['php', 'artisan', 'test'], capture_output=True, text=True, encoding='utf-8', errors='replace', cwd=ROOT)
     text = re.sub(r'\x1b\[[0-9;]*m', '', out.stdout)
     total = re.search(r'Tests:\s+(\d+) passed \((\d+) assertions\)', text)
     files = {}
