@@ -23,6 +23,10 @@ class LeaseMappingManager extends Component
     public $search = '';
     public $locationFilter = '';
     public $statusFilter = '';
+
+    // Exact stall number (calendar links); ?stall= is taken by the New Lease pre-fill (a stall id).
+    #[Url(as: 'stall_number', except: '')]
+    public string $stallNumber = '';
     public $showModal = false;
 
     // Lease Detail & Actions Modal
@@ -249,6 +253,10 @@ class LeaseMappingManager extends Component
                     $q->where('stall_number', 'like', "%{$this->search}%");
                 });
             });
+        }
+
+        if ($this->stallNumber !== '') {
+            $query->whereHas('stall', fn ($q) => $q->where('stall_number', $this->stallNumber));
         }
 
         if ($this->locationFilter) {

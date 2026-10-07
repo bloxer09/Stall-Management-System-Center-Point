@@ -43,7 +43,7 @@ class StallApplication extends Model
      */
     public static function findByReference(string $reference): ?self
     {
-        if (!preg_match('/^APP-(\d{4})-(\d{6})$/', strtoupper(trim($reference)), $m)) {
+        if (!preg_match('/^APP-(\d{4})-(\d{6,})$/', strtoupper(trim($reference)), $m)) {
             return null;
         }
 

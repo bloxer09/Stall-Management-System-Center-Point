@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\MailService;
 use App\Services\StallApplicationService;
 use App\Services\StatementService;
+use App\Support\LikeSearch;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -46,6 +47,11 @@ class TenantManager extends Component
         $tenant = $this->tenant($id);
         if (!$tenant) {
             $this->dispatch('notify', type: 'error', message: 'Only tenant accounts can be deactivated.');
+            return;
+        }
+
+        if ($tenant->isDeactivated()) {
+            $this->dispatch('notify', type: 'info', message: "{$tenant->name} is already deactivated.");
             return;
         }
 
@@ -101,8 +107,8 @@ class TenantManager extends Component
             ->withCount(['activeMappings as active_leases'])
             ->withSum(['invoices as unpaid_balance' => fn ($q) => $q->where('status', 'pending')], 'total_amount')
             ->when($this->search !== '', function ($q) {
-                $term = '%' . addcslashes($this->search, '%_\\') . '%';
-                $q->where(fn ($w) => $w->where('name', 'like', $term)->orWhere('email', 'like', $term)->orWhere('phone', 'like', $term));
+                $term = trim($this->search);
+                $q->where(fn ($w) => LikeSearch::contains(LikeSearch::contains(LikeSearch::contains($w, 'name', $term), 'email', $term, 'or'), 'phone', $term, 'or'));
             })
             ->when($this->statusFilter === 'active', fn ($q) => $q->whereNull('deactivated_at'))
             ->when($this->statusFilter === 'deactivated', fn ($q) => $q->whereNotNull('deactivated_at'))

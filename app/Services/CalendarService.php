@@ -33,7 +33,7 @@ class CalendarService
             $events[$day][] = [
                 'type' => 'lease_end',
                 'label' => "Lease ends: Stall {$stallNumber} (" . ($lease->user->name ?? 'Tenant') . ')',
-                'url' => url('/admin/mappings?search=' . urlencode($stallNumber)),
+                'url' => url('/admin/mappings?stall_number=' . urlencode($stallNumber)),
                 'overdue' => false,
             ];
             if ($lease->renewal_status === 'requested') {
