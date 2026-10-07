@@ -158,7 +158,7 @@ class PaymentManager extends Component
             'Issued At',
         ];
 
-        return $exporter->exportCsv('Payments_Report_' . date('Ymd_His') . '.csv', $headers, $rows);
+        return $exporter->downloadXlsx('Payments_Report_' . date('Ymd_His') . '.xlsx', $headers, $rows);
     }
 
     public function render()
