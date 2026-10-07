@@ -16,6 +16,7 @@ class StallBrowser extends Component
 
     public StallApplicationForm $form;
     public bool $submitted = false;
+    public ?string $submittedReference = null;
     public ?int $activeLocationId = null;
     public ?int $selectedStallId = null;
     public bool $showApply = false;
@@ -65,7 +66,7 @@ class StallBrowser extends Component
         $this->form->validate();
 
         try {
-            $applications->submit(
+            $application = $applications->submit(
                 $this->form->payload() + [
                     'preferred_stall_id' => $this->selectedStallId,
                     // A signed-in tenant's application is linked to their account so it shows on their dashboard.
@@ -81,13 +82,14 @@ class StallBrowser extends Component
             return;
         }
 
-        $this->finishSubmission();
+        $this->finishSubmission($application->reference());
     }
 
-    private function finishSubmission(): void
+    private function finishSubmission(?string $reference = null): void
     {
         $this->form->reset();
         $this->submitted = true;
+        $this->submittedReference = $reference;
     }
 
     public function render()

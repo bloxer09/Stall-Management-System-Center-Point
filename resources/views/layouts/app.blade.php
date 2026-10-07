@@ -82,6 +82,8 @@
                     <div class="flex items-center gap-3 font-semibold text-xs text-base-content/60">
                         <span>{{ \App\Models\Setting::get('platform_address', 'Pagadian City, Zamboanga del Sur') }}</span>
                         <span>&bull;</span>
+                        <a href="{{ route('application.status') }}" wire:navigate class="hover:text-primary transition">Check application status</a>
+                        <span>&bull;</span>
                         <a href="{{ route('privacy') }}" wire:navigate class="hover:text-primary transition">Privacy Policy</a>
                         <span>&bull;</span>
                         <a href="{{ route('terms') }}" wire:navigate class="hover:text-primary transition">Terms &amp; Conditions</a>

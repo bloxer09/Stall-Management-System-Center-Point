@@ -79,8 +79,11 @@ class StallApplicationService
             'We received your stall application',
             '<p>Hello ' . e($application->applicant_name) . ',</p>'
                 . '<p>Thank you for applying for <strong>Stall ' . e($stall->stall_number) . '</strong>. '
-                . 'Our office will review your application and email you the result.</p>',
-            "Hello {$application->applicant_name}, thank you for applying for Stall {$stall->stall_number}. Our office will review your application and email you the result."
+                . 'Our office will review your application and email you the result.</p>'
+                . '<p>Your reference number is <strong>' . e($application->reference()) . '</strong>. '
+                . 'You can check its status any time at <a href="' . e(route('application.status')) . '">' . e(route('application.status')) . '</a>.</p>',
+            "Hello {$application->applicant_name}, thank you for applying for Stall {$stall->stall_number}. Our office will review your application and email you the result. "
+                . "Your reference number is {$application->reference()}. Check its status at " . route('application.status') . '.'
         );
 
         foreach (User::where('role', 'admin')->pluck('id') as $adminId) {

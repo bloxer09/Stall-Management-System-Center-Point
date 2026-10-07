@@ -35,6 +35,10 @@
                 class="btn btn-ghost btn-sm font-semibold text-base-content/80 {{ request()->routeIs('stalls.browse') ? 'text-primary' : '' }}">
                 Browse Stalls
             </a>
+            <a href="{{ route('application.status') }}" wire:navigate
+                class="btn btn-ghost btn-sm font-semibold text-base-content/80 hidden sm:inline-flex {{ request()->routeIs('application.status') ? 'text-primary' : '' }}">
+                Application Status
+            </a>
         @endif
         <!-- Quick Dashboard Link when on public pages -->
         @auth

@@ -100,7 +100,7 @@
 
                 @if($submitted)
                     <div class="alert alert-success rounded-2xl mt-5 text-sm">
-                        <span><strong>Application submitted.</strong> We emailed you a confirmation. The office will review it and get back to you.</span>
+                        <span><strong>Application submitted.</strong> We emailed you a confirmation. The office will review it and get back to you.@if($submittedReference) Your reference number is <strong class="font-mono">{{ $submittedReference }}</strong> &mdash; <a href="{{ route('application.status') }}" wire:navigate class="link">check its status</a>.@endif</span>
                     </div>
                 @elseif($showApply && $selectedStall->status === 'available')
                     <form wire:submit="submitApplication" class="space-y-3 mt-5">
