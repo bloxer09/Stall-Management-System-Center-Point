@@ -8,7 +8,7 @@
         <title>@stack('page-title'){{ \App\Models\Setting::get('platform_name', config('app.name', 'STALLM')) }} — Commercial Stall Management</title>
 
         <!-- Inline Theme Script to prevent FOUC -->
-        <script>
+        <script nonce="{{ Vite::cspNonce() }}">
             (function() {
                 const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
                 document.documentElement.setAttribute('data-theme', savedTheme);
@@ -23,11 +23,11 @@
         <!-- Local Bundled Assets (Vite) -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-        @livewireStyles
+        @livewireStyles(['nonce' => Vite::cspNonce()])
     </head>
     <body class="font-sans antialiased bg-base-200 text-base-content min-h-screen">
 
-        <script>
+        <script nonce="{{ Vite::cspNonce() }}">
             // With several modals open, Escape should only close the one on top (the last open in the DOM).
             window.isTopModal = function (el) {
                 const mine = el.closest('.modal-open');
@@ -320,7 +320,7 @@
             </div>
         </div>
 
-        <script>
+        <script nonce="{{ Vite::cspNonce() }}">
             function openImageLightbox(src) {
                 if (!src) return;
                 window.dispatchEvent(new CustomEvent('open-lightbox', { detail: { src: src } }));
@@ -366,6 +366,6 @@
             document.addEventListener('livewire:initialized', triggerFlashToasts);
         </script>
 
-        @livewireScripts
+        @livewireScripts(['nonce' => Vite::cspNonce()])
     </body>
 </html>

@@ -57,7 +57,7 @@
                                     <div class="avatar">
                                         <div
                                             class="w-8 h-8 rounded-full overflow-hidden border border-primary/20 shadow-xs">
-                                            <img src="{{ $t->user->avatar_url }}" onclick="openImageLightbox(this.src)"
+                                            <img src="{{ $t->user->avatar_url }}" x-data x-on:click="openImageLightbox($el.src)"
                                                 class="w-full h-full object-cover cursor-pointer" alt="Tenant Avatar"
                                                 title="Click to view full photo">
                                         </div>
@@ -77,7 +77,7 @@
                                         <div class="avatar">
                                             <div
                                                 class="w-6 h-6 rounded-full overflow-hidden border border-success/30 shadow-xs">
-                                                <img src="{{ $t->handler->avatar_url }}" onclick="openImageLightbox(this.src)"
+                                                <img src="{{ $t->handler->avatar_url }}" x-data x-on:click="openImageLightbox($el.src)"
                                                     class="w-full h-full object-cover cursor-pointer" alt="Handler Avatar"
                                                     title="Click to view full photo">
                                             </div>
@@ -174,7 +174,7 @@
                     <div class="flex items-center gap-2.5 truncate">
                         <div class="avatar">
                             <div class="w-8 h-8 rounded-full overflow-hidden border border-primary/20 shadow-xs">
-                                <img src="{{ $selectedTicket->user->avatar_url }}" onclick="openImageLightbox(this.src)"
+                                <img src="{{ $selectedTicket->user->avatar_url }}" x-data x-on:click="openImageLightbox($el.src)"
                                     class="w-full h-full object-cover cursor-pointer" alt="Tenant Avatar"
                                     title="Click to view full photo">
                             </div>
@@ -222,7 +222,7 @@
                         <div class="chat {{ $msg->user_id === auth()->id() ? 'chat-end' : 'chat-start' }}">
                             <div class="chat-image avatar">
                                 <div class="w-7 h-7 rounded-full overflow-hidden border border-base-300 shadow-xs">
-                                    <img src="{{ $msg->user->avatar_url }}" onclick="openImageLightbox(this.src)"
+                                    <img src="{{ $msg->user->avatar_url }}" x-data x-on:click="openImageLightbox($el.src)"
                                         class="w-full h-full object-cover cursor-pointer" alt="User Avatar"
                                         title="Click to view photo">
                                 </div>
@@ -243,7 +243,7 @@
                                                 $attUrl = route('file.ticket-attachment', ['id' => $msg->id, 'index' => $attIndex]);
                                             @endphp
                                             @if($isImage)
-                                                <div onclick="openImageLightbox('{{ $attUrl }}')"
+                                                <div x-data x-on:click="openImageLightbox('{{ $attUrl }}')"
                                                     class="block group cursor-pointer">
                                                     <img src="{{ $attUrl }}" alt="Attachment Preview"
                                                         class="max-w-[180px] max-h-36 rounded-xl object-cover border border-base-300 shadow-xs group-hover:scale-105 transition cursor-pointer"
@@ -358,7 +358,7 @@
                                         <div class="relative group flex items-center gap-2 p-1.5 bg-base-200/60 rounded-xl border border-base-300 shadow-2xs pr-6">
                                             @if($isImg)
                                                 <img src="{{ $file->temporaryUrl() }}" 
-                                                    onclick="openImageLightbox(this.src)" 
+                                                    x-data x-on:click="openImageLightbox($el.src)" 
                                                     class="w-10 h-10 rounded-lg object-cover cursor-pointer hover:opacity-90 transition border border-base-300" 
                                                     title="Click to preview full photo">
                                             @else

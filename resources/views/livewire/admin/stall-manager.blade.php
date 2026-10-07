@@ -63,7 +63,7 @@
                     @forelse($stalls as $stall)
                         <tr class="hover:bg-base-200/40 transition">
                             <td>
-                                <img src="{{ $stall->image_url }}" onclick="openImageLightbox(this.src)"
+                                <img src="{{ $stall->image_url }}" x-data x-on:click="openImageLightbox($el.src)"
                                     class="w-12 h-12 rounded-2xl object-cover border border-base-300 shadow-xs cursor-pointer hover:scale-110 transition"
                                     alt="Stall Photo" title="Click to view full image">
                             </td>
@@ -140,7 +140,7 @@
                 </button>
 
                 <div class="flex items-start gap-4">
-                    <img src="{{ $selectedStall->image_url }}" onclick="openImageLightbox(this.src)"
+                    <img src="{{ $selectedStall->image_url }}" x-data x-on:click="openImageLightbox($el.src)"
                         class="w-20 h-20 rounded-2xl object-cover border border-base-300 shadow-xs cursor-pointer hover:scale-105 transition"
                         alt="Stall Photo" title="Click to view full image">
                     <div class="space-y-1">

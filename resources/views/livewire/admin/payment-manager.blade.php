@@ -66,7 +66,7 @@
                                         <div class="avatar">
                                             <div
                                                 class="w-7 h-7 rounded-full overflow-hidden border border-primary/20 shadow-xs">
-                                                <img src="{{ $p->user->avatar_url }}" onclick="openImageLightbox(this.src)"
+                                                <img src="{{ $p->user->avatar_url }}" x-data x-on:click="openImageLightbox($el.src)"
                                                     class="w-full h-full object-cover cursor-pointer" alt="Tenant Avatar"
                                                     title="Click to view full photo">
                                             </div>

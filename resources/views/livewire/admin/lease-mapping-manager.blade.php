@@ -216,7 +216,7 @@
 
                 <!-- Header -->
                 <div class="flex items-start gap-4">
-                    <img src="{{ $selectedLease->stall->image_url }}" onclick="openImageLightbox(this.src)"
+                    <img src="{{ $selectedLease->stall->image_url }}" x-data x-on:click="openImageLightbox($el.src)"
                         class="w-16 h-16 rounded-2xl object-cover border border-base-300 shadow-xs cursor-pointer"
                         alt="Stall" title="Click to view full photo">
                     <div>

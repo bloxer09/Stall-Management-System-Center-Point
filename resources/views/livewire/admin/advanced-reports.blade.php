@@ -127,11 +127,12 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ Vite::cspNonce() }}">
     (function () {
         function initRevenueChart() {
             const canvas = document.getElementById('revenueChart');
-            if (!canvas) return;
+            // livewire:navigated can fire before chart.min.js finishes loading; its onload draws the chart.
+            if (!canvas || typeof Chart === 'undefined') return;
             if (canvas._chartInstance) { canvas._chartInstance.destroy(); }
 
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';

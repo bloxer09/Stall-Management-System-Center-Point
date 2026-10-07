@@ -25,7 +25,7 @@
             <p class="text-sm text-base-content/70 mt-2">
                 Password links work once and only for 72 hours. Use <strong>Forgot Password</strong> on the sign-in screen to get a new code.
             </p>
-            <button type="button" onclick="Livewire.dispatch('open-login-modal')" class="btn btn-primary rounded-xl font-bold w-full mt-6">Go to sign in</button>
+            <button type="button" x-data x-on:click="Livewire.dispatch('open-login-modal')" class="btn btn-primary rounded-xl font-bold w-full mt-6">Go to sign in</button>
         @endif
     </div>
 </div>

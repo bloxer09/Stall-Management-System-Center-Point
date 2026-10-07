@@ -42,7 +42,7 @@
                         <tr class="hover:bg-base-200/40 transition">
                             <td class="font-bold text-base-content">
                                 <div class="flex items-center gap-3">
-                                    <img src="{{ $lease->stall->image_url }}" onclick="openImageLightbox(this.src)"
+                                    <img src="{{ $lease->stall->image_url }}" x-data x-on:click="openImageLightbox($el.src)"
                                         class="w-10 h-10 rounded-xl object-cover border border-base-300 cursor-pointer flex-shrink-0"
                                         alt="Stall" title="Click to view full photo">
                                     <div>
@@ -138,7 +138,7 @@
 
                 <!-- Header Info -->
                 <div class="flex items-start gap-4">
-                    <img src="{{ $selectedLease->stall->image_url }}" onclick="openImageLightbox(this.src)"
+                    <img src="{{ $selectedLease->stall->image_url }}" x-data x-on:click="openImageLightbox($el.src)"
                         class="w-16 h-16 rounded-2xl object-cover border border-base-300 shadow-xs cursor-pointer"
                         alt="Stall" title="Click to view full photo">
                     <div>

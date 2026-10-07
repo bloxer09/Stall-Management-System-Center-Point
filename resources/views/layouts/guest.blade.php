@@ -10,12 +10,12 @@
         <!-- Local Bundled Assets (Vite) -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-        @livewireStyles
+        @livewireStyles(['nonce' => Vite::cspNonce()])
     </head>
     <body class="font-sans antialiased bg-base-200 text-base-content min-h-screen flex flex-col justify-center items-center p-4">
         <div class="w-full max-w-md bg-base-100 p-8 rounded-3xl shadow-xl border border-base-300">
             {{ $slot }}
         </div>
-        @livewireScripts
+        @livewireScripts(['nonce' => Vite::cspNonce()])
     </body>
 </html>

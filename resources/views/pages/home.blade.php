@@ -58,7 +58,7 @@
                         <a href="{{ route('stalls.browse') }}" wire:navigate data-hero-primary class="btn btn-primary rounded-2xl font-bold px-8 shadow-md">
                             Browse Available Stalls
                         </a>
-                        <button type="button" onclick="Livewire.dispatch('open-login-modal')" class="btn btn-neutral text-white rounded-2xl font-bold px-7 border-white/20 hover:bg-white/20 backdrop-blur-sm">
+                        <button type="button" x-data x-on:click="Livewire.dispatch('open-login-modal')" class="btn btn-neutral text-white rounded-2xl font-bold px-7 border-white/20 hover:bg-white/20 backdrop-blur-sm">
                             Sign In
                         </button>
                     @endauth
@@ -195,7 +195,7 @@
 
             @guest
             <div class="flex-shrink-0">
-                <button type="button" onclick="Livewire.dispatch('open-login-modal')" class="btn btn-primary rounded-2xl font-bold px-8 shadow-sm">
+                <button type="button" x-data x-on:click="Livewire.dispatch('open-login-modal')" class="btn btn-primary rounded-2xl font-bold px-8 shadow-sm">
                     Access Portal
                 </button>
             </div>

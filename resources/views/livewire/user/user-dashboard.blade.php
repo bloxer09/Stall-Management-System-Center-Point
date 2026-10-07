@@ -160,7 +160,7 @@
                 @endphp
                 <div class="card bg-base-100 border border-base-300 rounded-3xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between space-y-4">
                     <div class="flex items-start gap-4">
-                        <img src="{{ $lease->stall->image_url }}" onclick="openImageLightbox(this.src)"
+                        <img src="{{ $lease->stall->image_url }}" x-data x-on:click="openImageLightbox($el.src)"
                             class="w-16 h-16 rounded-2xl object-cover border border-base-300 shadow-xs cursor-pointer hover:scale-105 transition flex-shrink-0"
                             alt="Stall Photo" title="Click to view storefront photo">
                         <div class="space-y-1 min-w-0 flex-1">

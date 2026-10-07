@@ -32,7 +32,7 @@
                         @if ($photo)
                             <img src="{{ $photo->temporaryUrl() }}" class="w-16 h-16 rounded-full object-cover border-2 border-primary shadow-xs" />
                         @elseif ($currentPhoto)
-                            <img src="{{ asset('storage/' . $currentPhoto) }}" onclick="openImageLightbox(this.src)" class="w-16 h-16 rounded-full object-cover border-2 border-primary shadow-xs cursor-pointer hover:scale-105 transition" title="Click to view full image" />
+                            <img src="{{ asset('storage/' . $currentPhoto) }}" x-data x-on:click="openImageLightbox($el.src)" class="w-16 h-16 rounded-full object-cover border-2 border-primary shadow-xs cursor-pointer hover:scale-105 transition" title="Click to view full image" />
                         @else
                             <div class="w-16 h-16 rounded-full bg-primary text-primary-content font-black text-xl flex items-center justify-center border-2 border-primary shadow-xs">
                                 {{ strtoupper(substr($name ?: 'U', 0, 1)) }}
@@ -113,7 +113,7 @@
                 </div>
 
                 <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-base-200">
-                    <button type="button" onclick="Livewire.dispatch('open-forgot-password-modal', { email: '{{ auth()->user()->email }}' })" class="text-xs text-primary font-bold hover:underline">
+                    <button type="button" x-data x-on:click="Livewire.dispatch('open-forgot-password-modal', { email: '{{ auth()->user()->email }}' })" class="text-xs text-primary font-bold hover:underline">
                         Forgot Password? Recover with OTP
                     </button>
 

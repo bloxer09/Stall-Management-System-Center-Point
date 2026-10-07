@@ -279,8 +279,8 @@
     </div>
 
     <!-- Chart.js Engine Script -->
-    <script src="{{ asset('assets/js/chart.min.js') }}"></script>
-    <script>
+    <script src="{{ asset('assets/js/chart.min.js') }}" nonce="{{ Vite::cspNonce() }}"></script>
+    <script nonce="{{ Vite::cspNonce() }}">
         document.addEventListener('livewire:navigated', initAnalyticsCharts);
         document.addEventListener('DOMContentLoaded', initAnalyticsCharts);
 

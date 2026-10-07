@@ -103,9 +103,9 @@
                         <input type="checkbox" wire:model="terms" required class="checkbox checkbox-primary checkbox-xs rounded-md" />
                         <span class="label-text text-xs text-base-content/80">
                             I agree to the 
-                            <button type="button" onclick="document.getElementById('terms_modal').showModal()" class="text-primary font-bold hover:underline">Terms & Conditions</button> 
+                            <button type="button" x-data x-on:click="document.getElementById('terms_modal').showModal()" class="text-primary font-bold hover:underline">Terms & Conditions</button> 
                             and 
-                            <button type="button" onclick="document.getElementById('privacy_modal').showModal()" class="text-primary font-bold hover:underline">Privacy Policy</button>
+                            <button type="button" x-data x-on:click="document.getElementById('privacy_modal').showModal()" class="text-primary font-bold hover:underline">Privacy Policy</button>
                         </span>
                     </label>
                 </div>
@@ -207,7 +207,7 @@
             </div>
             <div class="modal-action flex justify-between items-center pt-2">
                 <form method="dialog"><button class="btn btn-sm btn-ghost rounded-xl">Close</button></form>
-                <button type="button" onclick="@this.set('terms', true); document.getElementById('terms_modal').close()" class="btn btn-sm btn-primary rounded-xl font-bold px-5 shadow-xs">I Understand & Accept</button>
+                <button type="button" x-data x-on:click="$wire.set('terms', true); document.getElementById('terms_modal').close()" class="btn btn-sm btn-primary rounded-xl font-bold px-5 shadow-xs">I Understand & Accept</button>
             </div>
         </div>
         <form method="dialog" class="modal-backdrop"><button>close</button></form>
@@ -230,7 +230,7 @@
             </div>
             <div class="modal-action flex justify-between items-center pt-2">
                 <form method="dialog"><button class="btn btn-sm btn-ghost rounded-xl">Close</button></form>
-                <button type="button" onclick="@this.set('terms', true); document.getElementById('privacy_modal').close()" class="btn btn-sm btn-primary rounded-xl font-bold px-5 shadow-xs">I Understand & Accept</button>
+                <button type="button" x-data x-on:click="$wire.set('terms', true); document.getElementById('privacy_modal').close()" class="btn btn-sm btn-primary rounded-xl font-bold px-5 shadow-xs">I Understand & Accept</button>
             </div>
         </div>
         <form method="dialog" class="modal-backdrop"><button>close</button></form>

@@ -62,7 +62,7 @@
         <label aria-label="Toggle dark mode" class="swap swap-rotate btn btn-ghost btn-circle btn-sm text-base-content/70"
             title="Toggle Light / Dark Mode">
             <input type="checkbox" id="theme-toggle" class="theme-controller hidden" value="dark"
-                onchange="toggleAppTheme(this)" />
+                x-data x-on:change="toggleAppTheme($el)" />
 
             <!-- Sun Icon (shown when light mode is active) -->
             <svg class="swap-off fill-current w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -77,7 +77,7 @@
             </svg>
         </label>
 
-        <script>
+        <script nonce="{{ Vite::cspNonce() }}">
             function applyAppTheme(theme) {
                 document.documentElement.setAttribute('data-theme', theme);
                 localStorage.setItem('theme', theme);
@@ -138,7 +138,7 @@
                         <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('user.dashboard') }}" wire:navigate
                             class="rounded-xl w-full text-left font-medium">Dashboard</a>
                     </li>
-                    <li><button type="button" onclick="Livewire.dispatch('open-profile-modal')" class="rounded-xl w-full text-left font-medium">Profile Settings</button></li>
+                    <li><button type="button" x-data x-on:click="Livewire.dispatch('open-profile-modal')" class="rounded-xl w-full text-left font-medium">Profile Settings</button></li>
                     <div class="divider my-0 opacity-50"></div>
                     <li>
                         <form method="POST" action="{{ route('logout') }}" class="w-full">
@@ -149,11 +149,11 @@
                 </ul>
             </div>
         @else
-            <button onclick="Livewire.dispatch('open-login-modal')"
+            <button x-data x-on:click="Livewire.dispatch('open-login-modal')"
                 class="btn btn-ghost btn-sm font-semibold text-base-content/80">
                 Sign In
             </button>
-            <button onclick="Livewire.dispatch('open-register-modal')"
+            <button x-data x-on:click="Livewire.dispatch('open-register-modal')"
                 class="btn btn-primary btn-sm rounded-xl font-bold shadow-xs">
                 Register
             </button>
