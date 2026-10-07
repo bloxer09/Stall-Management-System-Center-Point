@@ -134,12 +134,22 @@ class TenantAccountsTest extends TestCase
 
     public function test_deactivated_user_livewire_request_is_logged_out(): void
     {
-        // Livewire re-runs persistent middleware on /livewire/update, so an open page is covered too.
-        $this->assertContains(EnsureAccountActive::class, Livewire::getPersistentMiddleware());
+        // A real Livewire action from an already-open dashboard, sent after the admin deactivated the account.
+        $html = $this->actingAs($this->tenant)->get('/user/dashboard')->assertOk()->getContent();
+        preg_match_all('/wire:snapshot="([^"]+)"/', $html, $all);
+        $snapshot = collect($all[1])->map(fn ($s) => html_entity_decode($s))->first(fn ($s) => str_contains($s, 'user.user-dashboard'));
+        $this->assertNotNull($snapshot);
 
-        $this->actingAs($this->tenant);
         $this->deactivate();
-        $this->withHeader('X-Livewire', 'true')->get('/user/dashboard')->assertRedirect('/');
+
+        $this->withHeader('X-Livewire', 'true')->postJson('/livewire/update', [
+            '_token' => csrf_token(),
+            'components' => [[
+                'snapshot' => $snapshot,
+                'updates' => (object) [],
+                'calls' => [['path' => '', 'method' => 'closeRenewal', 'params' => []]],
+            ]],
+        ])->assertRedirect('/');
         $this->assertGuest();
     }
 

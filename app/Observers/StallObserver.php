@@ -2,18 +2,17 @@
 
 namespace App\Observers;
 
+use App\Jobs\SendBulkEmail;
 use App\Models\Stall;
-use App\Services\MailService;
 use Illuminate\Contracts\Events\ShouldHandleEventsAfterCommit;
-use Throwable;
 
 // After commit: a rolled-back termination must not email anyone.
 class StallObserver implements ShouldHandleEventsAfterCommit
 {
-    public function __construct(protected MailService $mailer) {}
-
     /**
-     * When a stall opens up (any path: termination, admin edit), email everyone waiting for it once.
+     * When a stall opens up (any path: termination, admin edit), email everyone waiting for it.
+     * Each entry is stamped notified only when its email is delivered; a failed one is tried
+     * again the next time the stall opens.
      */
     public function updated(Stall $stall): void
     {
@@ -21,28 +20,21 @@ class StallObserver implements ShouldHandleEventsAfterCommit
             return;
         }
 
-        $link = url('/stalls');
-        foreach ($stall->waitlist()->whereNull('notified_at')->get() as $entry) {
-            $sent = false;
-            try {
-                $sent = $this->mailer->sendEmail(
-                    $entry->email,
-                    $entry->name,
-                    "Stall {$stall->stall_number} is now available",
-                    '<p>Hello ' . e($entry->name) . ',</p>'
-                        . '<p>Good news: <strong>Stall ' . e($stall->stall_number) . '</strong> is now open for applications.</p>'
-                        . '<p><a href="' . e($link) . '">Browse stalls and apply</a> before someone else does.</p>',
-                    "Hello {$entry->name}, Stall {$stall->stall_number} is now open for applications. Apply at {$link}"
-                );
-            } catch (Throwable $e) {
-                // A mail failure must never block the stall update.
-                report($e);
-            }
-
-            // Only stamp a delivered email; a failed one is tried again the next time the stall opens.
-            if ($sent) {
-                $entry->forceFill(['notified_at' => now()])->save();
-            }
+        $recipients = $stall->waitlist()->whereNull('notified_at')->get()
+            ->map(fn ($entry) => ['email' => $entry->email, 'name' => $entry->name, 'waitlist_id' => $entry->id])
+            ->values()->all();
+        if ($recipients === []) {
+            return;
         }
+
+        $link = url('/stalls');
+        SendBulkEmail::dispatch(
+            $recipients,
+            "Stall {$stall->stall_number} is now available",
+            '<p>Hello {name},</p>'
+                . '<p>Good news: <strong>Stall ' . e($stall->stall_number) . '</strong> is now open for applications.</p>'
+                . '<p><a href="' . e($link) . '">Browse stalls and apply</a> before someone else does.</p>',
+            "Hello {name}, Stall {$stall->stall_number} is now open for applications. Apply at {$link}"
+        )->afterResponse();
     }
 }

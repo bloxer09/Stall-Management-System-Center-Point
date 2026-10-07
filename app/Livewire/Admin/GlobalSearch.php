@@ -7,7 +7,6 @@ use App\Models\Stall;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Support\LikeSearch;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Livewire\Component;
 

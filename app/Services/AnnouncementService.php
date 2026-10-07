@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\SendBulkEmail;
 use App\Models\Announcement;
 use App\Models\AuditLog;
 use App\Models\Notification;
@@ -46,11 +47,13 @@ class AnnouncementService
             Notification::send($tenant->id, 'announcement', $announcement->title, $preview, route('user.dashboard'));
         }
 
-        if ($announcement->emailed) {
-            $html = '<p>' . nl2br(e($announcement->body)) . '</p>';
-            foreach ($recipients as $tenant) {
-                $this->mailer->sendEmail($tenant->email, $tenant->name, $announcement->title, '<p>Hello ' . e($tenant->name) . ',</p>' . $html, $announcement->body);
-            }
+        if ($announcement->emailed && $recipients->isNotEmpty()) {
+            SendBulkEmail::dispatch(
+                $recipients->map(fn ($tenant) => ['email' => $tenant->email, 'name' => $tenant->name])->values()->all(),
+                $announcement->title,
+                '<p>Hello {name},</p><p>' . nl2br(e($announcement->body)) . '</p>',
+                $announcement->body,
+            )->afterResponse();
         }
 
         AuditLog::record("Posted announcement \"{$announcement->title}\" to {$recipients->count()} tenant(s)", 'Announcement', $announcement->id);

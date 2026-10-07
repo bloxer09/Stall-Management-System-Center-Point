@@ -2,7 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\SendBulkEmail;
 use App\Livewire\Admin\LeaseMappingManager;
+use App\Models\StallWaitlist;
+use App\Services\BackupService;
+use App\Services\MailService;
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\File;
 use App\Livewire\Admin\TenantManager;
 use App\Models\Stall;
 use App\Models\StallApplication;
@@ -84,6 +90,58 @@ class HardeningMinorsTest extends TestCase
         $events = app(CalendarService::class)->eventsForMonth(Carbon::parse('2026-10-01'));
 
         $this->assertStringContainsString('stall_number=S-101', $events['2026-10-15'][0]['url']);
+    }
+
+    public function test_announcement_email_dispatched_after_response(): void
+    {
+        Bus::fake();
+        $this->leaseOn('S-5', 'Bulk Tenant');
+
+        Livewire::actingAs($this->admin)->test(\App\Livewire\Admin\AnnouncementManager::class)
+            ->set('title', 'Notice')->set('body', 'Hello tenants.')->set('sendEmail', true)
+            ->call('post');
+
+        Bus::assertDispatchedAfterResponse(SendBulkEmail::class, fn ($job) => count($job->recipients) === 1);
+    }
+
+    public function test_bulk_email_stamps_only_delivered_waitlist_rows(): void
+    {
+        $stall = Stall::create(['stall_number' => 'W-1', 'location_id' => $this->floor->id, 'price' => 1, 'status' => 'occupied']);
+        $ok = StallWaitlist::create(['stall_id' => $stall->id, 'name' => 'Ok', 'email' => 'ok@mail.com']);
+        $fail = StallWaitlist::create(['stall_id' => $stall->id, 'name' => 'Fail', 'email' => 'fail@mail.com']);
+        $mailer = $this->mock(MailService::class);
+        $mailer->shouldReceive('sendEmail')->with('ok@mail.com', 'Ok', 'Subj', '<p>Hi Ok</p>', 'Hi Ok')->andReturn(true);
+        $mailer->shouldReceive('sendEmail')->with('fail@mail.com', 'Fail', 'Subj', '<p>Hi Fail</p>', 'Hi Fail')->andReturn(false);
+
+        (new SendBulkEmail([
+            ['email' => 'ok@mail.com', 'name' => 'Ok', 'waitlist_id' => $ok->id],
+            ['email' => 'fail@mail.com', 'name' => 'Fail', 'waitlist_id' => $fail->id],
+        ], 'Subj', '<p>Hi {name}</p>', 'Hi {name}'))->handle($mailer);
+
+        $this->assertNotNull($ok->fresh()->notified_at);
+        $this->assertNull($fail->fresh()->notified_at);
+    }
+
+    public function test_backup_rows_ordered_by_primary_key(): void
+    {
+        // Primary key is not the first column: ordering by the first column would keep insert order.
+        \Illuminate\Support\Facades\Schema::create('zz_order_probe', function ($table) {
+            $table->string('grp');
+            $table->string('code')->primary();
+            $table->string('label');
+        });
+        \Illuminate\Support\Facades\DB::table('zz_order_probe')->insert([
+            ['grp' => 'a', 'code' => 'k9', 'label' => 'Ordered 9'],
+            ['grp' => 'a', 'code' => 'k4', 'label' => 'Ordered 4'],
+        ]);
+        $dir = storage_path('framework/testing/backups-' . uniqid());
+
+        try {
+            $sql = File::get($dir . '/' . (new BackupService($dir))->create());
+            $this->assertLessThan(strpos($sql, 'Ordered 9'), strpos($sql, 'Ordered 4'));
+        } finally {
+            File::deleteDirectory($dir);
+        }
     }
 
     public function test_seven_digit_reference_resolves(): void

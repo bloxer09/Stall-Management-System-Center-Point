@@ -50,6 +50,12 @@ class BackupService
             throw new RuntimeException("Cannot write backup file {$name}.");
         }
 
+        // Read every table from one point in time, so rows written mid-backup cannot break references.
+        $snapshot = $driver === 'mysql' && DB::transactionLevel() === 0;
+        if ($snapshot) {
+            DB::statement('START TRANSACTION WITH CONSISTENT SNAPSHOT');
+        }
+
         try {
             fwrite($handle, '-- ' . config('app.name') . ' database backup, ' . now()->toDateTimeString() . "\n");
             fwrite($handle, self::preamble($driver) . "\n");
@@ -68,11 +74,32 @@ class BackupService
             fclose($handle);
             File::delete($path);
             throw $e;
+        } finally {
+            if ($snapshot) {
+                DB::statement('COMMIT');
+            }
         }
 
         fclose($handle);
 
         return $name;
+    }
+
+    /**
+     * Columns that give rows a stable order for chunked reads: the primary key, else every column.
+     *
+     * @param  list<string>  $columns
+     * @return list<string>
+     */
+    private function orderColumns(string $table, array $columns): array
+    {
+        foreach (Schema::getIndexes($table) as $index) {
+            if ($index['primary'] ?? false) {
+                return $index['columns'];
+            }
+        }
+
+        return $columns;
     }
 
     /**
@@ -186,7 +213,12 @@ class BackupService
         $pdo = DB::getPdo();
         $columnList = implode(', ', array_map(fn ($c) => $this->quoteIdentifier($c, $driver), $columns));
 
-        DB::table($table)->orderBy($columns[0])->chunk(self::CHUNK, function ($rows) use ($handle, $table, $driver, $pdo, $columnList, $columns) {
+        $query = DB::table($table);
+        foreach ($this->orderColumns($table, $columns) as $orderColumn) {
+            $query->orderBy($orderColumn);
+        }
+
+        $query->chunk(self::CHUNK, function ($rows) use ($handle, $table, $driver, $pdo, $columnList, $columns) {
             $values = [];
             foreach ($rows as $row) {
                 $row = (array) $row;
