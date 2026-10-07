@@ -8,6 +8,7 @@ use App\Models\PaymentTransaction;
 use App\Models\Stall;
 use App\Models\User;
 use App\Services\XlsxExportService;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -15,6 +16,7 @@ class PaymentManager extends Component
 {
     use WithPagination;
 
+    #[Url(except: '')]
     public $search = '';
     public $statusFilter = '';
 

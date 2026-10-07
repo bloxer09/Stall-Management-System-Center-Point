@@ -127,6 +127,20 @@
         </div>
     @endif
 
+    @if($upcomingDates->isNotEmpty())
+        <div class="card bg-base-100 border border-base-300 rounded-3xl p-6 shadow-sm space-y-3">
+            <h2 class="font-extrabold text-base text-base-content">Upcoming dates</h2>
+            <ul class="space-y-2">
+                @foreach($upcomingDates as $item)
+                    <li class="flex items-center gap-3 text-sm">
+                        <span class="w-16 shrink-0 text-center rounded-xl py-1 font-black text-xs {{ $item['type'] === 'lease_end' ? 'bg-info/15 text-info' : 'bg-warning/20 text-base-content' }}">{{ $item['date']->format('M d') }}</span>
+                        <span class="text-base-content/80">{{ $item['label'] }}</span>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <!-- Commercial Leases Overview -->
     <div class="space-y-4">
         <div class="flex justify-between items-center">

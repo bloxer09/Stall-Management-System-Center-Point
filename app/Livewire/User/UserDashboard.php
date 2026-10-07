@@ -83,6 +83,7 @@ class UserDashboard extends Component
 
         return view('livewire.user.user-dashboard', [
             'announcements' => $announcements,
+            'upcomingDates' => app(\App\Services\CalendarService::class)->upcomingFor(auth()->user()),
             'assignedLeases' => $assignedLeases,
             'activeLeasesCount' => $activeLeasesCount,
             'pendingLeasesCount' => $pendingLeasesCount,

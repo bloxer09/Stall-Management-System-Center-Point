@@ -10,6 +10,7 @@ use App\Services\FileUploadService;
 use App\Services\InvoiceService;
 use App\Services\LeaseService;
 use Illuminate\Support\Carbon;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
@@ -18,6 +19,7 @@ class LeaseMappingManager extends Component
 {
     use WithPagination, WithFileUploads;
 
+    #[Url(except: '')]
     public $search = '';
     public $locationFilter = '';
     public $statusFilter = '';
@@ -231,11 +233,14 @@ class LeaseMappingManager extends Component
         $query = StallMapping::with(['user', 'stall.location', 'initialInvoice']);
 
         if ($this->search) {
-            $query->whereHas('user', function ($q) {
-                $q->where('name', 'like', "%{$this->search}%")
-                    ->orWhere('email', 'like', "%{$this->search}%");
-            })->orWhereHas('stall', function ($q) {
-                $q->where('stall_number', 'like', "%{$this->search}%");
+            // Grouped so the floor and status filters below still apply to every match.
+            $query->where(function ($w) {
+                $w->whereHas('user', function ($q) {
+                    $q->where('name', 'like', "%{$this->search}%")
+                        ->orWhere('email', 'like', "%{$this->search}%");
+                })->orWhereHas('stall', function ($q) {
+                    $q->where('stall_number', 'like', "%{$this->search}%");
+                });
             });
         }
 

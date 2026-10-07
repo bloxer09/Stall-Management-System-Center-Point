@@ -7,6 +7,7 @@ use App\Models\Stall;
 use App\Models\StallLocation;
 use Illuminate\Support\Facades\Auth;
 use App\Services\FileUploadService;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
@@ -15,6 +16,7 @@ class StallManager extends Component
 {
     use WithFileUploads, WithPagination;
 
+    #[Url(except: '')]
     public $search = '';
     public $locationFilter = '';
     public $statusFilter = '';
