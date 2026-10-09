@@ -206,7 +206,7 @@ def add_picture_fit(slide, image, left, top, width, height):
     slide.shapes.add_picture(os.path.join(ASSETS, image), left + (width - pw) // 2, top + (height - ph) // 2, pw, ph)
 
 
-def main():
+def main(slides=SLIDES, out=OUT):
     prs = Presentation(SRC)
     title_slide, content, thanks = prs.slides[0], prs.slides[1], prs.slides[7]
 
@@ -253,7 +253,7 @@ def main():
 
     # Content slides: copies of the template content slide
     body_left, body_top, body_w, body_h = Inches(0.37), Inches(2.33), Inches(12.59), Inches(4.26)
-    for title, bullets, image in SLIDES:
+    for title, bullets, image in slides:
         s = clone_slide(prs, content)
         set_title(shape_with_text(s, 'GENERAL OBJECTIVES'), title)
         body = shape_with_text(s, 'Insert General Objectives')
@@ -284,8 +284,8 @@ def main():
         if e is thanks_entry:
             continue
         prs.part.drop_rel(e.get('{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id'))
-    prs.save(OUT)
-    print('wrote', OUT, '| slides:', len(prs.slides))
+    prs.save(out)
+    print('wrote', out, '| slides:', len(prs.slides))
 
 
 if __name__ == '__main__':
