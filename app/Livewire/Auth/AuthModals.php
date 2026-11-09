@@ -58,7 +58,6 @@ class AuthModals extends Component
         }
     }
 
-    #[On('open-login-modal')]
     public function openLogin()
     {
         $this->resetValidation();
@@ -66,7 +65,6 @@ class AuthModals extends Component
         $this->isOpen = true;
     }
 
-    #[On('open-register-modal')]
     public function openRegister()
     {
         $this->resetValidation();
@@ -80,7 +78,9 @@ class AuthModals extends Component
         $this->resetValidation();
         $this->activeTab = 'forgot';
         $this->forgotStep = 'request';
-        if (!empty($email)) {
+        if (Auth::check()) {
+            $this->forgotEmail = Auth::user()->email;
+        } elseif (!empty($email)) {
             $this->forgotEmail = $email;
         }
         $this->isOpen = true;
@@ -88,6 +88,9 @@ class AuthModals extends Component
 
     public function processForgotPasswordRequest(MailService $mailer, SmsService $smsService)
     {
+        if (Auth::check()) {
+            $this->forgotEmail = Auth::user()->email;
+        }
         $this->forgotEmail = trim($this->forgotEmail);
         $this->validate([
             'forgotEmail' => 'required|email',
@@ -163,7 +166,7 @@ class AuthModals extends Component
         }
 
         $expiresAt = session('forgot_otp_expires_at');
-        if (!$expiresAt || now()->timestamp > $expiresAt) {
+        if (!$expiresAt || now()->timestamp >= $expiresAt) {
             $this->addError('forgotOtpInput', 'Your reset code has expired. Please request a new one.');
             session()->forget(['forgot_otp_hash', 'forgot_otp_user_id', 'forgot_otp_expires_at']);
             return;
@@ -242,10 +245,7 @@ class AuthModals extends Component
         SecurityLog::record('login succeeded', $user->id, 'method: password');
         $this->forceCloseModal();
 
-        if ($user->isAdmin()) {
-            return redirect()->route('admin.dashboard');
-        }
-        return redirect()->route('user.dashboard');
+        return redirect(\App\Services\StallApplicationAccess::destination($user));
     }
 
     public function processRegister()
@@ -266,7 +266,7 @@ class AuthModals extends Component
         $this->validate([
             'regName' => 'required|string|max:100',
             'regEmail' => 'required|email|max:120|unique:users,email',
-            'regPhone' => 'required|string|max:30|unique:users,phone',
+            'regPhone' => ['required', 'string', 'max:30', new \App\Rules\PhilippineMobileNumber, 'unique:users,phone'],
             'regPassword' => ['required', 'string', Password::defaults(), 'same:regPasswordConfirmation'],
             'terms' => 'accepted',
         ]);
@@ -282,8 +282,9 @@ class AuthModals extends Component
 
         RateLimiter::hit($throttleKey, 3600);
         Auth::login($user);
+        session()->regenerate();
         $this->forceCloseModal();
-        return redirect()->route('user.dashboard');
+        return redirect(\App\Services\StallApplicationAccess::destination($user));
     }
 
     public function render()

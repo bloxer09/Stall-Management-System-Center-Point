@@ -13,7 +13,7 @@ class StallApplicationForm extends Form
     #[Validate('required|email|max:120')]
     public string $applicant_email = '';
 
-    #[Validate('required|string|max:30')]
+    #[Validate]
     public string $applicant_phone = '';
 
     #[Validate('required|string|max:150')]
@@ -30,6 +30,13 @@ class StallApplicationForm extends Form
 
     // Honeypot: real visitors never see or fill this field.
     public string $website = '';
+
+    protected function rules(): array
+    {
+        return [
+            'applicant_phone' => ['required', 'string', 'max:30', new \App\Rules\PhilippineMobileNumber],
+        ];
+    }
 
     public function payload(): array
     {

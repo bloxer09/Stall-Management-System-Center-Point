@@ -15,6 +15,7 @@ class Invoice extends Model
         'verification_token',
         'user_id',
         'stall_id',
+        'stall_mapping_id',
         'total_amount',
         'status',
         'due_date',
@@ -22,6 +23,7 @@ class Invoice extends Model
         'billing_period',
         'notes',
         'overdue_notified_at',
+        'is_renewal', 'rent_period_start', 'rent_period_end', 'renewal_months', 'renewal_monthly_rate',
     ];
 
     protected $casts = [
@@ -29,6 +31,11 @@ class Invoice extends Model
         'due_date' => 'date',
         'paid_at' => 'datetime',
         'overdue_notified_at' => 'datetime',
+        'is_renewal' => 'boolean',
+        'rent_period_start' => 'date',
+        'rent_period_end' => 'date',
+        'renewal_months' => 'integer',
+        'renewal_monthly_rate' => 'decimal:2',
     ];
 
     protected static function booted(): void
@@ -51,6 +58,11 @@ class Invoice extends Model
     public function items()
     {
         return $this->hasMany(InvoiceItem::class);
+    }
+
+    public function lease()
+    {
+        return $this->belongsTo(StallMapping::class, 'stall_mapping_id');
     }
 
     public function transactions()

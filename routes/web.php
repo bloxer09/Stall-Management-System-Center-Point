@@ -27,7 +27,7 @@ Route::get('/stalls', function () {
 
 Route::get('/application-status', function () {
     return view('pages.application-status');
-})->name('application.status');
+})->middleware(['auth', 'role:user'])->name('application.status');
 
 // Signature is validated inside the component so an expired link shows a friendly page instead of a 403.
 Route::get('/account/set-password/{user}', function (\Illuminate\Http\Request $request, \App\Models\User $user) {

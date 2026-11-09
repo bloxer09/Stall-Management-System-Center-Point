@@ -79,9 +79,9 @@
                             {{ $log['message'] }}
                         </td>
                         <td class="text-right">
-                            <button wire:click="openTraceModal({{ $log['id'] }})" class="btn btn-ghost btn-xs text-primary font-bold">
+                            <x-table-action wire:click="openTraceModal({{ $log['id'] }})">
                                 Inspect Trace
-                            </button>
+                            </x-table-action>
                         </td>
                     </tr>
                     @empty

@@ -97,6 +97,22 @@ class TwoFactorEnrollmentTest extends TestCase
         $this->assertDatabaseHas('audit_logs', ['entity_type' => 'User', 'entity_id' => $admin->id, 'action' => 'Enabled two-factor authentication']);
     }
 
+    public function test_resending_code_clears_previous_error_without_enabling_two_factor(): void
+    {
+        $admin = $this->admin();
+        $component = $this->securityTab($admin)->call('sendTwoFactorEnableCode');
+        $component->set('twoFactorCode', $this->lastCode() === '000000' ? '111111' : '000000')
+            ->call('confirmTwoFactor')->assertHasErrors('twoFactorCode');
+
+        $this->travel(61)->seconds();
+        $component->call('sendTwoFactorEnableCode')
+            ->assertSet('twoFactorCodeSent', true)
+            ->assertHasNoErrors('twoFactorCode');
+
+        $this->assertCount(2, $this->sent);
+        $this->assertFalse($admin->fresh()->two_factor_enabled);
+    }
+
     public function test_disable_requires_correct_password(): void
     {
         $admin = $this->admin(['two_factor_enabled' => true, 'two_factor_confirmed_at' => now()]);

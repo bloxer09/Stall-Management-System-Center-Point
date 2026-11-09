@@ -6,13 +6,13 @@
         <form wire:submit="lookup" class="space-y-4 mt-6">
             <div>
                 <label for="statusReference" class="label text-xs font-bold">Reference number</label>
-                <input id="statusReference" type="text" wire:model="reference" maxlength="30" autocomplete="off" class="input input-bordered w-full rounded-xl text-sm uppercase" placeholder="APP-2026-000123">
-                @error('reference') <p class="text-error text-xs mt-1">{{ $message }}</p> @enderror
+                <input id="statusReference" type="text" wire:model="reference" maxlength="30" autocomplete="off" aria-invalid="{{ $errors->has('reference') ? 'true' : 'false' }}" @error('reference') aria-describedby="statusReference-error" @enderror class="input input-bordered w-full rounded-xl text-sm uppercase" placeholder="APP-2026-000123">
+                @error('reference') <p id="statusReference-error" role="alert" class="text-error text-xs mt-1">{{ $message }}</p> @enderror
             </div>
             <div>
                 <label for="statusEmail" class="label text-xs font-bold">Email address</label>
-                <input id="statusEmail" type="email" wire:model="email" maxlength="120" autocomplete="email" class="input input-bordered w-full rounded-xl text-sm" placeholder="you@example.com">
-                @error('email') <p class="text-error text-xs mt-1">{{ $message }}</p> @enderror
+                <input id="statusEmail" type="email" wire:model="email" maxlength="120" autocomplete="email" aria-invalid="{{ $errors->has('email') ? 'true' : 'false' }}" @error('email') aria-describedby="statusEmail-error" @enderror class="input input-bordered w-full rounded-xl text-sm" placeholder="you@example.com">
+                @error('email') <p id="statusEmail-error" role="alert" class="text-error text-xs mt-1">{{ $message }}</p> @enderror
             </div>
             <x-turnstile />
             <button type="submit" class="btn btn-primary rounded-xl font-bold w-full" wire:loading.attr="disabled" wire:target="lookup"><span wire:loading wire:target="lookup" class="loading loading-spinner loading-xs"></span>

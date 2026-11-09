@@ -72,6 +72,11 @@ class Stall extends Model
         return $this->hasOne(StallMapping::class)->where('is_active', true);
     }
 
+    public function pendingLease()
+    {
+        return $this->hasOne(StallMapping::class)->where('payment_status', 'pending_initial');
+    }
+
     public function invoices()
     {
         return $this->hasMany(Invoice::class);

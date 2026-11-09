@@ -59,7 +59,7 @@ class FrontendReviewFixesTest extends TestCase
 
         Livewire::actingAs($tenant)->test(StallBrowser::class)
             ->call('selectStall', $stall->id)->call('openApply')
-            ->set('form.applicant_name', 'Juan')->set('form.applicant_email', 'juan@mail.com')->set('form.applicant_phone', '0917')
+            ->set('form.applicant_name', 'Juan')->set('form.applicant_email', 'juan@mail.com')->set('form.applicant_phone', '09171234567')
             ->set('form.business_name', 'Signed-in Biz')->set('form.business_type', 'Retail')
             ->call('submitApplication')->assertHasNoErrors();
 

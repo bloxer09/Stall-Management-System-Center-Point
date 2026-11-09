@@ -16,10 +16,22 @@ use Livewire\WithPagination;
 
 class TicketCenter extends Component
 {
+    use \App\Livewire\Concerns\AcceptsTicketMedia;
     use WithFileUploads, WithPagination;
 
     public $search = '';
     public $statusFilter = '';
+    public ?int $actionTicketId = null;
+
+    public function openActions(int $id): void
+    {
+        $this->actionTicketId = Ticket::whereKey($id)->exists() ? $id : null;
+    }
+
+    public function closeActions(): void
+    {
+        $this->actionTicketId = null;
+    }
 
     public function mount(): void
     {
@@ -29,8 +41,8 @@ class TicketCenter extends Component
         }
 
         // Global search links here with ?ticket={id} to open that conversation.
-        $ticketId = (string) request()->query('ticket', '');
-        if (ctype_digit($ticketId) && Ticket::whereKey((int) $ticketId)->exists()) {
+        $ticketId = request()->query('ticket', '');
+        if ((is_string($ticketId) || is_int($ticketId)) && ctype_digit((string) $ticketId) && Ticket::whereKey((int) $ticketId)->exists()) {
             $this->openThreadModal((int) $ticketId);
         }
     }
@@ -45,14 +57,6 @@ class TicketCenter extends Component
     public $attachments = [];
     public $incomingAttachments = [];
     public $replyToMessageId = null;
-
-    public function updatedIncomingAttachments()
-    {
-        foreach ($this->incomingAttachments as $file) {
-            $this->attachments[] = $file;
-        }
-        $this->incomingAttachments = [];
-    }
 
     public function removeAttachment($index)
     {
@@ -74,6 +78,7 @@ class TicketCenter extends Component
 
     public function openThreadModal($id)
     {
+        $this->closeActions();
         $this->resetValidation();
         $this->selectedTicketId = $id;
         $this->showThreadModal = true;
@@ -108,7 +113,7 @@ class TicketCenter extends Component
                 'ticket_update',
                 "Ticket #TKT-" . str_pad($ticket->id, 5, '0', STR_PAD_LEFT) . " Assigned",
                 Auth::user()->name . " has claimed and is now handling your support ticket.",
-                route('user.tickets')
+            route('user.tickets', ['ticket' => $ticket->id])
             );
 
             AuditLog::log(
@@ -190,7 +195,7 @@ class TicketCenter extends Component
 
         $this->validate([
             'newMessage' => !empty($this->attachments) ? 'nullable|string' : 'required|string',
-            'attachments.*' => 'nullable|file|max:10240',
+            'attachments.*' => \App\Rules\TicketMedia::rules(),
         ]);
 
         $savedPaths = [];
@@ -224,7 +229,7 @@ class TicketCenter extends Component
             'ticket_message',
             "Support Ticket Reply (#TKT-" . str_pad($ticket->id, 5, '0', STR_PAD_LEFT) . ")",
             Auth::user()->name . ": " . \Illuminate\Support\Str::limit($messageContent, 60),
-            route('user.tickets')
+            route('user.tickets', ['ticket' => $ticket->id])
         );
 
         $this->reset(['newMessage', 'attachments', 'incomingAttachments', 'replyToMessageId']);
@@ -247,7 +252,7 @@ class TicketCenter extends Component
                     'ticket_update',
                     "Ticket #TKT-" . str_pad($ticket->id, 5, '0', STR_PAD_LEFT) . " Status Updated",
                     "Your support ticket status has been updated to " . strtoupper($status) . ".",
-                    route('user.tickets')
+                    route('user.tickets', ['ticket' => $ticket->id])
                 );
 
                 AuditLog::log(
@@ -298,6 +303,7 @@ class TicketCenter extends Component
 
         return view('livewire.admin.ticket-center', [
             'tickets' => $ticketsQuery->latest()->paginate(10),
+            'actionTicket' => $this->actionTicketId ? Ticket::with(['user', 'handler', 'stall'])->find($this->actionTicketId) : null,
             'selectedTicket' => $selectedTicket,
             'otherParticipant' => $otherParticipant,
             'staffUsers' => $staffUsers,

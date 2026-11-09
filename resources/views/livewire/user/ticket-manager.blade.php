@@ -86,19 +86,14 @@
                             </td>
                             <td class="text-right whitespace-nowrap">
                                 @php $newChats = $t->unread_count; @endphp
-                                <button wire:click="openThreadModal({{ $t->id }})"
-                                    class="relative inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-primary bg-primary/10 hover:bg-primary hover:text-white rounded-xl border border-primary/20 hover:border-transparent transition-all duration-200 shadow-xs group">
-                                    <svg class="w-3.5 h-3.5 opacity-75 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                                    </svg>
+                                <x-table-action wire:click="openThreadModal({{ $t->id }})">
                                     <span>Manage</span>
                                     @if($newChats > 0)
                                         <span class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-black rounded-full bg-primary text-white group-hover:bg-white group-hover:text-primary transition-colors shadow-xs" title="{{ $newChats }} new unread message(s)">
                                             {{ $newChats }}
                                         </span>
                                     @endif
-                                </button>
+                                </x-table-action>
                             </td>
                         </tr>
                     @empty
@@ -140,7 +135,7 @@
         @else
             <!-- Expanded Messenger Chat Box -->
             <div wire:poll.3s="markAsRead"
-                class="fixed bottom-4 right-4 z-50 w-80 md:w-96 h-[520px] bg-base-100 border border-base-300 rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-200">
+                class="support-chat fixed bottom-4 right-4 z-50 bg-base-100 border border-base-300 rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-200">
                 <!-- Mini Tab Header -->
                 <div
                     class="bg-base-200/90 backdrop-blur-md px-4 py-3 border-b border-base-300 flex items-center justify-between">
@@ -259,7 +254,7 @@
                     <form wire:submit.prevent="sendMessage"
                         x-data="{
                             handleChatPaste(e) {
-                                const clipboard = e.clipboardData || window.clipboardData;
+                                const clipboard = e.dataTransfer || e.clipboardData || window.clipboardData;
                                 if (!clipboard) return;
 
                                 const filesToUpload = [];
@@ -288,9 +283,12 @@
                             }
                         }"
                         x-on:paste="handleChatPaste($event)"
+                        x-on:dragover.prevent
+                        x-on:drop.prevent="handleChatPaste($event)"
                         class="p-3 bg-base-200/50 border-t border-base-300 flex flex-col gap-2">
 
                         <!-- Uploading Indicator -->
+                        @include('livewire.partials.ticket-media-errors')
                         <div wire:loading wire:target="incomingAttachments" class="flex items-center gap-2 text-[11px] text-primary bg-primary/10 px-3 py-1.5 rounded-xl border border-primary/20 animate-pulse">
                             <span class="loading loading-spinner loading-xs"></span>
                             <span class="font-bold">Attaching files...</span>
@@ -341,7 +339,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                                 </svg>
-                                <input type="file" wire:model="incomingAttachments" multiple class="hidden">
+                                <input type="file" wire:model="incomingAttachments" accept="{{ \App\Rules\TicketMedia::ACCEPT }}" multiple class="sr-only">
                             </label>
                             <input type="text" wire:model="message" placeholder="Type a message or paste files..." x-data="{ lastTyping: 0 }" @input="if (Date.now() - lastTyping > 2000) { lastTyping = Date.now(); $wire.typing() }"
                                 class="input input-sm input-bordered flex-1 rounded-xl text-xs" />
@@ -393,7 +391,7 @@
                             <label class="label"><span class="label-text font-bold text-xs uppercase">Select Leased Stall
                                     (Optional)</span></label>
                             <select wire:model="stall_id" class="select select-bordered w-full rounded-xl text-sm">
-                                <option value="">-- General Inquiry / No Stall --</option>
+                                <option value="">General Inquiry / No Stall</option>
                                 @foreach($myStalls as $st)
                                     <option value="{{ $st->id }}">Stall #{{ $st->stall_number }}
                                         ({{ $st->location->name ?? 'Main' }})</option>

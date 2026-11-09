@@ -51,11 +51,10 @@
                                 </span>
                             </td>
                             <td class="text-right">
-                                <a href="{{ route('file.contract', $contract->id) }}" target="_blank"
-                                   class="btn btn-xs btn-outline rounded-xl font-bold gap-1">
+                                <x-table-action :href="route('file.contract', $contract->id)" target="_blank">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                                     Download PDF
-                                </a>
+                                </x-table-action>
                             </td>
                         </tr>
                     @empty
@@ -120,13 +119,12 @@
                             </td>
                             <td class="text-right">
                                 @if($invoice->status === 'paid')
-                                    <a href="{{ route('receipt.pdf', $invoice->id) }}" target="_blank"
-                                       class="btn btn-xs btn-outline btn-success rounded-xl font-bold gap-1">
+                                    <x-table-action :href="route('receipt.pdf', $invoice->id)" target="_blank">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                                         PDF Receipt
-                                    </a>
+                                    </x-table-action>
                                 @else
-                                    <a href="{{ route('user.payments') }}" wire:navigate class="btn btn-xs btn-primary rounded-xl font-bold">Pay now</a>
+                                    <x-table-action :href="route('user.payments')" wire:navigate>Pay now</x-table-action>
                                 @endif
                             </td>
                         </tr>

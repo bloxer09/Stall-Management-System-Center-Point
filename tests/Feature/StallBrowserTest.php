@@ -43,6 +43,7 @@ class StallBrowserTest extends TestCase
 
     public function test_only_available_stall_offers_apply(): void
     {
+        $this->actingAs(\App\Models\User::factory()->create(['role' => 'user']));
         $available = $this->stall('S-101', 'available', 1, 1);
         $occupied = $this->stall('S-102', 'occupied', 1, 2);
 

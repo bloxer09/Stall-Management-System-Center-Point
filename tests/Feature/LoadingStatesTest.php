@@ -19,7 +19,6 @@ class LoadingStatesTest extends TestCase
             ['admin/floor-manager', 'saveFloor'],
             ['admin/floor-manager', 'deleteFloor'],
             ['admin/payment-manager', 'recordManualPayment'],
-            ['admin/payment-manager', 'markAsPaid'],
             ['admin/lease-mapping-manager', 'saveMapping'],
             ['admin/lease-mapping-manager', 'recordInitialCashPayment'],
             ['admin/lease-mapping-manager', 'terminateLease'],

@@ -18,6 +18,7 @@
 
             <!-- Quick Access Buttons -->
             <div class="flex flex-wrap items-center gap-2.5">
+                <a href="{{ route('application.status') }}" wire:navigate class="btn btn-outline rounded-xl min-h-11 font-bold">Check Application Status</a>
                 <a href="{{ route('user.payments') }}" wire:navigate class="btn btn-primary btn-sm rounded-xl font-bold gap-1.5 shadow-sm">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V8a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                     <span>Pay Invoices</span>
@@ -169,7 +170,7 @@
                                 @if($isPending)
                                     <span class="badge badge-warning text-slate-900 badge-xs font-extrabold uppercase">Pending Payment</span>
                                 @else
-                                    <span class="badge badge-success text-white badge-xs font-bold uppercase">Good Standing</span>
+                                    <span class="badge badge-success text-white badge-xs font-bold uppercase">Paid</span>
                                 @endif
                             </div>
                             <p class="text-xs font-bold text-primary">{{ $lease->stall->location->name ?? 'Main Floor' }}</p>
@@ -187,7 +188,7 @@
                             @if($isPending)
                                 <span class="text-warning font-bold text-[11px]">Reserved &bull; Awaiting Initial Payment</span>
                             @else
-                                <span class="text-success font-bold text-[11px]">Active &bull; Continuous Good Standing</span>
+                                <span class="text-success font-bold text-[11px]">Active &bull; Paid</span>
                             @endif
                         </div>
                         @if($lease->is_active)
@@ -199,7 +200,9 @@
                                 </span>
                             </div>
                             @if($lease->renewal_status === 'requested')
-                                <div class="text-[11px] font-bold text-warning">Renewal requested — awaiting review</div>
+                                <div class="text-[11px] font-bold text-warning">Renewal requested, awaiting review</div>
+                            @elseif($lease->renewal_status === 'awaiting_payment')
+                                @include('livewire.partials.renewal-payment', ['lease' => $lease])
                             @elseif($lease->renewal_status === 'rejected')
                                 <div class="text-[11px] font-bold text-error">Renewal not approved: <span class="font-medium">{{ $lease->renewal_rejection_reason }}</span></div>
                             @endif

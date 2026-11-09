@@ -51,6 +51,30 @@ class LeaseRenewalUiTest extends TestCase
         ], $overrides));
     }
 
+    public function test_selected_photo_clears_previous_required_error(): void
+    {
+        $lease = $this->lease();
+        $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=');
+
+        Livewire::actingAs($this->tenant)->test(MyLeases::class)
+            ->call('openImageModal', $lease->stall_id)
+            ->call('uploadStallPhoto')
+            ->assertHasErrors(['newStallImage' => 'required'])
+            ->set('newStallImage', \Illuminate\Http\UploadedFile::fake()->createWithContent('storefront.png', $png))
+            ->assertHasNoErrors('newStallImage')
+            ->assertSee('Ready to upload');
+    }
+
+    public function test_invalid_photo_is_not_marked_ready(): void
+    {
+        $lease = $this->lease();
+        Livewire::actingAs($this->tenant)->test(MyLeases::class)
+            ->call('openImageModal', $lease->stall_id)
+            ->set('newStallImage', \Illuminate\Http\UploadedFile::fake()->createWithContent('notes.txt', 'Not an image'))
+            ->assertHasErrors(['newStallImage' => 'image'])
+            ->assertDontSee('Ready to upload');
+    }
+
     public function test_request_renewal_button_only_on_eligible_lease(): void
     {
         $this->lease();
@@ -68,11 +92,11 @@ class LeaseRenewalUiTest extends TestCase
         Livewire::actingAs($this->tenant)
             ->test(MyLeases::class)
             ->call('openRenewal', $lease->id)
-            ->set('renewalOption', '1y')
+            ->set('renewalMonths', 12)
             ->set('renewalNote', 'Please renew.')
             ->call('submitRenewal')
             ->assertHasNoErrors()
-            ->assertSee('Renewal requested — awaiting review');
+            ->assertSee('Renewal requested, awaiting review');
 
         $lease->refresh();
         $this->assertSame('requested', $lease->renewal_status);
@@ -120,13 +144,14 @@ class LeaseRenewalUiTest extends TestCase
             ->test(LeaseMappingManager::class)
             ->call('openDetailModal', $lease->id)
             ->assertSet('renewalEndDate', $lease->requested_end_date->toDateString())
-            ->set('renewalEndDate', $edited)
+            ->set('renewalDurationMonths', 6)
             ->call('approveRenewal', $lease->id)
             ->assertHasNoErrors();
 
         $lease->refresh();
-        $this->assertSame('approved', $lease->renewal_status);
-        $this->assertSame($edited, $lease->end_date->toDateString());
+        $this->assertSame('awaiting_payment', $lease->renewal_status);
+        $this->assertSame($edited, $lease->renewalInvoice->rent_period_end->toDateString());
+        $this->assertSame('pending', $lease->renewalInvoice->status);
     }
 
     public function test_admin_reject_requires_reason(): void

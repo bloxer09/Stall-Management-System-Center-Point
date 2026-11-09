@@ -18,8 +18,16 @@ class ApplicationStatus extends Component
     /** Shown result: null before a lookup, false when nothing matched. */
     public array|false|null $result = null;
 
+    public function mount(): void
+    {
+        abort_unless(\App\Services\StallApplicationAccess::applicant(), 403);
+        $this->email = auth()->user()->email;
+    }
+
     public function lookup(): void
     {
+        $user = \App\Services\StallApplicationAccess::applicant();
+        abort_unless($user, 403);
         $this->validate([
             'reference' => 'required|string|max:30',
             'email' => 'required|string|max:120',
@@ -41,7 +49,8 @@ class ApplicationStatus extends Component
         $application = StallApplication::with('preferredStall')->find(StallApplication::findByReference($this->reference)?->id);
 
         // One message for every kind of mismatch, so the page never reveals who has applied.
-        if (!$application || Str::lower($application->applicant_email) !== Str::lower(trim($this->email))) {
+        $owned = $application && $application->user_id === $user->id;
+        if (!$owned || Str::lower($application->applicant_email) !== Str::lower(trim($this->email))) {
             $this->result = false;
             return;
         }

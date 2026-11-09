@@ -37,9 +37,9 @@
                 </select>
                 <select wire:model.live="statusFilter" class="select select-bordered rounded-2xl text-sm">
                     <option value="">All Statuses</option>
-                    <option value="active">Good Standing (Active)</option>
+                    <option value="active">Paid</option>
                     <option value="pending">Pending Initial Payment</option>
-                    <option value="inactive">Inactive / Terminated</option>
+                    <option value="inactive">Terminated</option>
                     <option value="renewal_requested">Renewal Requested</option>
                 </select>
             </div>
@@ -52,9 +52,9 @@
                         <th class="font-bold">Tenant</th>
                         <th class="font-bold">Stall Space</th>
                         <th class="font-bold">Floor Level</th>
-                        <th class="font-bold">Monthly Rate</th>
-                        <th class="font-bold">Contract Active Dates</th>
-                        <th class="font-bold">Standing / Status</th>
+                        <th class="font-bold whitespace-nowrap">Total Contract Rent</th>
+                        <th class="font-bold">Contract Term</th>
+                        <th class="font-bold">Status</th>
                         <th class="text-right font-bold">Actions</th>
                     </tr>
                 </thead>
@@ -82,10 +82,22 @@
                                     <span class="text-base-content/40 text-xs font-medium">Unassigned</span>
                                 @endif
                             </td>
-                            <td class="font-bold text-base-content">
-                                ₱{{ number_format($map->stall->price ?? 0, 2) }}
+                            <td class="font-bold text-base-content whitespace-nowrap">
+                                @if($map->contract_rent !== null)
+                                    ₱{{ number_format($map->contract_rent, 2) }}
+                                @else
+                                    <span class="font-normal text-base-content/70">Not recorded</span>
+                                @endif
+                                <span class="block text-xs font-normal text-base-content/70 mt-1">₱{{ number_format($map->agreed_monthly_rate ?? $map->stall->price ?? 0, 2) }} / month</span>
                             </td>
                             <td class="text-xs font-medium text-base-content/80">
+                                <span class="block text-sm font-bold text-base-content mb-1">
+                                    @if($map->duration_months !== null)
+                                        {{ $map->duration_months }} {{ Str::plural('month', $map->duration_months) }}
+                                    @else
+                                        Duration not recorded
+                                    @endif
+                                </span>
                                 {{ $map->start_date->format('M d, Y') }} &rarr; {{ $map->end_date->format('M d, Y') }}
                             </td>
                             <td>
@@ -96,21 +108,23 @@
                                     </span>
                                 @elseif($map->is_active)
                                     <span class="badge badge-sm font-bold uppercase badge-success text-white gap-1">
-                                        <span>✓</span> Good Standing
+                                        <span>✓</span> Paid
                                     </span>
                                 @else
                                     <span class="badge badge-sm font-bold uppercase badge-ghost text-base-content/60">
                                         Terminated
                                     </span>
                                 @endif
-                                @if($map->is_active && $map->renewal_status === 'requested')
+                                @if($map->is_active && $map->renewal_status === 'awaiting_payment')
+                                    <div class="text-[11px] leading-snug font-semibold text-base-content mt-1">Renewal awaiting payment</div>
+                                @elseif($map->is_active && $map->renewal_status === 'requested')
                                     <span class="badge badge-sm font-bold uppercase badge-warning mt-1">Renewal requested</span>
                                 @endif
                             </td>
                             <td class="text-right">
-                                <button wire:click="openDetailModal({{ $map->id }})" class="btn btn-ghost btn-xs text-primary font-bold rounded-lg border border-primary/20 hover:bg-primary hover:text-white transition">
+                                <x-table-action wire:click="openDetailModal({{ $map->id }})">
                                     Manage
-                                </button>
+                                </x-table-action>
                             </td>
                         </tr>
                     @empty
@@ -144,14 +158,14 @@
 
                 <div>
                     <h3 class="font-black text-xl text-base-content">Assign Stall to Tenant</h3>
-                    <p class="text-xs text-base-content/60 mt-0.5">The stall will be reserved and an initial monthly invoice will be generated for the tenant.</p>
+                    <p class="text-xs text-base-content mt-0.5">Reserve a stall and invoice the full contract rent upfront.</p>
                 </div>
 
                 <form wire:submit.prevent="saveMapping" class="space-y-4">
                     <div class="form-control">
-                        <label class="label"><span class="label-text font-bold text-xs uppercase">Select Commercial Tenant *</span></label>
-                        <select wire:model="user_id" required class="select select-bordered rounded-xl text-sm w-full">
-                            <option value="">-- Choose Tenant Account --</option>
+                        <label for="assignment-tenant" class="label"><span class="label-text font-bold text-xs uppercase">Select Commercial Tenant *</span></label>
+                        <select id="assignment-tenant" wire:model="user_id" required class="select select-bordered rounded-xl text-sm w-full">
+                            <option value="">Choose Tenant Account</option>
                             @foreach($users as $u)
                                 <option value="{{ $u->id }}">{{ $u->name }} ({{ $u->email }})</option>
                             @endforeach
@@ -160,9 +174,9 @@
                     </div>
 
                     <div class="form-control">
-                        <label class="label"><span class="label-text font-bold text-xs uppercase">Select Available Stall *</span></label>
-                        <select wire:model="stall_id" required class="select select-bordered rounded-xl text-sm w-full">
-                            <option value="">-- Choose Available Stall --</option>
+                        <label for="assignment-stall" class="label"><span class="label-text font-bold text-xs uppercase">Select Available Stall *</span></label>
+                        <select id="assignment-stall" wire:model.live="stall_id" required class="select select-bordered rounded-xl text-sm w-full">
+                            <option value="">Choose Available Stall</option>
                             @foreach($availableStalls as $s)
                                 <option value="{{ $s->id }}">Stall #{{ $s->stall_number }} &bull; {{ $s->location->name ?? 'Floor' }} (₱{{ number_format($s->price, 2) }}/mo)</option>
                             @endforeach
@@ -170,17 +184,38 @@
                         @error('stall_id') <span class="text-xs text-error mt-1">{{ $message }}</span> @enderror
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="form-control">
+                        <label for="assignment-duration" class="label"><span class="label-text font-bold text-xs">Duration</span></label>
+                        <select id="assignment-duration" wire:model.live="duration" class="select select-bordered rounded-xl text-sm w-full">
+                            @for($months = 1; $months <= 12; $months++)
+                                <option value="{{ $months }}">{{ $months }} {{ $months === 1 ? 'month' : 'months' }}</option>
+                            @endfor
+                        </select>
+                        @error('duration') <span class="text-xs text-error mt-1">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div class="form-control">
-                            <label class="label"><span class="label-text font-bold text-xs uppercase">Contract Start Date *</span></label>
-                            <input type="date" wire:model="start_date" required class="input input-bordered rounded-xl text-sm w-full" />
+                            <label for="assignment-start" class="label"><span class="label-text font-bold text-xs uppercase">Contract Start Date *</span></label>
+                            <input id="assignment-start" type="date" wire:model.live="start_date" required class="input input-bordered rounded-xl text-sm w-full" />
                             @error('start_date') <span class="text-xs text-error mt-1">{{ $message }}</span> @enderror
                         </div>
                         <div class="form-control">
-                            <label class="label"><span class="label-text font-bold text-xs uppercase">Contract End Date *</span></label>
-                            <input type="date" wire:model="end_date" required class="input input-bordered rounded-xl text-sm w-full" />
+                            <label for="assignment-end" class="label"><span class="label-text font-bold text-xs uppercase">Contract End Date *</span></label>
+                            <input id="assignment-end" type="date" value="{{ $end_date }}" readonly class="input input-bordered rounded-xl text-sm w-full" aria-describedby="assignment-end-help" />
+                            <span id="assignment-end-help" class="text-xs text-base-content mt-1">Calculated from the start date and duration.</span>
                             @error('end_date') <span class="text-xs text-error mt-1">{{ $message }}</span> @enderror
                         </div>
+                    </div>
+
+                    <div class="rounded-xl border border-base-300 p-3 text-sm text-base-content" role="status" aria-live="polite">
+                        @if($assignmentRentTotal !== null)
+                            <div>Monthly rate: ₱{{ number_format($assignmentMonthlyRate, 2) }}</div>
+                            <div>Duration: {{ $duration }} {{ $duration === '1' ? 'month' : 'months' }}</div>
+                            <div class="font-bold mt-1">Total rent due upfront: ₱{{ number_format($assignmentRentTotal, 2) }}</div>
+                        @else
+                            Select a stall and duration to calculate the total rent.
+                        @endif
                     </div>
 
                     <div class="form-control">
@@ -189,9 +224,9 @@
                         @error('contract_file') <span class="text-xs text-error mt-1">{{ $message }}</span> @enderror
                     </div>
 
-                    <div class="p-3 bg-base-200/50 rounded-2xl border border-base-300 text-[11px] text-base-content/70 space-y-1 font-medium">
+                    <div class="p-3 bg-base-200/50 rounded-2xl border border-base-300 text-[11px] text-base-content space-y-1 font-medium">
                         <span class="font-bold text-base-content">Payment-Driven Activation Note:</span>
-                        <p>Upon assignment, the stall status switches to <strong>Reserved</strong>. The lease officially activates to <strong>Occupied</strong> once the tenant pays the initial rental invoice via PayMongo or Over-the-Counter Cash.</p>
+                        <p>The stall is <strong>Reserved</strong> until the full contract rent is paid online or at the office. Covered rent will not be billed again each month.</p>
                     </div>
 
                     <div class="flex justify-end gap-2 pt-2 border-t border-base-200">
@@ -234,10 +269,10 @@
                                 <span class="w-2 h-2 rounded-full bg-warning animate-ping"></span>
                                 Awaiting Initial Payment
                             </span>
-                            <span class="font-mono font-black text-sm text-base-content">₱{{ number_format($selectedLease->stall->price, 2) }}</span>
+                            <span class="font-mono font-black text-sm text-base-content">₱{{ number_format($selectedLease->initialInvoice?->total_amount ?? $selectedLease->stall->price, 2) }}</span>
                         </div>
                         <p class="text-base-content/80 text-[11px]">
-                            Stall is reserved. If the tenant settled their deposit in cash at the administration office, you can confirm it below to immediately activate the lease.
+                            The stall is reserved until the rent invoice is paid. Record payment below if the tenant paid at the office.
                         </p>
                         <button type="button" wire:click="recordInitialCashPayment({{ $selectedLease->id }})" class="btn btn-success text-white btn-sm rounded-xl font-bold w-full shadow-xs gap-1.5" wire:loading.attr="disabled" wire:target="recordInitialCashPayment"><span wire:loading wire:target="recordInitialCashPayment" class="loading loading-spinner loading-xs"></span>
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
@@ -247,10 +282,10 @@
                 @elseif($selectedLease->is_active)
                     <div class="p-3.5 bg-success/10 border border-success/30 rounded-2xl text-xs space-y-1">
                         <div class="font-black text-success flex items-center gap-1.5 uppercase tracking-wide text-[11px]">
-                            <span>✓</span> Active &bull; In Good Standing
+                            <span>✓</span> Active &bull; Paid
                         </div>
                         <p class="text-base-content/80 text-[11px]">
-                            Lease stays in good standing while monthly bills are settled. Extending the end date requires an approved renewal.
+                            {{ $selectedLease->rent_billing_mode === 'upfront' ? 'The original contract rent is billed upfront. Covered months will not be billed again.' : 'Settle monthly bills on time.' }} Renewals take effect after office review and full payment.
                         </p>
                     </div>
                 @endif
@@ -267,8 +302,13 @@
                             @endif
                         </div>
                         <label class="form-control w-full">
-                            <span class="label-text text-[11px] font-bold">New end date</span>
-                            <input type="date" wire:model="renewalEndDate" min="{{ $selectedLease->end_date->copy()->addDay()->toDateString() }}" class="input input-bordered input-sm rounded-xl">
+                            <span class="label-text font-bold">Reviewed renewal duration</span>
+                            <select wire:model.live="renewalDurationMonths" aria-label="Reviewed renewal duration" class="select select-bordered rounded-xl min-h-11">
+                                @foreach(range(1, 12) as $months)
+                                    <option value="{{ $months }}">{{ $months }} {{ $months === 1 ? 'month' : 'months' }}</option>
+                                @endforeach
+                            </select>
+                            @error('renewalDurationMonths') <p role="alert" class="text-error text-sm">{{ $message }}</p> @enderror
                             @error('renewalEndDate') <span class="text-error text-[11px] mt-1">{{ $message }}</span> @enderror
                         </label>
                         <label class="form-control w-full">
@@ -276,23 +316,35 @@
                             <textarea wire:model="renewalRejectReason" rows="2" maxlength="500" class="textarea textarea-bordered rounded-xl text-xs"></textarea>
                             @error('renewalRejectReason') <span class="text-error text-[11px] mt-1">{{ $message }}</span> @enderror
                         </label>
-                        <div class="flex gap-2">
+                        <p class="text-sm">Full rent: ₱{{ number_format((float) \App\Services\LeaseService::calculateContractRent((string) ($selectedLease->agreed_monthly_rate ?? $selectedLease->stall->price), max(1, min(12, $renewalDurationMonths))), 2) }}. The expiry changes only after payment.</p>
+                        <div class="flex flex-wrap gap-2">
                             <button type="button" wire:click="rejectRenewal({{ $selectedLease->id }})" class="btn btn-outline btn-error btn-sm rounded-xl font-bold flex-1">Reject</button>
-                            <button type="button" wire:click="approveRenewal({{ $selectedLease->id }})" class="btn btn-success btn-sm rounded-xl font-bold flex-1">Approve renewal</button>
+                            <button type="button" wire:click="approveRenewal({{ $selectedLease->id }})" wire:loading.attr="disabled" class="btn btn-success rounded-xl font-bold flex-1 min-h-11">Confirm term and invoice</button>
                         </div>
                     </div>
                 @endif
 
                 <!-- Details Grid -->
+                @if($selectedLease->renewal_status === 'awaiting_payment')
+                    @include('livewire.partials.renewal-payment', ['lease' => $selectedLease])
+                    <button type="button" wire:click="recordRenewalCashPayment({{ $selectedLease->id }})" wire:confirm="Confirm that the office received the full renewal invoice amount in cash." wire:loading.attr="disabled" class="btn btn-primary rounded-xl min-h-11">Record full renewal cash payment</button>
+                    @error('renewalPayment') <p role="alert" class="text-error text-sm">{{ $message }}</p> @enderror
+                @endif
                 <div class="grid grid-cols-2 gap-3 p-4 bg-base-200/40 rounded-2xl border border-base-300 text-xs">
                     <div>
                         <span class="text-base-content/50 block text-[10px] uppercase font-bold">Monthly Rental Rate</span>
-                        <span class="font-mono font-black text-primary text-sm">₱{{ number_format($selectedLease->stall->price, 2) }}</span>
+                        <span class="font-mono font-black text-primary text-sm">₱{{ number_format($selectedLease->agreed_monthly_rate ?? $selectedLease->stall->price, 2) }}</span>
                     </div>
                     <div>
                         <span class="text-base-content/50 block text-[10px] uppercase font-bold">Contract Validity</span>
                         <span class="font-mono font-semibold text-base-content">{{ $selectedLease->start_date->format('M d, Y') }} - {{ $selectedLease->end_date->format('M d, Y') }}</span>
                     </div>
+                    @if($selectedLease->rent_billing_mode === 'upfront')
+                        <div class="col-span-2">
+                            <span class="text-base-content block font-bold">Contract rent · {{ $selectedLease->duration_months }} {{ Str::plural('month', $selectedLease->duration_months) }} upfront</span>
+                            <span class="font-mono font-bold">₱{{ number_format($selectedLease->contract_rent, 2) }}</span>
+                        </div>
+                    @endif
                 </div>
 
                 @if($selectedLease->contract_document)
@@ -317,7 +369,7 @@
                 <!-- Modal Actions -->
                 <div class="flex items-center justify-between gap-2 pt-3 border-t border-base-200">
                     <div>
-                        @if($selectedLease->is_active || $selectedLease->payment_status === 'pending_initial')
+                        @if(app(\App\Services\LeaseService::class)->canTerminate($selectedLease))
                             <button wire:click="openTerminate({{ $selectedLease->id }})" class="btn btn-outline btn-error btn-sm rounded-xl font-bold" wire:loading.attr="disabled" wire:target="openTerminate"><span wire:loading wire:target="openTerminate" class="loading loading-spinner loading-xs"></span>
                                 Terminate Lease
                             </button>

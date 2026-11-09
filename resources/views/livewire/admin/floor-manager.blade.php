@@ -52,9 +52,9 @@
                                 </span>
                             </td>
                             <td class="text-right">
-                                <button wire:click="openDetailModal({{ $floor->id }})" class="btn btn-ghost btn-xs text-primary font-bold rounded-lg border border-primary/20 hover:bg-primary hover:text-white transition">
+                                <x-table-action wire:click="openDetailModal({{ $floor->id }})">
                                     Manage
-                                </button>
+                                </x-table-action>
                             </td>
                         </tr>
                     @empty

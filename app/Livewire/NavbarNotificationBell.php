@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Notification;
+use App\Models\Ticket;
 use Livewire\Component;
 
 class NavbarNotificationBell extends Component
@@ -53,6 +54,23 @@ class NavbarNotificationBell extends Component
         $this->loadNotifications();
 
         if ($path = $this->internalPath($notif->link)) {
+            if (in_array($notif->type, ['ticket', 'ticket_message', 'ticket_update'], true)) {
+                $route = auth()->user()->role === 'admin' ? 'admin.tickets' : 'user.tickets';
+                $ticketPath = route($route, [], false);
+                if (parse_url($path, PHP_URL_PATH) === $ticketPath) {
+                    parse_str(parse_url($path, PHP_URL_QUERY) ?? '', $query);
+                    $ticketId = $query['ticket'] ?? null;
+                    if ($ticketId === null && preg_match('/#TKT-(\d+)\b/', $notif->title, $match)) {
+                        $ticketId = $match[1];
+                    }
+                    $ticket = is_string($ticketId) && ctype_digit($ticketId)
+                        ? Ticket::whereKey((int) $ticketId)
+                            ->when(auth()->user()->role !== 'admin', fn ($q) => $q->where('user_id', auth()->id()))
+                            ->first()
+                        : null;
+                    $path = $ticket ? route($route, ['ticket' => $ticket->id], false) : $ticketPath;
+                }
+            }
             $this->redirect($path, navigate: true);
         }
     }

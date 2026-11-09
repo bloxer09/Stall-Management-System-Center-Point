@@ -20,11 +20,17 @@ class FileUploadService
 
     public function uploadTicketAttachment(UploadedFile $file): string
     {
-        return $file->storeAs('ticket_attachments', $this->storedName($file, 'ticket'), 'local');
+        \Illuminate\Support\Facades\Validator::make(['attachment' => $file],
+            ['attachment' => \App\Rules\TicketMedia::rules()])->validate();
+        $name = 'ticket_'.Str::random(40).'.'.strtolower($file->getClientOriginalExtension());
+
+        return $file->storeAs('ticket_attachments', $name, 'local');
     }
 
     public function uploadTicketAttachments(array $files): array
     {
+        \Illuminate\Support\Facades\Validator::make(['attachments' => $files],
+            ['attachments.*' => \App\Rules\TicketMedia::rules()])->validate();
         $paths = [];
         foreach ($files as $file) {
             if ($file instanceof UploadedFile) {

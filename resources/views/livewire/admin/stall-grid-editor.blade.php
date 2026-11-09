@@ -5,14 +5,6 @@
             <h1 class="text-2xl font-black tracking-tight text-base-content">Floor Map & Space Planner</h1>
             <p class="text-xs text-base-content/60 mt-1">Interactive visual grid to arrange and manage stalls on floor levels.</p>
         </div>
-        <div class="flex flex-wrap gap-2">
-            <a href="{{ route('admin.stalls') }}" wire:navigate class="btn btn-primary btn-sm rounded-xl font-bold gap-1 shadow-xs">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
-                </svg>
-                Stalls Catalog
-            </a>
-        </div>
     </div>
 
     <!-- Floor Map Card with Integrated Controls -->
@@ -64,32 +56,33 @@
                 @for($r = 1; $r <= $gridRows; $r++)
                     @for($c = 1; $c <= $gridCols; $c++)
                         @php $key = "{$r}_{$c}"; $stall = $gridStalls[$key] ?? null; @endphp
-                        <div wire:click="placeStallOnGrid({{ $r }}, {{ $c }})"
+                        <div x-data
                             @if(!$stall)
-                                x-data="{ over: false }"
-                                @dragover.prevent="over = true"
-                                @dragleave="over = false"
-                                @drop.prevent="over = false; const id = parseInt($event.dataTransfer.getData('text/plain'), 10); if (Number.isInteger(id)) $wire.moveStall(id, {{ $r }}, {{ $c }})"
-                                :class="over && 'ring-2 ring-primary bg-primary/10'"
+                                @dragover.prevent="$el.classList.add('ring-2', 'ring-primary')"
+                                @dragleave="$el.classList.remove('ring-2', 'ring-primary')"
+                                @drop.prevent="$el.classList.remove('ring-2', 'ring-primary'); const id = parseInt($event.dataTransfer.getData('text/plain'), 10); if (Number.isInteger(id)) $wire.moveStall(id, {{ $r }}, {{ $c }})"
                             @else
                                 draggable="true"
                                 @dragstart="$event.dataTransfer.setData('text/plain', '{{ $stall->id }}'); $event.dataTransfer.effectAllowed = 'move'"
                             @endif
                             wire:key="cell-{{ $r }}-{{ $c }}"
                             class="h-28 p-3 rounded-2xl border-2 border-dashed flex flex-col justify-between items-center transition cursor-pointer relative group {{ $stall ? ($stall->status === 'occupied' ? 'bg-info/10 border-info text-info-content shadow-xs' : ($stall->status === 'reserved' ? 'bg-warning/10 border-warning shadow-xs' : ($stall->status === 'maintenance' ? 'bg-error/10 border-error shadow-xs' : 'bg-primary/10 border-primary shadow-xs'))) : 'border-base-300 hover:border-primary hover:bg-base-200/50 bg-base-200/20' }}">
-                            <span class="text-[10px] text-base-content/40 font-mono self-start font-bold">R{{ $r }}C{{ $c }}</span>
+                            <button type="button" wire:click="placeStallOnGrid({{ $r }}, {{ $c }})"
+                                aria-label="Row {{ $r }}, column {{ $c }}{{ $stall ? ', Stall ' . $stall->stall_number : ', place selected stall' }}"
+                                class="absolute inset-0 rounded-2xl"></button>
+                            <span class="relative pointer-events-none text-[10px] text-secondary-readable font-mono self-start font-bold">R{{ $r }}C{{ $c }}</span>
                             @if($stall)
-                            <div class="text-center w-full">
+                            <div class="relative pointer-events-none text-center w-full">
                                 <span class="text-xs font-black text-base-content block truncate" title="Stall {{ $stall->stall_number }}">Stall {{ $stall->stall_number }}</span>
                                 <span class="badge badge-xs font-bold uppercase mt-1 {{ $stall->status === 'available' ? 'badge-primary' : ($stall->status === 'occupied' ? 'badge-info text-white' : ($stall->status === 'reserved' ? 'badge-warning text-slate-900' : 'badge-error text-white')) }}">
                                     {{ $stall->status }}
                                 </span>
                             </div>
-                            <button wire:click.stop="removeStallFromGrid({{ $stall->id }})" title="Remove from grid cell" aria-label="Remove Stall {{ $stall->stall_number }} from grid" class="absolute top-1.5 right-1.5 btn btn-ghost btn-xs btn-circle text-error opacity-0 group-hover:opacity-100 transition hover:bg-error/10">
+                            <button type="button" wire:click.stop="removeStallFromGrid({{ $stall->id }})" title="Remove from grid cell" aria-label="Remove Stall {{ $stall->stall_number }} from grid" class="absolute z-10 top-1.5 right-1.5 btn btn-ghost btn-xs btn-circle text-base-content transition hover:bg-error/10">
                                 ✕
                             </button>
                             @else
-                            <span class="text-xs text-base-content/40 font-bold my-auto group-hover:text-primary transition">+ Place</span>
+                            <span class="relative pointer-events-none text-xs text-secondary-readable font-bold my-auto transition">+ Place</span>
                             @endif
                         </div>
                     @endfor

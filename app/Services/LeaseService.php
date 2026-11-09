@@ -39,7 +39,7 @@ class LeaseService
         return $lease->is_active
             && $lease->end_date !== null
             && $lease->end_date->lte(now()->addDays(self::RENEWAL_WINDOW_DAYS)->endOfDay())
-            && $lease->renewal_status !== 'requested';
+            && !in_array($lease->renewal_status, ['requested', 'awaiting_payment'], true);
     }
 
     /**
@@ -53,7 +53,7 @@ class LeaseService
         if (!$lease->is_active) {
             throw new InvalidArgumentException('Only active leases can be renewed.');
         }
-        if ($lease->renewal_status === 'requested') {
+        if (in_array($lease->renewal_status, ['requested', 'awaiting_payment'], true)) {
             throw new InvalidArgumentException('A renewal request for this lease is already waiting for review.');
         }
         if (!$this->isRenewalEligible($lease)) {
@@ -63,12 +63,21 @@ class LeaseService
             throw new InvalidArgumentException('The new end date must be after your current end date.');
         }
 
-        DB::transaction(function () use ($lease, $requestedEnd, $note) {
+        $months = $this->renewalMonths($lease->end_date, $requestedEnd);
+
+        DB::transaction(function () use ($lease, $requestedEnd, $note, $months) {
+            $lease = StallMapping::whereKey($lease->id)->lockForUpdate()->firstOrFail();
+            if (!$this->isRenewalEligible($lease)) {
+                throw new InvalidArgumentException('This lease already has a pending request or is no longer eligible.');
+            }
+            $this->renewalMonths($lease->end_date, $requestedEnd);
             $lease->update([
                 'renewal_status' => 'requested',
                 'requested_end_date' => $requestedEnd->toDateString(),
                 'renewal_note' => $note !== null && trim($note) !== '' ? trim($note) : null,
                 'renewal_rejection_reason' => null,
+                'renewal_months' => $months,
+                'renewal_invoice_id' => null,
             ]);
 
             AuditLog::record(
@@ -98,8 +107,15 @@ class LeaseService
      */
     public function approveRenewal(StallMapping $lease, User $admin, ?Carbon $overrideEnd = null): StallMapping
     {
-        $lease = DB::transaction(function () use ($lease, $admin, $overrideEnd) {
+        if (!$admin->isAdmin()) {
+            throw new InvalidArgumentException('Only an admin can review renewals.');
+        }
+        $reviewed = false;
+        $lease = DB::transaction(function () use ($lease, $admin, $overrideEnd, &$reviewed) {
             $locked = StallMapping::whereKey($lease->id)->lockForUpdate()->firstOrFail();
+            if ($locked->renewal_status === 'awaiting_payment') {
+                return $locked->fresh(['user', 'stall', 'renewalInvoice']);
+            }
             if ($locked->renewal_status !== 'requested') {
                 throw new InvalidArgumentException('There is no pending renewal request for this lease.');
             }
@@ -109,14 +125,40 @@ class LeaseService
                 throw new InvalidArgumentException('The new end date must be after the current end date.');
             }
 
+            if (!$locked->is_active) {
+                throw new InvalidArgumentException('Only active leases can be renewed.');
+            }
+            $months = $this->renewalMonths($locked->end_date, $newEnd);
+            $rate = (string) ($locked->agreed_monthly_rate ?? $locked->stall->price);
+            $amount = self::calculateContractRent($rate, $months);
+            if ((float) $amount <= 0) {
+                throw new InvalidArgumentException('Renewal rent must be greater than zero.');
+            }
+            $invoice = Invoice::create([
+                'invoice_number' => 'INV-RENEW-' . $locked->id . '-' . \Illuminate\Support\Str::upper(\Illuminate\Support\Str::random(10)),
+                'user_id' => $locked->user_id, 'stall_id' => $locked->stall_id,
+                'stall_mapping_id' => $locked->id, 'total_amount' => $amount,
+                'status' => 'pending', 'due_date' => today()->addDays(7),
+                'notes' => 'Lease renewal rent', 'is_renewal' => true,
+                'rent_period_start' => $locked->end_date, 'rent_period_end' => $newEnd,
+                'renewal_months' => $months, 'renewal_monthly_rate' => $rate,
+            ]);
+            InvoiceItem::create([
+                'invoice_id' => $invoice->id, 'item_type' => 'rent', 'amount' => $amount,
+                'description' => "Renewal rent: {$months} month(s), " . $locked->end_date->toDateString() . ' to ' . $newEnd->toDateString(),
+            ]);
+            $reviewed = true;
+
             $locked->update([
-                'end_date' => $newEnd->toDateString(),
-                'renewal_status' => 'approved',
+                'requested_end_date' => $newEnd->toDateString(),
+                'renewal_status' => 'awaiting_payment',
+                'renewal_months' => $months,
+                'renewal_invoice_id' => $invoice->id,
                 'renewal_rejection_reason' => null,
             ]);
 
             AuditLog::record(
-                "Approved renewal for Lease #{$locked->id} until {$newEnd->toDateString()}",
+                "Reviewed renewal for Lease #{$locked->id}; Invoice #{$invoice->id} awaits payment",
                 'StallMapping',
                 $locked->id,
                 null,
@@ -125,6 +167,40 @@ class LeaseService
 
             return $locked->fresh(['user', 'stall']);
         });
+
+        if ($reviewed) {
+            $message = 'The office reviewed your renewal. Pay the full renewal invoice to extend your lease.';
+            Notification::send($lease->user_id, 'renewal', 'Renewal ready for payment', $message, route('user.payments'));
+            $this->lastNotificationSent = $this->mailer->sendEmail($lease->user->email, $lease->user->name,
+                'Renewal ready for payment', '<p>' . e($message) . '</p>', $message);
+        }
+        return $lease;
+    }
+
+    public function finalizePaidRenewal(Invoice $invoice): void
+    {
+        $lease = DB::transaction(function () use ($invoice) {
+            $invoice = Invoice::whereKey($invoice->id)->lockForUpdate()->firstOrFail();
+            $lease = StallMapping::where('renewal_invoice_id', $invoice->id)->lockForUpdate()->first();
+            if (!$lease || !$invoice->is_renewal || $invoice->status !== 'paid'
+                || $lease->renewal_status !== 'awaiting_payment') {
+                return null;
+            }
+            if (!$invoice->rent_period_start?->isSameDay($lease->end_date)
+                || !$invoice->rent_period_end?->isSameDay($lease->requested_end_date)
+                || $invoice->user_id !== $lease->user_id) {
+                throw new DomainException('The paid renewal invoice does not match the reviewed lease terms.');
+            }
+            $lease->update([
+                'end_date' => $invoice->rent_period_end,
+                'renewal_status' => 'approved',
+            ]);
+            AuditLog::record("Paid renewal approved for Lease #{$lease->id}", 'StallMapping', $lease->id);
+            return $lease->fresh(['user', 'stall']);
+        });
+        if (!$lease) {
+            return;
+        }
 
         $tenant = $lease->user;
         $stallNumber = $lease->stall?->stall_number;
@@ -139,7 +215,16 @@ class LeaseService
         }
         $this->lastNotificationSent = $sent;
 
-        return $lease;
+    }
+
+    private function renewalMonths(Carbon $start, Carbon $end): int
+    {
+        for ($months = 1; $months <= 12; $months++) {
+            if ($start->copy()->addMonthsNoOverflow($months)->isSameDay($end)) {
+                return $months;
+            }
+        }
+        throw new InvalidArgumentException('Choose a renewal of 1 to 12 whole months.');
     }
 
     /**
@@ -147,6 +232,9 @@ class LeaseService
      */
     public function rejectRenewal(StallMapping $lease, User $admin, string $reason): StallMapping
     {
+        if (!$admin->isAdmin()) {
+            throw new InvalidArgumentException('Only an admin can review renewals.');
+        }
         $reason = trim($reason);
         if ($reason === '') {
             throw new InvalidArgumentException('Please give a reason for rejecting the renewal.');
@@ -189,8 +277,16 @@ class LeaseService
         int $stallId,
         string $startDate,
         string $endDate,
-        mixed $contractFile = null
+        mixed $contractFile = null,
+        ?int $durationMonths = null
     ): StallMapping {
+        if ($durationMonths !== null) {
+            if ($durationMonths < 1 || $durationMonths > 12) {
+                throw new InvalidArgumentException('Contract duration must be between 1 and 12 months.');
+            }
+            validator(['start_date' => $startDate], ['start_date' => 'required|date_format:Y-m-d'])->validate();
+            $endDate = Carbon::parse($startDate, 'Asia/Manila')->addMonthsNoOverflow($durationMonths)->toDateString();
+        }
         $hasOccupyingLease = StallMapping::where('stall_id', $stallId)
             ->where(function ($q) {
                 $q->where('is_active', true)
@@ -209,13 +305,29 @@ class LeaseService
 
         $stall = Stall::findOrFail($stallId);
 
-        $lease = DB::transaction(function () use ($userId, $stall, $startDate, $endDate, $filePath) {
+        $lease = DB::transaction(function () use ($userId, $stall, $startDate, $endDate, $filePath, $durationMonths) {
+            $stall = Stall::whereKey($stall->id)->lockForUpdate()->firstOrFail();
+            $occupied = StallMapping::where('stall_id', $stall->id)
+                ->where(fn ($q) => $q->where('is_active', true)->orWhere('payment_status', 'pending_initial'))
+                ->exists();
+            if ($occupied) {
+                throw new InvalidArgumentException("Stall #{$stall->id} already has an active or reserved lease assignment.");
+            }
+            $rent = self::calculateContractRent($stall->price, $durationMonths ?? 1);
+            $description = $durationMonths !== null
+                ? "Stall #{$stall->stall_number} rent: {$durationMonths} month(s), {$startDate} to {$endDate}"
+                : 'Initial Stall Lease Deposit & 1st Month Rent - Stall #' . $stall->stall_number;
             // 1. Create Lease Mapping in Pending Initial Payment state
             $created = StallMapping::create([
                 'user_id' => $userId,
                 'stall_id' => $stall->id,
                 'start_date' => $startDate,
                 'end_date' => $endDate,
+                'duration_months' => $durationMonths,
+                'agreed_monthly_rate' => $durationMonths !== null ? $stall->price : null,
+                'contract_rent' => $durationMonths !== null ? $rent : null,
+                'rent_billing_mode' => $durationMonths !== null ? 'upfront' : 'monthly',
+                'upfront_covered_until' => $durationMonths !== null ? $endDate : null,
                 'is_active' => false,
                 'payment_status' => 'pending_initial',
                 'contract_document' => $filePath,
@@ -230,26 +342,26 @@ class LeaseService
             $billingPeriod = $periodDate->format('Y-m');
             $invoiceNumber = 'INV-' . $periodDate->format('Ym') . '-' . str_pad((string) $stall->id, 4, '0', STR_PAD_LEFT);
 
-            // If an invoice already exists for this stall & billing period, make unique invoice number
             if (Invoice::where('invoice_number', $invoiceNumber)->exists()) {
-                $invoiceNumber = 'INV-' . $periodDate->format('Ym') . '-' . str_pad((string) $stall->id, 4, '0', STR_PAD_LEFT) . '-' . time();
+                $invoiceNumber .= '-L' . $created->id;
             }
 
             $invoice = Invoice::create([
                 'invoice_number' => $invoiceNumber,
                 'user_id' => $userId,
                 'stall_id' => $stall->id,
-                'total_amount' => $stall->price,
+                'stall_mapping_id' => $created->id,
+                'total_amount' => $rent,
                 'status' => 'pending',
                 'due_date' => Carbon::now()->addDays(7)->toDateString(),
                 'billing_period' => $billingPeriod,
-                'notes' => 'Initial Stall Lease Deposit & 1st Month Rent - Stall #' . $stall->stall_number,
+                'notes' => $description,
             ]);
 
             InvoiceItem::create([
                 'invoice_id' => $invoice->id,
-                'description' => 'Initial Stall Lease Deposit & 1st Month Rent - Stall #' . $stall->stall_number,
-                'amount' => $stall->price,
+                'description' => $description,
+                'amount' => $rent,
                 'item_type' => 'rent',
             ]);
 
@@ -273,22 +385,85 @@ class LeaseService
      */
     public function activateLeaseOnPayment(StallMapping $lease): StallMapping
     {
-        DB::transaction(function () use ($lease) {
+        $activated = DB::transaction(function () use ($lease) {
+            $invoice = Invoice::whereKey($lease->initial_invoice_id)->lockForUpdate()->first();
+            $lease = StallMapping::whereKey($lease->id)->lockForUpdate()->firstOrFail();
+            if (!$invoice?->isPaid() || !$lease->isPendingInitial() || $lease->terminated_at) {
+                return false;
+            }
             $lease->update([
                 'is_active' => true,
                 'payment_status' => 'good_standing',
             ]);
 
             Stall::where('id', $lease->stall_id)->update(['status' => 'occupied']);
+            return true;
         });
 
-        AuditLog::record(
-            "Lease mapping #{$lease->id} activated upon payment. Stall #{$lease->stall_id} is now occupied.",
-            'StallMapping',
-            $lease->id
-        );
+        if ($activated) {
+            AuditLog::record(
+                "Lease mapping #{$lease->id} activated upon payment. Stall #{$lease->stall_id} is now occupied.",
+                'StallMapping',
+                $lease->id
+            );
+        }
 
         return $lease->fresh();
+    }
+
+    public function cancelExpiredReservation(int $invoiceId): bool
+    {
+        $cancelled = DB::transaction(function () use ($invoiceId) {
+            // Payment confirmation locks the invoice before the lease as well.
+            $invoice = Invoice::whereKey($invoiceId)->lockForUpdate()->first();
+            if (!$invoice || !$invoice->isOverdue() || $invoice->is_renewal) {
+                return null;
+            }
+            $lease = StallMapping::where('initial_invoice_id', $invoiceId)->lockForUpdate()->first();
+            if (!$lease || !$lease->isPendingInitial() || $lease->is_active || $lease->terminated_at
+                || $lease->user_id !== $invoice->user_id || $lease->stall_id !== $invoice->stall_id) {
+                return null;
+            }
+            $stall = Stall::whereKey($lease->stall_id)->lockForUpdate()->firstOrFail();
+            $reason = 'Initial payment was not received by the seven-day payment deadline (' . $invoice->due_date->format('M d, Y') . ').';
+            $balance = $this->unpaidBalance($lease);
+            $invoice->update([
+                'status' => 'cancelled',
+                'notes' => trim(($invoice->notes ? $invoice->notes . ' | ' : '') . 'Cancelled: unpaid reservation deadline passed'),
+            ]);
+            $lease->update([
+                'is_active' => false, 'payment_status' => $balance > 0 ? 'past_due' : 'settled',
+                'terminated_at' => now(), 'termination_reason' => $reason,
+            ]);
+            $otherAssignment = StallMapping::where('stall_id', $stall->id)->whereKeyNot($lease->id)
+                ->where(fn ($query) => $query->where('is_active', true)->orWhere('payment_status', 'pending_initial'))->exists();
+            if ($stall->status === 'reserved' && !$otherAssignment) {
+                $stall->update(['status' => 'available']);
+            }
+            $message = "Your reservation for Stall {$stall->stall_number} was cancelled because the initial invoice was unpaid after its due date. The initial invoice has been cancelled. Contact the office if you already sent a payment.";
+            Notification::send($lease->user_id, 'lease', 'Reservation cancelled', $message, route('user.leases'));
+            foreach (User::where('role', 'admin')->pluck('id') as $adminId) {
+                Notification::send($adminId, 'lease', 'Unpaid reservation cancelled', "Reservation #{$lease->id} for Stall {$stall->stall_number} was cancelled after the payment deadline.", route('admin.mappings'));
+            }
+            AuditLog::record("Automatically cancelled reservation #{$lease->id} and invoice #{$invoice->invoice_number}: {$reason}", 'StallMapping', $lease->id);
+            return [$lease->user, $message];
+        }, 3);
+
+        if (!$cancelled) {
+            return false;
+        }
+        [$tenant, $message] = $cancelled;
+        if ($tenant) {
+            $this->mailer->sendEmail($tenant->email, $tenant->name, 'Your stall reservation was cancelled', '<p>' . e($message) . '</p>', $message);
+        }
+        return true;
+    }
+
+    public static function calculateContractRent(string $monthlyRate, int $months): string
+    {
+        [$whole, $fraction] = array_pad(explode('.', $monthlyRate, 2), 2, '0');
+        $cents = ((int) $whole * 100 + (int) str_pad($fraction, 2, '0')) * $months;
+        return intdiv($cents, 100) . '.' . str_pad((string) ($cents % 100), 2, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -299,6 +474,7 @@ class LeaseService
     {
         $lease = StallMapping::where('user_id', $invoice->user_id)
             ->where('stall_id', $invoice->stall_id)
+            ->when($invoice->stall_mapping_id, fn ($q) => $q->whereKey($invoice->stall_mapping_id))
             ->where('is_active', true)
             ->first();
 
@@ -306,7 +482,7 @@ class LeaseService
             $lease->update(['payment_status' => 'good_standing']);
 
             AuditLog::record(
-                "Lease #{$lease->id} marked Good Standing via Invoice #{$invoice->invoice_number}",
+                "Lease #{$lease->id} marked Paid via Invoice #{$invoice->invoice_number}",
                 'StallMapping',
                 $lease->id
             );
@@ -330,7 +506,7 @@ class LeaseService
 
     public function canTerminate(StallMapping $lease): bool
     {
-        return $lease->is_active || $lease->isPendingInitial();
+        return ($lease->is_active || $lease->isPendingInitial()) && $lease->renewal_status !== 'awaiting_payment';
     }
 
     /**
@@ -343,12 +519,16 @@ class LeaseService
     public function terminateLease(StallMapping $lease, string $reason): StallMapping
     {
         if (!$this->canTerminate($lease)) {
-            throw new DomainException('This lease has already ended.');
+            throw new DomainException('This lease has ended or its renewal is awaiting payment.');
         }
 
         $balance = $this->unpaidBalance($lease);
 
         DB::transaction(function () use ($lease, $reason, $balance) {
+            $lease = StallMapping::whereKey($lease->id)->lockForUpdate()->firstOrFail();
+            if (!$this->canTerminate($lease)) {
+                throw new DomainException('This lease has ended or its renewal is awaiting payment.');
+            }
             if ($lease->isPendingInitial() && $lease->initial_invoice_id) {
                 $initial = Invoice::whereKey($lease->initial_invoice_id)->where('status', 'pending')->first();
                 if ($initial) {

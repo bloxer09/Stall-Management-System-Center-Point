@@ -41,6 +41,7 @@
                     <option value="">All Statuses</option>
                     <option value="available">Available</option>
                     <option value="occupied">Occupied</option>
+                    <option value="pending">Pending payment</option>
                     <option value="maintenance">Maintenance</option>
                 </select>
             </div>
@@ -61,6 +62,7 @@
                 </thead>
                 <tbody class="divide-y divide-base-200">
                     @forelse($stalls as $stall)
+                        @php($tenantLease = $stall->currentLease ?? $stall->pendingLease)
                         <tr class="hover:bg-base-200/40 transition">
                             <td>
                                 <img src="{{ $stall->image_url }}" x-data x-on:click="openImageLightbox($el.src)"
@@ -77,13 +79,13 @@
                             </td>
                             <td class="font-bold text-base-content">₱{{ number_format($stall->price, 2) }}</td>
                             <td>
-                                @if($stall->currentLease && $stall->currentLease->user)
+                                @if($tenantLease && $tenantLease->user)
                                     <div class="flex items-center gap-2">
                                         <div class="w-6 h-6 rounded-full overflow-hidden border border-primary/20 shrink-0">
-                                            <img src="{{ $stall->currentLease->user->avatar_url }}" class="w-full h-full object-cover" alt="Tenant Avatar">
+                                            <img src="{{ $tenantLease->user->avatar_url }}" class="w-full h-full object-cover" alt="Tenant Avatar">
                                         </div>
-                                        <span class="font-bold text-xs text-base-content truncate max-w-[130px]" title="{{ $stall->currentLease->user->name }}">
-                                            {{ $stall->currentLease->user->name }}
+                                        <span class="font-bold text-xs text-base-content truncate max-w-[130px]" title="{{ $tenantLease->user->name }}">
+                                            {{ $tenantLease->user->name }}
                                         </span>
                                     </div>
                                 @else
@@ -93,14 +95,13 @@
                             <td>
                                 <span
                                     class="badge badge-sm font-bold uppercase {{ $stall->status === 'available' ? 'badge-success text-white' : ($stall->status === 'occupied' ? 'badge-info text-white' : ($stall->status === 'reserved' ? 'badge-warning text-slate-900' : 'badge-error text-white')) }}">
-                                    {{ $stall->status }}
+                                    {{ $stall->pendingLease ? 'Pending payment' : $stall->status }}
                                 </span>
                             </td>
                             <td class="text-right">
-                                <button wire:click="openDetailModal({{ $stall->id }})"
-                                    class="btn btn-ghost btn-xs text-primary font-bold rounded-lg border border-primary/20 hover:bg-primary hover:text-white transition">
+                                <x-table-action wire:click="openDetailModal({{ $stall->id }})">
                                     Manage
-                                </button>
+                                </x-table-action>
                             </td>
                         </tr>
                     @empty
@@ -115,8 +116,7 @@
                                         <p class="font-extrabold text-sm">No stalls found</p>
                                         <p class="text-xs mt-0.5">Try adjusting your filters or add a new stall unit.</p>
                                     </div>
-                                    <button wire:click="openModal"
-                                        class="btn btn-primary btn-xs rounded-xl font-bold mt-1">+ Add First Stall</button>
+                                    <x-table-action wire:click="openModal" class="mt-1">+ Add First Stall</x-table-action>
                                 </div>
                             </td>
                         </tr>
@@ -147,11 +147,11 @@
                         <div class="flex items-center gap-2">
                             <h3 class="text-xl font-extrabold text-base-content">Stall {{ $selectedStall->stall_number }}</h3>
                             <span class="badge badge-sm font-bold uppercase {{ $selectedStall->status === 'available' ? 'badge-success text-white' : ($selectedStall->status === 'occupied' ? 'badge-info text-white' : 'badge-warning') }}">
-                                {{ $selectedStall->status }}
+                                {{ $selectedStall->pendingLease ? 'Pending payment' : $selectedStall->status }}
                             </span>
                         </div>
                         <p class="text-xs font-bold text-primary">
-                            {{ $selectedStall->location->name ?? 'No Floor Assigned' }} &bull; ₱{{ number_format($selectedStall->price, 2) }} / month
+                            {{ $selectedStall->location->name ?? 'Unassigned' }} &bull; ₱{{ number_format($selectedStall->price, 2) }} / month
                         </p>
                         @if($selectedStall->description)
                             <p class="text-xs text-base-content/70 line-clamp-2">{{ $selectedStall->description }}</p>
@@ -162,19 +162,20 @@
                 <!-- Current Tenant Info Card -->
                 <div class="p-4 bg-base-200/60 rounded-2xl border border-base-300 space-y-2">
                     <div class="text-[11px] font-extrabold uppercase tracking-wider text-base-content/60">Current Tenant</div>
-                    @if($selectedStall->currentLease && $selectedStall->currentLease->user)
+                    @php($tenantLease = $selectedStall->currentLease ?? $selectedStall->pendingLease)
+                    @if($tenantLease && $tenantLease->user)
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
-                                <img src="{{ $selectedStall->currentLease->user->avatar_url }}" class="w-9 h-9 rounded-full object-cover border border-primary/20" alt="Avatar">
+                                <img src="{{ $tenantLease->user->avatar_url }}" class="w-9 h-9 rounded-full object-cover border border-primary/20" alt="Avatar">
                                 <div>
-                                    <div class="font-extrabold text-sm text-base-content">{{ $selectedStall->currentLease->user->name }}</div>
-                                    <div class="text-xs text-base-content/60">{{ $selectedStall->currentLease->user->email }}</div>
+                                    <div class="font-extrabold text-sm text-base-content">{{ $tenantLease->user->name }}</div>
+                                    <div class="text-xs text-base-content/60">{{ $tenantLease->user->email }}</div>
                                 </div>
                             </div>
                             <div class="text-right">
-                                <span class="badge badge-xs badge-success text-white font-bold uppercase">Active Lease</span>
+                                <span class="badge badge-xs {{ $selectedStall->pendingLease ? 'badge-warning' : 'badge-success text-white' }} font-bold uppercase">{{ $selectedStall->pendingLease ? 'Pending payment' : 'Active Lease' }}</span>
                                 <div class="text-[10px] text-base-content/60 font-mono mt-0.5">
-                                    Until {{ $selectedStall->currentLease->end_date->format('M d, Y') }}
+                                    Until {{ $tenantLease->end_date->format('M d, Y') }}
                                 </div>
                             </div>
                         </div>
@@ -251,7 +252,7 @@
                         <div class="form-control">
                             <label class="label py-1"><span class="label-text font-bold text-xs uppercase">Floor Location</span></label>
                             <select wire:model="location_id" class="select select-bordered select-sm rounded-xl text-sm">
-                                <option value="">-- No Floor Assigned --</option>
+                                <option value="">Unassigned</option>
                                 @foreach($locations as $loc)
                                     <option value="{{ $loc->id }}">{{ $loc->name }}</option>
                                 @endforeach

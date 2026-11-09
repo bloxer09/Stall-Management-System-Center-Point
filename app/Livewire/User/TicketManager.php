@@ -14,6 +14,7 @@ use Livewire\WithPagination;
 
 class TicketManager extends Component
 {
+    use \App\Livewire\Concerns\AcceptsTicketMedia;
     use WithFileUploads, WithPagination;
 
     public $search = '';
@@ -33,12 +34,12 @@ class TicketManager extends Component
     public $incomingAttachments = [];
     public $replyToMessageId = null;
 
-    public function updatedIncomingAttachments()
+    public function mount(): void
     {
-        foreach ($this->incomingAttachments as $file) {
-            $this->attachments[] = $file;
+        $ticketId = request()->query('ticket', '');
+        if ((is_string($ticketId) || is_int($ticketId)) && ctype_digit((string) $ticketId)) {
+            $this->openThreadModal((int) $ticketId);
         }
-        $this->incomingAttachments = [];
     }
 
     public function removeAttachment($index)
@@ -139,7 +140,7 @@ class TicketManager extends Component
                 'ticket',
                 "New Ticket #TKT-" . str_pad($ticket->id, 5, '0', STR_PAD_LEFT),
                 auth()->user()->name . " submitted a new ticket: " . \Illuminate\Support\Str::limit($this->issue, 60),
-                route('admin.tickets')
+                route('admin.tickets', ['ticket' => $ticket->id])
             );
         }
 
@@ -220,7 +221,7 @@ class TicketManager extends Component
 
         $this->validate([
             'message' => !empty($this->attachments) ? 'nullable|string' : 'required|string',
-            'attachments.*' => 'nullable|file|max:10240',
+            'attachments.*' => \App\Rules\TicketMedia::rules(),
         ]);
 
         $savedPaths = [];
@@ -255,7 +256,7 @@ class TicketManager extends Component
                 'ticket_message',
                 "New reply on Ticket #TKT-" . str_pad($ticket->id, 5, '0', STR_PAD_LEFT),
                 auth()->user()->name . ": " . \Illuminate\Support\Str::limit($messageContent, 60),
-                route('admin.tickets')
+                route('admin.tickets', ['ticket' => $ticket->id])
             );
         } else {
             $admins = \App\Models\User::where('role', 'admin')->get();
@@ -265,7 +266,7 @@ class TicketManager extends Component
                     'ticket_message',
                     "New message on Ticket #TKT-" . str_pad($ticket->id, 5, '0', STR_PAD_LEFT),
                     auth()->user()->name . ": " . \Illuminate\Support\Str::limit($messageContent, 60),
-                    route('admin.tickets')
+                    route('admin.tickets', ['ticket' => $ticket->id])
                 );
             }
         }

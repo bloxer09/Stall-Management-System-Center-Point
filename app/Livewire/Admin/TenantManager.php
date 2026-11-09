@@ -23,6 +23,17 @@ class TenantManager extends Component
     public string $statusFilter = '';
 
     public ?int $statementUserId = null;
+    public ?int $actionTenantId = null;
+
+    public function openActions(int $id): void
+    {
+        $this->actionTenantId = $this->tenant($id)?->id;
+    }
+
+    public function closeActions(): void
+    {
+        $this->actionTenantId = null;
+    }
 
     public function updatingSearch(): void
     {
@@ -93,6 +104,7 @@ class TenantManager extends Component
 
     public function openStatement(int $id): void
     {
+        $this->closeActions();
         $this->statementUserId = $this->tenant($id)?->id;
     }
 
@@ -119,6 +131,7 @@ class TenantManager extends Component
 
         return view('livewire.admin.tenant-manager', [
             'tenants' => $tenants,
+            'actionTenant' => $this->actionTenantId ? $this->tenant($this->actionTenantId) : null,
             'statementUser' => $statementUser,
             'statement' => $statementUser ? app(StatementService::class)->forUser($statementUser) : null,
         ]);

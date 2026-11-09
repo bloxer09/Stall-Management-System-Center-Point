@@ -55,14 +55,14 @@ class TurnstileTest extends TestCase
                 ->set('captchaToken', $t)->call('processRegister'), 'regEmail'],
             'forgot' => [fn ($t) => Livewire::test(AuthModals::class)->call('openForgotPassword')
                 ->set('forgotEmail', 'someone@mail.com')->set('captchaToken', $t)->call('processForgotPasswordRequest'), 'forgotEmail'],
-            'apply' => [fn ($t) => Livewire::test(StallBrowser::class)->call('selectStall', $this->available->id)->call('openApply')
+            'apply' => [fn ($t) => Livewire::actingAs(User::factory()->create(['role' => 'user']))->test(StallBrowser::class)->call('selectStall', $this->available->id)->call('openApply')
                 ->set('form.applicant_name', 'Juan')->set('form.applicant_email', 'juan@mail.com')->set('form.applicant_phone', '09171234567')
                 ->set('form.business_name', 'Biz')->set('form.business_type', 'Retail')
                 ->set('captchaToken', $t)->call('submitApplication'), 'form.applicant_email'],
             'waitlist' => [fn ($t) => Livewire::test(StallBrowser::class)->call('selectStall', $this->taken->id)->call('openWaitlist')
                 ->set('waitlistName', 'Joy')->set('waitlistEmail', 'joy@mail.com')
                 ->set('captchaToken', $t)->call('joinWaitlist'), 'waitlistEmail'],
-            'status' => [fn ($t) => Livewire::test(ApplicationStatus::class)
+            'status' => [fn ($t) => Livewire::actingAs(User::factory()->create(['role' => 'user']))->test(ApplicationStatus::class)
                 ->set('reference', 'APP-2026-000001')->set('email', 'x@mail.com')
                 ->set('captchaToken', $t)->call('lookup'), 'reference'],
         ];

@@ -90,6 +90,9 @@ class TwoFactorChallenge extends Component
             ? substr($phone, 0, 2) . str_repeat('•', strlen($phone) - 6) . substr($phone, -4)
             : $phone;
 
-        return view('livewire.auth.two-factor-challenge', ['maskedPhone' => $masked]);
+        return view('livewire.auth.two-factor-challenge', [
+            'maskedPhone' => $masked,
+            'codeExpiresAt' => app(TwoFactorService::class)->expiresAt(Auth::user()),
+        ]);
     }
 }

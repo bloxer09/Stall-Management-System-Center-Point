@@ -111,7 +111,9 @@ class AnalyticsDashboard extends Component
 
         // 4. Revenue Trend by Selected Timeframe
         $driver = DB::connection()->getDriverName();
-        $dateFormat = $driver === 'sqlite' ? "strftime('%Y-%m', paid_at)" : "DATE_FORMAT(paid_at, '%Y-%m')";
+        $daily = $this->timeframe === '30d';
+        $datePattern = $daily ? '%Y-%m-%d' : '%Y-%m';
+        $dateFormat = $driver === 'sqlite' ? "strftime('{$datePattern}', paid_at)" : "DATE_FORMAT(paid_at, '{$datePattern}')";
 
         $numMonths = match ($this->timeframe) {
             '30d' => 1,
@@ -120,9 +122,10 @@ class AnalyticsDashboard extends Component
             default => 12,
         };
 
+        $start = $daily ? now()->subDays(29)->startOfDay() : now()->startOfMonth()->subMonths($numMonths - 1);
         $rawRevenue = Invoice::selectRaw("{$dateFormat} as month_key, SUM(total_amount) as revenue, COUNT(id) as invoice_count")
             ->where('status', 'paid')
-            ->where('paid_at', '>=', now()->subMonths($numMonths - 1)->startOfMonth())
+            ->whereBetween('paid_at', [$start, now()->endOfDay()])
             ->groupByRaw($dateFormat)
             ->get()
             ->keyBy('month_key');
@@ -131,10 +134,11 @@ class AnalyticsDashboard extends Component
         $revenueData = [];
         $invoiceCountData = [];
 
-        for ($i = $numMonths - 1; $i >= 0; $i--) {
-            $month = Carbon::now()->subMonths($i);
-            $key = $month->format('Y-m');
-            $monthsLabels[] = $month->format('M Y');
+        $periods = $daily ? 30 : $numMonths;
+        for ($i = 0; $i < $periods; $i++) {
+            $date = $daily ? $start->copy()->addDays($i) : $start->copy()->addMonths($i);
+            $key = $date->format($daily ? 'Y-m-d' : 'Y-m');
+            $monthsLabels[] = $date->format($daily ? 'M j' : 'M Y');
             $revenueData[] = (float) ($rawRevenue[$key]->revenue ?? 0);
             $invoiceCountData[] = (int) ($rawRevenue[$key]->invoice_count ?? 0);
         }
@@ -159,6 +163,8 @@ class AnalyticsDashboard extends Component
             }
         }
         $paymentMethodsData = [$onlineTotal, $cashTotal];
+
+        $this->dispatch('analytics-charts-updated', labels: $monthsLabels, revenue: $revenueData, methods: $paymentMethodsData);
 
         // 6. Floor Performance Breakdown
         $locations = StallLocation::with(['stalls'])->orderBy('sort_order')->get();

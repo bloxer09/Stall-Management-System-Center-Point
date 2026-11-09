@@ -56,7 +56,7 @@ class SystemSettings extends Component
             'platform_name' => 'required|string|max:255',
             'platform_address' => 'required|string|max:255',
             'support_email' => 'required|email|max:255',
-            'support_phone' => 'nullable|string|max:50',
+            'support_phone' => ['nullable', 'string', 'max:50', new \App\Rules\PhilippineMobileNumber],
             'privacy_policy' => 'required|string|min:20',
             'terms_conditions' => 'required|string|min:20',
             'landing_bg_image' => 'nullable|image|max:10240',

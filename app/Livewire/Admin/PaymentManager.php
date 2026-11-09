@@ -115,14 +115,13 @@ class PaymentManager extends Component
         $this->closeModal();
     }
 
-    public function markAsPaid($invoiceId, \App\Services\InvoiceService $invoiceService)
+    public function refreshPayments(): void
     {
-        $invoice = Invoice::findOrFail($invoiceId);
-        $invoiceService->markAsPaid($invoice);
-
-        $this->dispatch('notify', type: 'success', message: 'Invoice marked as paid.');
-        if ($this->selectedInvoice && $this->selectedInvoice->id === $invoice->id) {
-            $this->selectedInvoice = Invoice::with(['user', 'stall.location', 'items', 'transactions'])->find($invoiceId);
+        if ($this->selectedInvoice) {
+            $this->selectedInvoice = Invoice::with(['user', 'stall.location', 'items', 'transactions'])->find($this->selectedInvoice->id);
+            if (!$this->selectedInvoice) {
+                $this->showDetailModal = false;
+            }
         }
     }
 
@@ -181,6 +180,7 @@ class PaymentManager extends Component
         }
 
         return view('livewire.admin.payment-manager', [
+            'hasPendingOnlinePayments' => PaymentTransaction::where('gateway', 'paymongo')->where('status', 'pending')->whereHas('invoice', fn ($q) => $q->where('status', 'pending'))->exists(),
             'payments' => $query->latest()->paginate(10),
             'totalPaid' => Invoice::where('status', 'paid')->sum('total_amount'),
             'totalPending' => Invoice::where('status', 'pending')->sum('total_amount'),

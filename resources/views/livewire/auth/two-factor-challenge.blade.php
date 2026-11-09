@@ -2,7 +2,7 @@
     <div class="card bg-base-100 border border-base-300 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
         <div>
             <h1 class="text-2xl font-black tracking-tight">Two-step verification</h1>
-            <p class="text-sm text-base-content/70 mt-1">We sent a 6-digit code to <strong>{{ $maskedPhone }}</strong>. It expires in 10 minutes.</p>
+            <p class="text-sm text-base-content/70 mt-1">Enter the 6-digit code sent to <strong>{{ $maskedPhone }}</strong>.</p>
         </div>
 
         @if($sendFailed)
@@ -10,6 +10,7 @@
         @endif
 
         <form wire:submit="verify" class="space-y-3">
+            <x-otp-countdown :expires-at="$codeExpiresAt" context="sign-in" />
             <input type="text" wire:model="code" inputmode="numeric" maxlength="6" autocomplete="one-time-code" autofocus
                 placeholder="••••••"
                 class="input input-bordered rounded-xl w-full text-center text-2xl font-black tracking-[0.5em] @error('code') input-error @enderror">

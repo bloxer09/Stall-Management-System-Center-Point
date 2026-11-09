@@ -27,9 +27,9 @@
                     @error('support_email') <span class="text-xs text-error mt-1">{{ $message }}</span> @enderror
                 </div>
                 <div class="form-control">
-                    <label class="label"><span class="label-text font-bold text-xs uppercase">Support Phone Number</span></label>
-                    <input type="text" wire:model="support_phone" class="input input-bordered rounded-xl text-sm" placeholder="09171112233" />
-                    @error('support_phone') <span class="text-xs text-error mt-1">{{ $message }}</span> @enderror
+                    <label for="support-phone" class="label"><span class="label-text font-bold text-xs uppercase">Support Phone Number</span></label>
+                    <x-phone-input id="support-phone" model="support_phone" />
+                    @error('support_phone') <span id="support-phone-error" role="alert" class="text-xs text-error mt-1">{{ $message }}</span> @enderror
                 </div>
             </div>
         </div>
@@ -156,8 +156,8 @@
                             <td class="text-xs">{{ $backup['created']->format('M d, Y g:i A') }}</td>
                             <td class="text-right text-xs">{{ number_format($backup['size'] / 1024, 1) }} KB</td>
                             <td class="text-right space-x-1">
-                                <a href="{{ route('admin.backups.download', $backup['name']) }}" class="btn btn-xs btn-outline rounded-lg font-bold">Download</a>
-                                <button type="button" wire:click="deleteBackup('{{ $backup['name'] }}')" wire:confirm="Delete {{ $backup['name'] }}? This cannot be undone." class="btn btn-xs btn-ghost text-error rounded-lg font-bold">Delete</button>
+                                <x-table-action :href="route('admin.backups.download', $backup['name'])">Download</x-table-action>
+                                <x-table-action :danger="true" wire:click="deleteBackup('{{ $backup['name'] }}')" wire:confirm="Delete {{ $backup['name'] }}? This cannot be undone.">Delete</x-table-action>
                             </td>
                         </tr>
                     @empty

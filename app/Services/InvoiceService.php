@@ -24,24 +24,46 @@ class InvoiceService
             return null;
         }
 
-        // Prevent duplicate invoices for the same stall and billing period
-        $alreadyInvoiced = Invoice::where('stall_id', $lease->stall_id)
-            ->where('billing_period', $billingPeriod)
-            ->exists();
-
-        if ($alreadyInvoiced) {
-            return null;
-        }
-
         return DB::transaction(function () use ($lease, $billingPeriod) {
-            $periodDate = Carbon::createFromFormat('Y-m', $billingPeriod) ?: Carbon::now();
+            $lease = StallMapping::with('stall')->whereKey($lease->id)->lockForUpdate()->firstOrFail();
+            $periodDate = Carbon::createFromFormat('!Y-m', $billingPeriod);
+            $coveredByRenewal = Invoice::where('stall_mapping_id', $lease->id)
+                ->where('is_renewal', true)->where('status', 'paid')
+                ->get()->contains(fn ($invoice) => $periodDate->gte($invoice->rent_period_start)
+                    && $periodDate->lt($invoice->rent_period_end));
+            if ($coveredByRenewal) {
+                return null;
+            }
+            if ($lease->rent_billing_mode === 'upfront') {
+                if (!$periodDate || $periodDate->lt($lease->start_date->copy()->startOfMonth())
+                    || $periodDate->gte($lease->end_date)
+                    || ($lease->upfront_covered_until && $periodDate->lt($lease->upfront_covered_until))) {
+                    return null;
+                }
+            }
+            $alreadyInvoiced = Invoice::where('billing_period', $billingPeriod)
+                ->where(function ($q) use ($lease) {
+                    $q->where('stall_mapping_id', $lease->id)
+                        ->orWhere(fn ($legacy) => $legacy->whereNull('stall_mapping_id')
+                            ->where('stall_id', $lease->stall_id)->where('user_id', $lease->user_id)
+                            ->where('notes', 'like', 'Monthly Stall Rental - %'));
+                })->exists();
+            if ($alreadyInvoiced) {
+                return null;
+            }
+            $periodDate = $periodDate ?: Carbon::now();
+            $monthlyRate = $lease->agreed_monthly_rate ?? $lease->stall->price;
             $invoiceNumber = 'INV-' . $periodDate->format('Ym') . '-' . str_pad((string) $lease->stall_id, 4, '0', STR_PAD_LEFT);
+            if (Invoice::where('invoice_number', $invoiceNumber)->exists()) {
+                $invoiceNumber .= '-L' . $lease->id;
+            }
 
             $invoice = Invoice::create([
                 'invoice_number' => $invoiceNumber,
                 'user_id' => $lease->user_id,
                 'stall_id' => $lease->stall_id,
-                'total_amount' => $lease->stall->price,
+                'stall_mapping_id' => $lease->id,
+                'total_amount' => $monthlyRate,
                 'status' => 'pending',
                 'due_date' => $periodDate->copy()->startOfMonth()->addDays(5)->toDateString(),
                 'billing_period' => $billingPeriod,
@@ -51,7 +73,7 @@ class InvoiceService
             InvoiceItem::create([
                 'invoice_id' => $invoice->id,
                 'description' => 'Monthly Stall Rental - ' . $periodDate->format('F Y'),
-                'amount' => $lease->stall->price,
+                'amount' => $monthlyRate,
                 'item_type' => 'rent',
             ]);
 
@@ -84,6 +106,10 @@ class InvoiceService
      */
     public function onInvoicePaid(Invoice $invoice): void
     {
+        if ($invoice->is_renewal) {
+            app(LeaseService::class)->finalizePaidRenewal($invoice);
+            return;
+        }
         // 1. If this invoice is the initial invoice of a pending lease, activate it
         $pendingLease = StallMapping::where('initial_invoice_id', $invoice->id)
             ->where('payment_status', 'pending_initial')
@@ -159,7 +185,11 @@ class InvoiceService
      */
     public function markAsPaid(Invoice $invoice, string $gateway = 'office_cash', ?string $reference = null): Invoice
     {
-        DB::transaction(function () use ($invoice, $gateway, $reference) {
+        DB::transaction(function () use (&$invoice, $gateway, $reference) {
+            $invoice = Invoice::whereKey($invoice->id)->lockForUpdate()->firstOrFail();
+            if ($invoice->status !== 'pending') {
+                return;
+            }
             $invoice->update([
                 'status' => 'paid',
                 'paid_at' => Carbon::now(),
@@ -180,10 +210,10 @@ class InvoiceService
                 'Invoice',
                 $invoice->id
             );
+            $this->onInvoicePaid($invoice);
         });
 
         $fresh = $invoice->fresh();
-        $this->onInvoicePaid($fresh);
 
         return $fresh;
     }

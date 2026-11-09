@@ -7,8 +7,8 @@ use App\Models\User;
 use App\Services\TwoFactorService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Hash;
-use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -45,20 +45,27 @@ class ProfileModal extends Component
         }
     }
 
-    #[On('open-profile-modal')]
     public function openModal(?string $tab = 'profile'): void
     {
         $this->resetValidation();
         $this->loadUserData();
         $this->activeTab = in_array($tab, ['profile', 'password']) ? $tab : 'profile';
-        $this->reset(['current_password', 'password', 'password_confirmation', 'photo']);
+        $this->reset(['current_password', 'password', 'password_confirmation', 'photo', 'twoFactorPassword']);
         $this->isOpen = true;
     }
 
     public function closeModal(): void
     {
         $this->isOpen = false;
-        $this->reset(['current_password', 'password', 'password_confirmation', 'photo']);
+        $this->reset(['current_password', 'password', 'password_confirmation', 'photo', 'twoFactorPassword']);
+        $this->resetValidation();
+        $this->loadUserData();
+    }
+
+    public function updatedPhoto(): void
+    {
+        $this->resetValidation('photo');
+        $this->validateOnly('photo', ['photo' => ['nullable', 'image', 'max:2048']]);
     }
 
     protected function loadUserData(): void
@@ -77,18 +84,21 @@ class ProfileModal extends Component
         $user = Auth::user();
         if (!$user || $this->blockedUntilVerified($user)) return;
 
+        $this->phone = trim($this->phone);
+
         $this->validate([
             'name' => ['required', 'string', 'max:255'],
             // 2FA codes go to this number, so it cannot be cleared while 2FA is on.
-            'phone' => [$user->hasTwoFactorEnabled() ? 'required' : 'nullable', 'string', 'max:20'],
+            'phone' => [$user->hasTwoFactorEnabled() ? 'required' : 'nullable', 'string', 'max:20', new \App\Rules\PhilippineMobileNumber, Rule::unique('users', 'phone')->ignore($user->id)],
             'photo' => ['nullable', 'image', 'max:2048'],
         ], [
             'phone.required' => 'Turn off two-factor authentication before removing your phone number.',
+            'phone.unique' => 'This phone number is already used by another account.',
         ]);
 
         $dataToUpdate = [
             'name' => $this->name,
-            'phone' => $this->phone,
+            'phone' => $this->phone === '' ? null : $this->phone,
         ];
 
         if ($this->photo) {
@@ -102,6 +112,7 @@ class ProfileModal extends Component
         AuditLog::record("Updated profile information", 'User', $user->id);
 
         $this->reset('photo');
+        $this->isOpen = false;
         $this->dispatch('notify', type: 'success', message: 'Profile details updated successfully.');
     }
 
@@ -132,6 +143,7 @@ class ProfileModal extends Component
             return;
         }
 
+        $this->resetValidation('twoFactorCode');
         if (!$twoFactor->sendCode($user)) {
             $wait = $twoFactor->secondsUntilResend($user);
             $this->addError('twoFactorCode', $wait > 0
@@ -212,6 +224,10 @@ class ProfileModal extends Component
 
     public function render()
     {
-        return view('livewire.profile.profile-modal');
+        return view('livewire.profile.profile-modal', [
+            'codeExpiresAt' => $this->twoFactorCodeSent && Auth::check()
+                ? app(TwoFactorService::class)->expiresAt(Auth::user())
+                : null,
+        ]);
     }
 }

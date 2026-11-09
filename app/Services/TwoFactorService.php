@@ -49,6 +49,11 @@ class TwoFactorService
             : 0;
     }
 
+    public function expiresAt(User $user): ?int
+    {
+        return TwoFactorCode::where('user_id', $user->id)->first()?->expires_at?->timestamp;
+    }
+
     public function verify(User $user, string $code): bool
     {
         $verifyKey = $this->verifyKey($user);

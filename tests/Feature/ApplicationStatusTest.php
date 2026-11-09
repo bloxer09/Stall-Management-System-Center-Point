@@ -27,6 +27,7 @@ class ApplicationStatusTest extends TestCase
         parent::setUp();
 
         Mail::fake();
+        $this->actingAs(\App\Models\User::factory()->create(['role' => 'user', 'email' => 'juan@mail.com']));
         RateLimiter::clear('app-status:127.0.0.1');
         $floor = StallLocation::create(['name' => 'Ground Floor', 'sort_order' => 1]);
         $this->stall = Stall::create(['stall_number' => 'S-101', 'location_id' => $floor->id, 'price' => 4500, 'status' => 'available']);
@@ -36,6 +37,7 @@ class ApplicationStatusTest extends TestCase
     {
         return StallApplication::create(array_merge([
             'applicant_name' => 'Juan Dela Cruz',
+            'user_id' => auth()->id(),
             'applicant_email' => 'juan@mail.com',
             'applicant_phone' => '09171234567',
             'business_name' => 'Juan Sari-Sari',
@@ -103,6 +105,7 @@ class ApplicationStatusTest extends TestCase
 
     public function test_confirmation_email_contains_reference(): void
     {
+        $this->actingAs(\App\Models\User::factory()->create(['role' => 'user', 'email' => 'ana@mail.com']));
         $application = app(StallApplicationService::class)->submit([
             'applicant_name' => 'Ana Reyes',
             'applicant_email' => 'ana@mail.com',
@@ -115,9 +118,24 @@ class ApplicationStatusTest extends TestCase
         Mail::assertSent(GenericNotificationMail::class, fn ($mail) => str_contains($mail->htmlContent, $application->reference()));
     }
 
-    public function test_page_is_public(): void
+    public function test_page_requires_tenant_and_link_only_appears_on_dashboard(): void
     {
+        $tenant = auth()->user();
+        auth()->logout();
+        $this->get('/application-status')->assertRedirect();
+        $this->get('/')->assertDontSee(route('application.status'));
+        $this->actingAs($tenant);
         $this->get('/application-status')->assertOk()->assertSee('Check application status');
-        $this->get('/')->assertSee(route('application.status'));
+        $this->get('/user/dashboard')->assertSee(route('application.status'));
+        $this->get('/user/leases')->assertDontSee(route('application.status'));
+        $admin = \App\Models\User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin)->get('/application-status')->assertForbidden();
+    }
+
+    public function test_knowing_another_applicants_email_does_not_grant_access(): void
+    {
+        $other = \App\Models\User::factory()->create(['role' => 'user', 'email' => 'other@mail.com']);
+        $application = $this->application(['user_id' => $other->id, 'applicant_email' => $other->email]);
+        $this->lookup($application->reference(), $other->email)->assertSee(self::NOT_FOUND);
     }
 }

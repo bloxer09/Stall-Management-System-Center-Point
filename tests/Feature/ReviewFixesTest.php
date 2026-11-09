@@ -164,6 +164,6 @@ class ReviewFixesTest extends TestCase
             ->call('approveRenewal', $lease->id)
             ->assertDispatched('notify', type: 'warning');
 
-        $this->assertSame('approved', $lease->fresh()->renewal_status);
+        $this->assertSame('awaiting_payment', $lease->fresh()->renewal_status);
     }
 }

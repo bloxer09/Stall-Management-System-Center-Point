@@ -35,7 +35,7 @@ class UserDashboard extends Component
         $userId = auth()->id();
 
         // 1. Assigned & Active Leases
-        $assignedLeases = StallMapping::with(['stall.location', 'initialInvoice'])
+        $assignedLeases = StallMapping::with(['stall.location', 'initialInvoice', 'renewalInvoice'])
             ->where('user_id', $userId)
             ->where(function ($q) {
                 $q->where('is_active', true)

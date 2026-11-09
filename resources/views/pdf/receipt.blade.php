@@ -50,7 +50,7 @@
     </table>
 
     <div class="qr-section">
-        <div>{!! $qrCode !!}</div>
+        <div><img src="{{ $qrCode }}" width="120" height="120" alt="Receipt verification QR code"></div>
         <div class="verify-text">Scan QR code to verify online receipt authenticity<br>{{ $verificationUrl }}</div>
     </div>
 </body>

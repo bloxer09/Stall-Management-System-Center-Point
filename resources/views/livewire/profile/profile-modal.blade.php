@@ -1,9 +1,13 @@
 <div>
-    @if($isOpen)
-    <dialog class="modal modal-open backdrop-blur-xs z-50">
-        <div class="modal-box max-w-lg p-6 bg-base-100 rounded-3xl border border-base-300 relative shadow-2xl space-y-5">
+    <dialog class="modal profile-modal" wire:ignore.self data-client-modal aria-label="Account Profile"
+        x-data="{ visible: $wire.entangle('isOpen'), tab: $wire.entangle('activeTab'), dismiss() { this.visible = false; this.$dispatch('auth-closed'); this.$wire.closeModal(); } }"
+        :class="{ 'modal-open': visible }"
+        @open-profile-modal.window="tab = $event.detail?.tab === 'password' ? 'password' : 'profile'; visible = true"
+        @keydown.escape.window="if (visible && isTopModal($el)) dismiss()">
+        <div class="modal-box max-w-lg p-0 bg-base-100 rounded-3xl border border-base-300 relative shadow-2xl">
+            <div class="profile-modal-header relative shrink-0 p-6 pb-4 border-b border-base-300">
             <!-- Close button -->
-            <button wire:click="closeModal" class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-base-content/60 hover:text-base-content" aria-label="Close" x-data x-on:keydown.escape.window="isTopModal($el) && $wire.closeModal()">
+            <button type="button" @click="dismiss()" class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 text-base-content/60 hover:text-base-content" aria-label="Close">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
 
@@ -14,25 +18,27 @@
             </div>
 
             <!-- Tab Switcher -->
-            <div class="tabs tabs-boxed bg-base-200/60 p-1 rounded-2xl flex">
-                <button type="button" wire:click="$set('activeTab', 'profile')" class="tab flex-1 rounded-xl text-xs font-bold transition {{ $activeTab === 'profile' ? 'tab-active bg-primary text-primary-content shadow-xs' : 'text-base-content/70' }}">
+            <div class="tabs tabs-boxed bg-base-200/60 p-1 rounded-2xl flex mt-5">
+                <button type="button" @click="tab = 'profile'; $refs.profileBody.scrollTop = 0" :aria-pressed="tab === 'profile'" class="tab flex-1 rounded-xl text-xs font-bold transition " :class="tab === 'profile' ? 'tab-active bg-primary text-primary-content shadow-xs' : 'text-base-content/70'">
                     Profile Details
                 </button>
-                <button type="button" wire:click="$set('activeTab', 'password')" class="tab flex-1 rounded-xl text-xs font-bold transition {{ $activeTab === 'password' ? 'tab-active bg-primary text-primary-content shadow-xs' : 'text-base-content/70' }}">
+                <button type="button" @click="tab = 'password'; $refs.profileBody.scrollTop = 0" :aria-pressed="tab === 'password'" class="tab flex-1 rounded-xl text-xs font-bold transition " :class="tab === 'password' ? 'tab-active bg-primary text-primary-content shadow-xs' : 'text-base-content/70'">
                     Password &amp; Security
                 </button>
             </div>
+            </div>
+            <div class="profile-modal-body p-6 pt-4" x-ref="profileBody">
 
             <!-- Profile Details Tab -->
-            @if($activeTab === 'profile')
+            <div x-show="tab === 'profile'" wire:key="profile-details-panel">
             <form wire:submit.prevent="updateProfile" class="space-y-4">
                 <!-- Avatar Section -->
-                <div class="flex items-center gap-4 p-3 bg-base-200/40 rounded-2xl border border-base-300">
-                    <div class="relative">
-                        @if ($photo)
-                            <img src="{{ $photo->temporaryUrl() }}" class="w-16 h-16 rounded-full object-cover border-2 border-primary shadow-xs" />
+                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-3 bg-base-200/40 rounded-2xl border border-base-300">
+                    <div class="relative shrink-0">
+                        @if ($photo && !$errors->has('photo'))
+                            <img src="{{ $photo->temporaryUrl() }}" alt="Profile avatar" class="w-16 h-16 rounded-full object-cover border-2 border-primary shadow-xs" />
                         @elseif ($currentPhoto)
-                            <img src="{{ asset('storage/' . $currentPhoto) }}" x-data x-on:click="openImageLightbox($el.src)" class="w-16 h-16 rounded-full object-cover border-2 border-primary shadow-xs cursor-pointer hover:scale-105 transition" title="Click to view full image" />
+                            <img src="{{ asset('storage/' . $currentPhoto) }}" x-data x-on:click="openImageLightbox($el.src)" alt="Profile avatar" class="w-16 h-16 rounded-full object-cover border-2 border-primary shadow-xs cursor-pointer hover:scale-105 transition" title="Click to view full image" />
                         @else
                             <div class="w-16 h-16 rounded-full bg-primary text-primary-content font-black text-xl flex items-center justify-center border-2 border-primary shadow-xs">
                                 {{ strtoupper(substr($name ?: 'U', 0, 1)) }}
@@ -40,46 +46,38 @@
                         @endif
                     </div>
 
-                    <div class="flex-1 min-w-0">
-                        <label for="profile-photo-input" class="btn btn-outline btn-xs rounded-xl font-bold cursor-pointer">
-                            Upload Avatar
+                    <div class="w-full sm:flex-1 min-w-0">
+                        <label for="profile-photo-input" class="label p-0 mb-2 font-semibold text-xs">
+                            Choose avatar
                         </label>
-                        <input type="file" wire:model="photo" id="profile-photo-input" class="hidden" accept="image/*">
+                        <input type="file" wire:model="photo" id="profile-photo-input" class="file-input file-input-bordered file-input-sm w-full" accept="image/*" aria-invalid="{{ $errors->has('photo') ? 'true' : 'false' }}" @error('photo') aria-describedby="profile-photo-error" @enderror>
                         <p class="text-[10px] text-base-content/60 mt-1">PNG, JPG up to 2MB</p>
-                        @error('photo') <span class="text-xs text-error block mt-1">{{ $message }}</span> @enderror
+                        @error('photo') <span id="profile-photo-error" role="alert" class="text-xs text-error block mt-1">{{ $message }}</span> @enderror
                     </div>
                 </div>
 
                 <!-- Name Field -->
-                <div class="form-control">
-                    <label class="label"><span class="label-text font-bold text-xs uppercase">Full Name *</span></label>
-                    <input wire:model="name" type="text" required class="input input-bordered rounded-xl text-sm" />
-                    @error('name') <span class="text-xs text-error mt-1">{{ $message }}</span> @enderror
-                </div>
+                <x-form-input name="name" label="Full Name *" wire:model="name" autocomplete="name" required />
 
                 <!-- Email Field (Readonly / Non-changeable) -->
                 <div class="form-control">
                     <div class="flex justify-between items-center px-1">
-                        <label class="label"><span class="label-text font-bold text-xs uppercase">Email Address</span></label>
+                        <label for="profile-email" class="label"><span class="label-text font-bold text-xs uppercase">Email Address</span></label>
                         <span class="badge badge-neutral text-[10px] font-bold gap-1 opacity-80">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                             Locked
                         </span>
                     </div>
-                    <input type="email" value="{{ $email }}" disabled readonly class="input input-bordered rounded-xl text-sm bg-base-200 text-base-content/60 cursor-not-allowed opacity-80" />
+                    <input id="profile-email" type="email" value="{{ $email }}" disabled readonly class="input input-bordered rounded-xl text-sm bg-base-200 text-base-content/60 cursor-not-allowed opacity-80" />
                     <span class="text-[10px] text-base-content/50 mt-1 px-1">Email address is permanent and cannot be modified.</span>
                 </div>
 
                 <!-- Phone Number -->
-                <div class="form-control">
-                    <label class="label"><span class="label-text font-bold text-xs uppercase">Phone Number</span></label>
-                    <input wire:model="phone" type="text" placeholder="09171234567" class="input input-bordered rounded-xl text-sm" />
-                    @error('phone') <span class="text-xs text-error mt-1">{{ $message }}</span> @enderror
-                </div>
+                <x-form-input name="phone" label="Phone Number" type="tel" wire:model="phone" autocomplete="tel" placeholder="09171234567" />
 
                 <!-- Actions -->
                 <div class="flex justify-end gap-2 pt-2 border-t border-base-200">
-                    <button type="button" wire:click="closeModal" class="btn btn-ghost rounded-xl font-bold">Cancel</button>
+                    <button type="button" @click="dismiss()" class="btn btn-ghost rounded-xl font-bold">Cancel</button>
                     <button type="submit"
                         wire:loading.attr="disabled" wire:loading.class="opacity-60"
                         class="btn btn-primary rounded-xl font-bold gap-2 shadow-xs">
@@ -88,37 +86,73 @@
                     </button>
                 </div>
             </form>
-            @endif
+            </div>
 
             <!-- Password & Security Tab -->
-            @if($activeTab === 'password')
+            <div x-show="tab === 'password'" x-cloak wire:key="profile-security-panel" class="space-y-4">
+            @if(auth()->user()->isAdmin())
+                <div class="p-4 rounded-2xl border border-base-300 bg-base-200/40 space-y-3" wire:key="profile-two-factor" x-data="{ showDisable: false, sending: false, codeSent: $wire.entangle('twoFactorCodeSent'), async sendCode() { if (this.sending) return; this.sending = true; try { await this.$wire.sendTwoFactorEnableCode(); } finally { this.sending = false; } } }" :aria-busy="sending">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <h4 class="font-black text-sm text-base-content">Two-Factor Authentication</h4>
+                            <p class="text-xs text-base-content/60 mt-0.5">Require a 6-digit SMS code after your password every time you sign in.</p>
+                        </div>
+                        <button type="button" role="switch" aria-label="Two-factor authentication" aria-checked="{{ auth()->user()->hasTwoFactorEnabled() ? 'true' : 'false' }}"
+                            @if(auth()->user()->hasTwoFactorEnabled()) @click="showDisable = !showDisable"
+                            @else @click="if (!codeSent) sendCode()" @disabled(blank(auth()->user()->phone)) :aria-disabled="sending || codeSent" @endif
+                            class="shrink-0 min-w-14 min-h-11 flex items-center justify-center rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">
+                            <span class="w-12 h-7 p-1 rounded-full flex items-center {{ auth()->user()->hasTwoFactorEnabled() ? 'bg-primary justify-end' : 'bg-base-content/30 justify-start' }}" aria-hidden="true">
+                                <span class="w-5 h-5 rounded-full bg-base-100 shadow-sm"></span>
+                            </span>
+                        </button>
+                    </div>
+
+                    @if(auth()->user()->hasTwoFactorEnabled())
+                        <div x-show="showDisable" x-cloak class="flex flex-col sm:flex-row gap-2">
+                            <x-form-input name="twoFactorPassword" label="Current password to turn off two-factor authentication" wire:model="twoFactorPassword" type="password" :reveal-password="true" autocomplete="current-password" class="flex-1" />
+                            <button type="button" wire:click="disableTwoFactor" wire:loading.attr="disabled" class="btn btn-outline btn-error btn-sm rounded-xl font-bold">Turn off</button>
+                        </div>
+                    @elseif(blank(auth()->user()->phone))
+                        <p class="text-xs text-warning font-semibold">Add a phone number first in Profile Details. Codes are sent to that number.</p>
+                    @else
+                        <p x-show="!codeSent" class="text-xs text-base-content/70" role="status">
+                            <span x-show="!sending">Off · Turn on to verify your phone ending in {{ substr(auth()->user()->phone, -4) }}.</span>
+                            <span x-show="sending" x-cloak>Sending verification code...</span>
+                        </p>
+                        <div x-show="codeSent" x-cloak wire:key="profile-two-factor-verification" class="space-y-3">
+                            <x-otp-countdown :expires-at="$codeExpiresAt" context="enrollment" />
+                            <div class="flex flex-col sm:flex-row sm:items-end gap-2">
+                                <div class="flex-1 min-w-0">
+                                    <label for="profile-two-factor-code" class="label pb-1"><span class="label-text font-semibold text-xs">6-digit verification code</span></label>
+                                    <input id="profile-two-factor-code" class="input input-bordered w-full rounded-xl text-sm tracking-widest" wire:model="twoFactorCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" aria-invalid="{{ $errors->has('twoFactorCode') ? 'true' : 'false' }}" @error('twoFactorCode') aria-describedby="profile-two-factor-error" @enderror />
+                                </div>
+                                <button type="button" wire:click="confirmTwoFactor" wire:loading.attr="disabled" wire:target="confirmTwoFactor" :disabled="sending" class="btn btn-primary rounded-xl font-bold">Confirm</button>
+                            </div>
+                            <button type="button" @click="sendCode()" :aria-disabled="sending" class="text-xs text-primary font-bold hover:underline min-h-11">
+                                <span x-show="!sending">Resend code</span><span x-show="sending" x-cloak role="status">Sending verification code...</span>
+                            </button>
+                        </div>
+                        @error('twoFactorCode') <span id="profile-two-factor-error" role="alert" class="text-xs text-error block">{{ $message }}</span> @enderror
+                    @endif
+                </div>
+            @endif
             <form wire:submit.prevent="updatePassword" class="space-y-4">
-                <div class="form-control">
-                    <label class="label"><span class="label-text font-bold text-xs uppercase">Current Password *</span></label>
-                    <input wire:model="current_password" type="password" required class="input input-bordered rounded-xl text-sm" />
-                    @error('current_password') <span class="text-xs text-error mt-1">{{ $message }}</span> @enderror
-                </div>
+                <x-form-input name="current_password" label="Current Password *" type="password" :reveal-password="true" wire:model="current_password" autocomplete="current-password" placeholder="Enter your current password" required />
 
                 <div class="form-control">
-                    <label class="label"><span class="label-text font-bold text-xs uppercase">New Password *</span></label>
-                    <input wire:model.live="password" type="password" required placeholder="8+ characters with letters and numbers" class="input input-bordered rounded-xl text-sm" />
+                    <x-form-input name="password" label="New Password *" type="password" :reveal-password="true" wire:model.live="password" autocomplete="new-password" placeholder="Create a strong password" required />
                     <x-password-strength model="password" />
-                    @error('password') <span class="text-xs text-error mt-1">{{ $message }}</span> @enderror
                 </div>
 
-                <div class="form-control">
-                    <label class="label"><span class="label-text font-bold text-xs uppercase">Confirm New Password *</span></label>
-                    <input wire:model="password_confirmation" type="password" required class="input input-bordered rounded-xl text-sm" />
-                    @error('password_confirmation') <span class="text-xs text-error mt-1">{{ $message }}</span> @enderror
-                </div>
+                <x-form-input name="password_confirmation" label="Confirm New Password *" type="password" :reveal-password="true" wire:model="password_confirmation" autocomplete="new-password" placeholder="Confirm your password" required />
 
                 <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-base-200">
-                    <button type="button" x-data x-on:click="Livewire.dispatch('open-forgot-password-modal', { email: '{{ auth()->user()->email }}' })" class="text-xs text-primary font-bold hover:underline">
-                        Forgot Password? Recover with OTP
+                    <button type="button" @click="dismiss(); $dispatch('open-forgot-password-modal')" class="text-xs text-primary font-bold hover:underline">
+                        Forgot Password
                     </button>
 
                     <div class="flex gap-2">
-                        <button type="button" wire:click="closeModal" class="btn btn-ghost rounded-xl font-bold">Cancel</button>
+                        <button type="button" @click="dismiss()" class="btn btn-ghost rounded-xl font-bold">Cancel</button>
                         <button type="submit"
                             wire:loading.attr="disabled" wire:loading.class="opacity-60"
                             class="btn btn-primary rounded-xl font-bold gap-2 shadow-xs">
@@ -129,47 +163,9 @@
                 </div>
             </form>
 
-            @if(auth()->user()->isAdmin())
-                <div class="p-4 rounded-2xl border border-base-300 bg-base-200/40 space-y-3">
-                    <div class="flex items-start justify-between gap-3">
-                        <div>
-                            <h4 class="font-black text-sm text-base-content">Two-Factor Authentication</h4>
-                            <p class="text-xs text-base-content/60 mt-0.5">Require a 6-digit SMS code after your password every time you sign in.</p>
-                        </div>
-                        @if(auth()->user()->hasTwoFactorEnabled())
-                            <span class="badge badge-success badge-sm font-bold whitespace-nowrap">On</span>
-                        @else
-                            <span class="badge badge-ghost badge-sm font-bold whitespace-nowrap">Off</span>
-                        @endif
-                    </div>
-
-                    @if(auth()->user()->hasTwoFactorEnabled())
-                        <div class="flex flex-col sm:flex-row gap-2">
-                            <input wire:model="twoFactorPassword" type="password" placeholder="Current password to turn off" autocomplete="current-password" class="input input-bordered input-sm rounded-xl text-sm flex-1" />
-                            <button type="button" wire:click="disableTwoFactor" wire:loading.attr="disabled" class="btn btn-outline btn-error btn-sm rounded-xl font-bold">Turn off</button>
-                        </div>
-                        @error('twoFactorPassword') <span class="text-xs text-error">{{ $message }}</span> @enderror
-                    @elseif(blank(auth()->user()->phone))
-                        <p class="text-xs text-warning font-semibold">Add a phone number first in Profile Details. Codes are sent to that number.</p>
-                    @elseif(!$twoFactorCodeSent)
-                        <button type="button" wire:click="sendTwoFactorEnableCode" wire:loading.attr="disabled" class="btn btn-primary btn-sm rounded-xl font-bold">
-                            <span wire:loading wire:target="sendTwoFactorEnableCode" class="loading loading-spinner loading-xs"></span>
-                            Turn on &mdash; send code to {{ auth()->user()->phone }}
-                        </button>
-                        @error('twoFactorCode') <span class="text-xs text-error block">{{ $message }}</span> @enderror
-                    @else
-                        <div class="flex flex-col sm:flex-row gap-2">
-                            <input wire:model="twoFactorCode" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6-digit code" class="input input-bordered input-sm rounded-xl text-sm tracking-widest flex-1" />
-                            <button type="button" wire:click="confirmTwoFactor" wire:loading.attr="disabled" class="btn btn-primary btn-sm rounded-xl font-bold">Confirm</button>
-                        </div>
-                        @error('twoFactorCode') <span class="text-xs text-error">{{ $message }}</span> @enderror
-                        <button type="button" wire:click="sendTwoFactorEnableCode" class="text-xs text-primary font-bold hover:underline">Resend code</button>
-                    @endif
-                </div>
-            @endif
-            @endif
+            </div>
+            </div>
         </div>
-        <form method="dialog" class="modal-backdrop"><button wire:click="closeModal">close</button></form>
+        <div class="modal-backdrop"><button type="button" @click="dismiss()" aria-label="Close profile dialog">close</button></div>
     </dialog>
-    @endif
 </div>

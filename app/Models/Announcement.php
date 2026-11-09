@@ -13,12 +13,14 @@ class Announcement extends Model
         'body',
         'stall_location_id',
         'emailed',
+        'sms_requested',
         'posted_by',
         'created_at',
     ];
 
     protected $casts = [
         'emailed' => 'boolean',
+        'sms_requested' => 'boolean',
     ];
 
     public function location(): BelongsTo

@@ -4,8 +4,11 @@ namespace App\Services;
 
 use App\Models\AuditLog;
 use App\Models\Invoice;
+use App\Models\Notification;
 use App\Models\PaymentTransaction;
+use App\Models\User;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class TransactionService
@@ -88,6 +91,44 @@ class TransactionService
         ];
     }
 
+    public function reconcilePendingCheckouts(int $userId): int
+    {
+        $sessionIds = PaymentTransaction::where('user_id', $userId)
+            ->where('gateway', 'paymongo')->where('status', 'pending')
+            ->whereHas('invoice', fn ($query) => $query->where('status', 'pending'))
+            ->whereNotNull('gateway_transaction_id')
+            ->distinct()->pluck('gateway_transaction_id');
+        $updatedCount = 0;
+
+        foreach ($sessionIds as $sessionId) {
+            if (!Cache::add('paymongo:verify:' . $userId . ':' . $sessionId, true, 15)) {
+                continue;
+            }
+
+            $result = $this->payMongoService->retrieveCheckoutSession($sessionId);
+            $session = $result['data'] ?? [];
+            if (!($result['success'] ?? false) || ($session['id'] ?? null) !== $sessionId) {
+                continue;
+            }
+
+            $payments = $session['attributes']['payments'] ?? [];
+            $paidPayment = collect($payments)->first(fn ($payment) =>
+                ($payment['attributes']['status'] ?? null) === 'paid'
+            );
+            if (!$paidPayment) {
+                continue;
+            }
+
+            $updatedCount += $this->handleSuccessfulCheckout(
+                $sessionId,
+                $paidPayment['attributes']['source']['type'] ?? 'paymongo',
+                $session
+            );
+        }
+
+        return $updatedCount;
+    }
+
     /**
      * Fulfill a paid checkout session from webhook or gateway confirmation.
      */
@@ -96,19 +137,17 @@ class TransactionService
         string $paymentMethod = 'paymongo',
         array $sessionPayload = []
     ): int {
-        $transactions = PaymentTransaction::where('gateway_transaction_id', $sessionId)
-            ->where('status', '!=', 'successful')
-            ->get();
-
-        if ($transactions->isEmpty()) {
-            return 0;
-        }
-
-        $now = Carbon::now();
-        $updatedCount = 0;
-
-        DB::transaction(function () use ($transactions, $paymentMethod, $sessionPayload, $now, &$updatedCount) {
+        return DB::transaction(function () use ($sessionId, $paymentMethod, $sessionPayload) {
+            $transactions = PaymentTransaction::where('gateway_transaction_id', $sessionId)
+                ->where('gateway', 'paymongo')->where('status', 'pending')
+                ->orderBy('invoice_id')->lockForUpdate()->get();
+            $now = Carbon::now();
+            $updatedCount = 0;
             foreach ($transactions as $txn) {
+                $invoice = Invoice::whereKey($txn->invoice_id)->lockForUpdate()->first();
+                if (!$invoice) {
+                    continue;
+                }
                 $txn->update([
                     'status' => 'successful',
                     'gateway' => $paymentMethod,
@@ -116,10 +155,19 @@ class TransactionService
                     'payload' => $sessionPayload ?: $txn->payload,
                 ]);
 
-                Invoice::where('id', $txn->invoice_id)->update([
-                    'status' => 'paid',
-                    'paid_at' => $now,
-                ]);
+                if ($invoice->status === 'pending') {
+                    $invoice->update([
+                        'status' => 'paid',
+                        'paid_at' => $now,
+                    ]);
+                    app(InvoiceService::class)->onInvoicePaid($invoice);
+                } elseif ($invoice->status === 'cancelled') {
+                    $message = "Payment was confirmed for cancelled invoice {$invoice->invoice_number}. Contact the office to review the payment; it does not reactivate a cancelled reservation.";
+                    Notification::send($invoice->user_id, 'warning', 'Payment requires review', $message, route('user.payments'));
+                    foreach (User::where('role', 'admin')->pluck('id') as $adminId) {
+                        Notification::send($adminId, 'warning', 'Payment received for cancelled invoice', $message, route('admin.payments'));
+                    }
+                }
 
                 AuditLog::record(
                     "Payment confirmed via {$paymentMethod} for Invoice #{$txn->invoice_id}",
@@ -131,15 +179,7 @@ class TransactionService
 
                 $updatedCount++;
             }
-        });
-
-        foreach ($transactions as $txn) {
-            $inv = Invoice::find($txn->invoice_id);
-            if ($inv && $inv->status === 'paid') {
-                app(InvoiceService::class)->onInvoicePaid($inv);
-            }
-        }
-
-        return $updatedCount;
+            return $updatedCount;
+        }, 3);
     }
 }

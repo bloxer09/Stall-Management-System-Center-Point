@@ -75,11 +75,7 @@ class OAuthController extends Controller
             Auth::login($user);
             SecurityLog::record('login succeeded', $user->id, 'method: google');
 
-            if ($user->isAdmin()) {
-                return redirect()->route('admin.dashboard');
-            }
-
-            return redirect()->route('user.dashboard');
+            return redirect(\App\Services\StallApplicationAccess::destination($user));
         } catch (\Exception $e) {
             return redirect()->route('home', ['login' => 1])->with('error', 'Google authentication failed: ' . $e->getMessage());
         }
@@ -147,11 +143,7 @@ class OAuthController extends Controller
             Auth::login($user);
             SecurityLog::record('login succeeded', $user->id, 'method: facebook');
 
-            if ($user->isAdmin()) {
-                return redirect()->route('admin.dashboard');
-            }
-
-            return redirect()->route('user.dashboard');
+            return redirect(\App\Services\StallApplicationAccess::destination($user));
         } catch (\Exception $e) {
             return redirect()->route('home', ['login' => 1])->with('error', 'Facebook authentication failed: ' . $e->getMessage());
         }

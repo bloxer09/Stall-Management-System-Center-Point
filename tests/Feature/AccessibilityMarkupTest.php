@@ -39,8 +39,11 @@ class AccessibilityMarkupTest extends TestCase
                     continue;
                 }
                 $checked++;
-                $this->assertStringContainsString('aria-label="Close"', $tag, "{$file}: {$m[1]} close button needs aria-label");
-                $this->assertStringContainsString('keydown.escape.window', $tag, "{$file}: {$m[1]} modal should close on Escape");
+                $this->assertMatchesRegularExpression('/aria-label="Close(?: [^"]+)?"/', $tag, "{$file}: {$m[1]} close button needs aria-label");
+                $source = file_get_contents(resource_path('views/livewire/' . $file));
+                $this->assertTrue(str_contains($tag, 'keydown.escape.window')
+                    || preg_match('/keydown\.escape\.window="[^"]*\$wire\.' . preg_quote($m[1], '/') . '\(\)/', $source) === 1,
+                    "{$file}: {$m[1]} modal should close on Escape");
             }
         }
         $this->assertGreaterThanOrEqual(12, $checked);

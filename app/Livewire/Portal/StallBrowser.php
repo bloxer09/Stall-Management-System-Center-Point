@@ -34,6 +34,12 @@ class StallBrowser extends Component
     public function mount(): void
     {
         $this->activeLocationId = StallLocation::orderBy('sort_order')->value('id');
+        $id = request()->query('stall');
+        $stall = is_scalar($id) && ctype_digit((string) $id) ? Stall::find($id) : null;
+        if ($stall) {
+            $this->activeLocationId = $stall->location_id;
+            $this->selectedStallId = $stall->id;
+        }
     }
 
     public function selectLocation(int $id): void
@@ -110,13 +116,22 @@ class StallBrowser extends Component
 
     public function openApply(): void
     {
+        $user = \App\Services\StallApplicationAccess::applicant();
+        abort_unless($user, 403);
         $this->resetValidation();
         $this->submitted = false;
+        $this->form->applicant_name = $user->name;
+        $this->form->applicant_email = $user->email;
+        $this->form->applicant_phone = $user->phone ?? '';
         $this->showApply = $this->selectedStallId !== null;
     }
 
     public function submitApplication(StallApplicationService $applications): void
     {
+        $user = \App\Services\StallApplicationAccess::applicant();
+        abort_unless($user, 403);
+        $this->form->applicant_name = $user->name;
+        $this->form->applicant_email = $user->email;
         if (!$this->selectedStallId) {
             return;
         }
@@ -138,8 +153,7 @@ class StallBrowser extends Component
             $application = $applications->submit(
                 $this->form->payload() + [
                     'preferred_stall_id' => $this->selectedStallId,
-                    // A signed-in tenant's application is linked to their account so it shows on their dashboard.
-                    'user_id' => auth()->user()?->isUser() ? auth()->id() : null,
+                    'user_id' => $user->id,
                 ],
                 $this->form->document,
                 request()->ip()
@@ -190,6 +204,7 @@ class StallBrowser extends Component
             'grid' => $grid,
             'otherStalls' => $otherStalls,
             'selectedStall' => $this->selectedStallId ? Stall::with('location')->find($this->selectedStallId) : null,
+            'canApply' => \App\Services\StallApplicationAccess::applicant() !== null,
         ]);
     }
 }

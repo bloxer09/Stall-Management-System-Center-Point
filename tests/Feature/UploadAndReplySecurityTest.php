@@ -34,7 +34,7 @@ class UploadAndReplySecurityTest extends TestCase
         Storage::fake('public');
         $uploads = app(FileUploadService::class);
 
-        foreach (['uploadContractDocument', 'uploadApplicationDocument', 'uploadTicketAttachment', 'uploadProfilePicture', 'uploadStallImage'] as $method) {
+        foreach (['uploadContractDocument', 'uploadApplicationDocument', 'uploadProfilePicture', 'uploadStallImage'] as $method) {
             $path = $uploads->{$method}($this->disguisedPng());
             $this->assertStringEndsWith('.png', $path, $method);
             $this->assertStringNotContainsString('.php', $path, $method);

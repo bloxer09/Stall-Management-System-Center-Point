@@ -1,0 +1,56 @@
+import { test, expect } from '../fixtures';
+
+test('tenant Manage modal supports keyboard dismissal, statements, and account actions', async ({ auth, page, db }, info) => {
+    test.setTimeout(60_000);
+    await auth.login('admin');
+    await auth.goto('/admin/tenants');
+    const manage = page.getByRole('button', { name: 'Manage tenant E2E Tenant', exact: true });
+    await auth.action('openActions', () => manage.click());
+    const dialog = page.getByRole('dialog', { name: 'Manage tenant', exact: true });
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toContainText('tenant@example.test');
+    await expect(dialog.getByRole('button', { name: 'Close tenant actions' })).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await expect(dialog.getByRole('button', { name: 'Close', exact: true })).toBeFocused();
+    await auth.action('closeActions', () => page.keyboard.press('Escape'));
+    await expect(dialog).not.toBeVisible();
+    await expect(manage).toBeFocused();
+    await auth.action('openActions', () => manage.click());
+    await auth.action('openStatement', () => dialog.getByRole('button', { name: 'View statement' }).click());
+    await expect(dialog).not.toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Statement of account' })).toBeVisible();
+    await auth.action('closeStatement', () => page.getByRole('dialog').filter({ visible: true }).getByRole('button', { name: 'Close', exact: true }).click());
+    await auth.action('openActions', () => manage.click());
+    page.once('dialog', prompt => prompt.accept());
+    await auth.action('deactivate', () => dialog.getByRole('button', { name: 'Deactivate account' }).click());
+    await expect(dialog).toContainText('Account status: Deactivated');
+    await expect(dialog.getByRole('button', { name: 'Reactivate account' })).toBeEnabled();
+    await auth.action('reactivate', () => dialog.getByRole('button', { name: 'Reactivate account' }).click());
+    await expect(dialog).toContainText('Account status: Active');
+    expect(db.snapshot().audit_logs.filter(log => log.entity_id === db.ids.tenantId && /(?:Deactivated|Reactivated) tenant account/.test(log.action))).toHaveLength(2);
+    await info.attach('tenant-action-modal', { body: await page.screenshot(), contentType: 'image/png' });
+    await expect(page).toHaveURL(/\/admin\/tenants$/);
+});
+
+test('ticket Manage modal fits mobile and opens the existing conversation after claiming', async ({ auth, page, db }, info) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await auth.login('admin');
+    await auth.goto('/admin/tickets');
+    const manage = page.getByRole('button', { name: 'Manage ticket #TKT-00001', exact: true });
+    await auth.action('openActions', () => manage.click());
+    const dialog = page.getByRole('dialog', { name: 'Manage ticket #TKT-00001', exact: true });
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toContainText('Private other tenant ticket');
+    await expect(dialog).toContainText('Unassigned');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await info.attach('ticket-action-modal-mobile', { body: await page.screenshot(), contentType: 'image/png' });
+    await auth.action('claimTicket', () => dialog.getByRole('button', { name: 'Claim ticket' }).click());
+    await expect(dialog).toContainText('E2E Admin');
+    await expect(dialog.getByRole('button', { name: 'Claim ticket' })).not.toBeVisible();
+    expect(db.snapshot().tickets.find(ticket => ticket.id === db.ids.privateTicketId)?.assigned_to).toBe(db.ids.adminId);
+    await auth.action('openThreadModal', () => dialog.getByRole('button', { name: 'Open conversation' }).click());
+    await expect(dialog).not.toBeVisible();
+    await expect(page.locator('.support-chat')).toBeVisible();
+    await expect(page.locator('.support-chat')).toContainText('Private other tenant message');
+    await expect(page).toHaveURL(/\/admin\/tickets$/);
+});

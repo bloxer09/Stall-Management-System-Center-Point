@@ -83,7 +83,7 @@ class TenantDashboardTest extends TestCase
             ->assertSee('Ends in 45 days')
             ->assertSee('Request renewal')
             ->call('openRenewal', $lease->id)
-            ->set('renewalOption', '6m')
+            ->set('renewalMonths', 6)
             ->call('submitRenewal')
             ->assertHasNoErrors();
 

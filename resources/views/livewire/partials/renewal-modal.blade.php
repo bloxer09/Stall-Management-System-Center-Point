@@ -10,22 +10,20 @@
                     </p>
                 </div>
 
-                <div class="grid grid-cols-3 gap-2">
-                    @foreach(['6m' => '+6 months', '1y' => '+1 year', 'custom' => 'Custom date'] as $value => $label)
-                        <label class="btn btn-sm rounded-xl font-bold {{ $renewalOption === $value ? 'btn-primary' : 'btn-outline' }}">
-                            <input type="radio" wire:model.live="renewalOption" value="{{ $value }}" class="hidden">
-                            {{ $label }}
-                        </label>
-                    @endforeach
-                </div>
-
-                @if($renewalOption === 'custom')
-                    <label class="form-control w-full">
-                        <span class="label-text text-xs font-bold">New end date</span>
-                        <input type="date" wire:model="renewalCustomDate" min="{{ $renewalLease->end_date->copy()->addDay()->toDateString() }}" class="input input-bordered input-sm rounded-xl">
-                    </label>
+                <label class="form-control w-full">
+                    <span class="label-text font-bold">Renewal duration</span>
+                    <select wire:model.live="renewalMonths" class="select select-bordered rounded-xl w-full min-h-11">
+                        @foreach(range(1, 12) as $months)
+                            <option value="{{ $months }}">{{ $months }} {{ $months === 1 ? 'month' : 'months' }}</option>
+                        @endforeach
+                    </select>
+                </label>
+                @error('renewalMonths') <p role="alert" class="text-error text-sm">{{ $message }}</p> @enderror
+                @if($renewalMonths >= 1 && $renewalMonths <= 12)
+                    <p class="text-sm">Requested end date: {{ $renewalLease->end_date->copy()->addMonthsNoOverflow($renewalMonths)->format('M d, Y') }}.<br>
+                        Full renewal rent: ₱{{ number_format((float) \App\Services\LeaseService::calculateContractRent((string) ($renewalLease->agreed_monthly_rate ?? $renewalLease->stall->price), $renewalMonths), 2) }}.</p>
                 @endif
-                @error('renewalCustomDate') <span class="text-error text-xs">{{ $message }}</span> @enderror
+                <p class="text-sm">The office reviews your request first. Pay the full renewal invoice after review to extend your lease.</p>
 
                 <label class="form-control w-full">
                     <span class="label-text text-xs font-bold">Note to the office (optional)</span>
@@ -36,7 +34,7 @@
 
                 <div class="modal-action">
                     <button type="button" wire:click="closeRenewal" class="btn btn-ghost rounded-xl font-bold">Cancel</button>
-                    <button type="button" wire:click="submitRenewal" wire:loading.attr="disabled" class="btn btn-primary rounded-xl font-bold">Send request</button>
+                    <button type="button" wire:click="submitRenewal" wire:loading.attr="disabled" wire:target="submitRenewal" class="btn btn-primary rounded-xl font-bold min-h-11">Send request</button>
                 </div>
             </div>
             <div class="modal-backdrop" wire:click="closeRenewal"></div>

@@ -49,7 +49,11 @@ class OverdueDisplayTest extends TestCase
     {
         $html = Livewire::actingAs($this->tenant)->test(InvoicesCheckout::class)->html();
 
-        $this->assertSame(1, preg_match_all('/data-overdue-badge/', $html));
+        $dom = new \DOMDocument();
+        @$dom->loadHTML($html);
+        $xpath = new \DOMXPath($dom);
+        $this->assertSame(1, $xpath->query('//div[@data-mobile-invoices]//*[@data-overdue-badge]')->length);
+        $this->assertSame(1, $xpath->query('//table//*[@data-overdue-badge]')->length);
 
         Livewire::actingAs($this->tenant)
             ->test(InvoicesCheckout::class)

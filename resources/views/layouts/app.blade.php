@@ -4,6 +4,8 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
+        <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+        <link rel="alternate icon" href="{{ asset('favicon.ico') }}" sizes="any">
 
         <title>@stack('page-title'){{ \App\Models\Setting::get('platform_name', config('app.name', 'STALLM')) }} — Commercial Stall Management</title>
 
@@ -27,15 +29,6 @@
     </head>
     <body class="font-sans antialiased bg-base-200 text-base-content min-h-screen">
 
-        <script nonce="{{ Vite::cspNonce() }}">
-            // With several modals open, Escape should only close the one on top (the last open in the DOM).
-            window.isTopModal = function (el) {
-                const mine = el.closest('.modal-open');
-                const open = document.querySelectorAll('.modal-open');
-                return !!mine && open[open.length - 1] === mine;
-            };
-        </script>
-
         <!-- Top Page Load Progress Bar -->
         <div id="page-progress-bar"
              class="fixed top-0 left-0 h-[2.5px] bg-primary z-[9999] transition-all duration-300 ease-out"
@@ -45,8 +38,9 @@
             $isPortalPage = auth()->check() && (request()->routeIs('admin.*') || request()->routeIs('user.*'));
         @endphp
 
-        <div class="drawer {{ $isPortalPage ? 'lg:drawer-open' : '' }} min-h-screen">
-            <input id="app-drawer" type="checkbox" class="drawer-toggle" />
+        <div class="drawer {{ $isPortalPage ? 'lg:drawer-open' : '' }} min-h-screen" x-data="{ sidebarOpen: false, wideScreen: window.innerWidth >= 1024 }" @resize.window="wideScreen = window.innerWidth >= 1024"
+            @keydown.escape.window="if (sidebarOpen) { sidebarOpen = false; $refs.sidebarTrigger?.focus() }">
+            <input id="app-drawer" type="checkbox" class="drawer-toggle" x-model="sidebarOpen" tabindex="-1" aria-hidden="true" />
             
             <div class="drawer-content flex flex-col min-w-0 flex-1 bg-base-200">
                 <!-- Top Navbar Header -->
@@ -79,10 +73,8 @@
                         </div>
                         <span><strong>{{ \App\Models\Setting::get('platform_name', 'Center Point Commercial Complex') }}</strong> &bull; Stall Management System &copy; {{ date('Y') }}. All rights reserved.</span>
                     </div>
-                    <div class="flex items-center gap-3 font-semibold text-xs text-base-content/60">
+                    <div class="flex flex-wrap justify-center items-center gap-3 font-semibold text-xs text-base-content/60">
                         <span>{{ \App\Models\Setting::get('platform_address', 'Pagadian City, Zamboanga del Sur') }}</span>
-                        <span>&bull;</span>
-                        <a href="{{ route('application.status') }}" wire:navigate class="hover:text-primary transition">Check application status</a>
                         <span>&bull;</span>
                         <a href="{{ route('privacy') }}" wire:navigate class="hover:text-primary transition">Privacy Policy</a>
                         <span>&bull;</span>
@@ -94,17 +86,20 @@
             @if($isPortalPage)
             <!-- Sidebar Drawer for Mobile & Desktop -->
             <div class="drawer-side z-40">
-                <label for="app-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
-                <aside class="bg-base-100 text-base-content w-64 min-h-full flex flex-col justify-between border-r border-base-300 shadow-sm">
+                <button type="button" aria-label="Close sidebar" class="drawer-overlay lg:hidden" @click="sidebarOpen = false; $refs.sidebarTrigger?.focus()" tabindex="-1"></button>
+                <aside id="app-sidebar" :inert="!sidebarOpen && !wideScreen" class="relative bg-base-100 text-base-content w-64 min-h-full flex flex-col justify-between border-r border-base-300 shadow-sm">
                     <div>
                         <!-- Logo & Brand Header -->
-                        <div class="h-16 flex items-center px-6 border-b border-base-300 gap-3">
-                            <div class="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-primary-content font-black text-base shadow-sm">
+                        <div class="relative h-[4.5rem] flex items-center px-3 pr-14 lg:px-4 border-b border-base-300 gap-2">
+                            <button type="button" aria-label="Close menu" class="btn btn-ghost btn-circle btn-sm absolute right-1 top-3.5 lg:hidden" @click="sidebarOpen = false; $refs.sidebarTrigger?.focus()">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                            <div class="w-8 h-8 shrink-0 rounded-xl bg-primary flex items-center justify-center text-primary-content font-black text-base shadow-sm">
                                 {{ strtoupper(substr(\App\Models\Setting::get('platform_name', 'S'), 0, 1)) }}
                             </div>
-                            <div>
-                                <span class="font-extrabold text-base tracking-tight block">{{ \App\Models\Setting::get('platform_name', 'STALLM') }}</span>
-                                <span class="text-[10px] text-base-content/60 uppercase tracking-widest block font-bold">Commercial Platform</span>
+                            <div class="min-w-0">
+                                <span class="font-extrabold text-xs lg:text-sm leading-tight tracking-tight block">{{ \App\Models\Setting::get('platform_name', 'STALLM') }}</span>
+                                <span class="text-[8px] lg:text-[9px] text-base-content/60 uppercase tracking-wide block font-bold">Commercial Platform</span>
                             </div>
                         </div>
 
@@ -230,7 +225,7 @@
                     <div class="p-4 border-t border-base-300 flex items-center justify-between text-xs gap-3">
                         <div class="flex items-center gap-2.5 truncate">
                             @if(auth()->user()->profile_picture)
-                                <img src="{{ auth()->user()->profile_picture }}" class="w-8 h-8 rounded-full object-cover border border-base-300 flex-shrink-0" />
+                                <img src="{{ auth()->user()->avatar_url }}" class="w-8 h-8 rounded-full object-cover border border-base-300 flex-shrink-0" alt="Profile photo" />
                             @else
                                 <div class="w-8 h-8 rounded-full bg-primary text-primary-content font-bold flex items-center justify-center text-xs flex-shrink-0">
                                     {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
@@ -325,25 +320,6 @@
                 if (!src) return;
                 window.dispatchEvent(new CustomEvent('open-lightbox', { detail: { src: src } }));
             }
-
-            // Page Load Progress Bar
-            (function () {
-                const bar = document.getElementById('page-progress-bar');
-                if (!bar) return;
-
-                function startProgress() {
-                    bar.style.opacity = '1';
-                    bar.style.width = '30%';
-                    setTimeout(() => { bar.style.width = '70%'; }, 200);
-                }
-                function finishProgress() {
-                    bar.style.width = '100%';
-                    setTimeout(() => { bar.style.opacity = '0'; bar.style.width = '0%'; }, 350);
-                }
-
-                document.addEventListener('livewire:navigate', startProgress);
-                document.addEventListener('livewire:navigated', finishProgress);
-            })();
 
             // Dispatch toast from Livewire / session flash messages
             @php

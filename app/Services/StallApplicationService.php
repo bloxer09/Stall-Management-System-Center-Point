@@ -30,13 +30,18 @@ class StallApplicationService
     ) {}
 
     /**
-     * Record a public stall application, then confirm to the applicant and alert every admin.
+     * Record an authenticated tenant application, then confirm to the applicant and alert every admin.
      *
      * @throws ValidationException when the stall is no longer open, the applicant already has a
      *                             pending application for it, or the IP has hit the hourly limit.
      */
     public function submit(array $data, ?UploadedFile $document, string $ip): StallApplication
     {
+        $user = StallApplicationAccess::applicant();
+        abort_unless($user, 403);
+        $data['user_id'] = $user->id;
+        $data['applicant_name'] = $user->name;
+        $data['applicant_email'] = $user->email;
         $data['applicant_email'] = Str::lower(trim($data['applicant_email']));
         $throttleKey = 'stall-apply:' . $ip;
 
@@ -81,9 +86,9 @@ class StallApplicationService
                 . '<p>Thank you for applying for <strong>Stall ' . e($stall->stall_number) . '</strong>. '
                 . 'Our office will review your application and email you the result.</p>'
                 . '<p>Your reference number is <strong>' . e($application->reference()) . '</strong>. '
-                . 'You can check its status any time at <a href="' . e(route('application.status')) . '">' . e(route('application.status')) . '</a>.</p>',
+                . 'Sign in to your <a href="' . e(route('user.dashboard')) . '">dashboard</a> to check its status.</p>',
             "Hello {$application->applicant_name}, thank you for applying for Stall {$stall->stall_number}. Our office will review your application and email you the result. "
-                . "Your reference number is {$application->reference()}. Check its status at " . route('application.status') . '.'
+                . "Your reference number is {$application->reference()}. Sign in to your dashboard to check its status: " . route('user.dashboard') . '.'
         );
 
         foreach (User::where('role', 'admin')->pluck('id') as $adminId) {
@@ -113,7 +118,12 @@ class StallApplicationService
             $locked = $this->lockPending($application);
             $email = Str::lower(trim($locked->applicant_email));
 
-            $user = User::whereRaw('LOWER(email) = ?', [$email])->first();
+            $user = $locked->user_id
+                ? User::find($locked->user_id)
+                : User::whereRaw('LOWER(email) = ?', [$email])->first();
+            if ($locked->user_id && (!$user || $user->isDeactivated())) {
+                throw new DomainException('The linked applicant account is unavailable.');
+            }
             $created = false;
             $phoneDropped = false;
 

@@ -1,27 +1,25 @@
 <div
-    class="h-16 bg-base-100 border-b border-base-300 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs">
-    <div class="flex items-center gap-3">
+    class="app-navbar h-[4.5rem] shrink-0 bg-base-100 border-b border-base-300 px-3 sm:px-6 py-2 flex items-center justify-between gap-2 sticky top-0 z-30 shadow-xs">
+    <div class="flex items-center gap-2 min-w-0 flex-1">
         <!-- Mobile Sidebar Drawer Toggle Button -->
         @auth
             @if(request()->routeIs('admin.*') || request()->routeIs('user.*'))
-                <label for="app-drawer" class="btn btn-ghost btn-square btn-sm lg:hidden text-base-content/80">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                    </svg>
-                </label>
+                <button type="button" x-ref="sidebarTrigger" @click="sidebarOpen = !sidebarOpen"
+                    :aria-expanded="sidebarOpen.toString()" aria-controls="app-sidebar"
+                    class="btn btn-ghost btn-sm lg:hidden shrink-0">Menu</button>
             @endif
         @endauth
 
         <!-- Brand Identifier -->
         <a href="{{ route('home') }}" wire:navigate
-            class="font-black text-base-content text-lg tracking-tight flex items-center gap-2.5">
+            class="font-black text-base-content text-lg tracking-tight flex items-center gap-2 min-w-0">
             <div
-                class="w-8 h-8 rounded-xl bg-primary flex items-center justify-center text-primary-content font-black text-xs shadow-xs">
+                class="w-8 h-8 shrink-0 rounded-xl bg-primary hidden sm:flex items-center justify-center text-primary-content font-black text-xs shadow-xs">
                 {{ strtoupper(substr(\App\Models\Setting::get('platform_name', 'CP'), 0, 2)) }}
             </div>
-            <div class="flex flex-col">
+            <div class="flex flex-col min-w-0">
                 <span
-                    class="font-extrabold text-sm sm:text-base leading-tight">{{ \App\Models\Setting::get('platform_name', 'Center Point') }}</span>
+                    class="font-extrabold text-sm sm:text-base leading-tight truncate">{{ \App\Models\Setting::get('platform_name', 'Center Point') }}</span>
                 <span class="text-[9px] text-base-content/60 font-bold uppercase tracking-wider hidden sm:block">Stall
                     Management</span>
             </div>
@@ -29,7 +27,7 @@
     </div>
 
     <!-- Right Top Header Controls -->
-    <div class="flex items-center gap-2 sm:gap-3">
+    <div class="flex items-center gap-1 sm:gap-3 shrink-0">
         @auth
             @if(auth()->user()->isAdmin() && request()->routeIs('admin.*'))
                 <livewire:admin.global-search />
@@ -37,19 +35,15 @@
         @endauth
         @if(!request()->routeIs('admin.*') && !request()->routeIs('user.*'))
             <a href="{{ route('stalls.browse') }}" wire:navigate
-                class="btn btn-ghost btn-sm font-semibold text-base-content/80 {{ request()->routeIs('stalls.browse') ? 'text-primary' : '' }}">
+                class="btn btn-ghost btn-sm hidden xl:inline-flex font-semibold text-base-content/80 {{ request()->routeIs('stalls.browse') ? 'text-primary' : '' }}">
                 Browse Stalls
-            </a>
-            <a href="{{ route('application.status') }}" wire:navigate
-                class="btn btn-ghost btn-sm font-semibold text-base-content/80 hidden sm:inline-flex {{ request()->routeIs('application.status') ? 'text-primary' : '' }}">
-                Application Status
             </a>
         @endif
         <!-- Quick Dashboard Link when on public pages -->
         @auth
             @if(!request()->routeIs('admin.*') && !request()->routeIs('user.*'))
                 <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('user.dashboard') }}" wire:navigate
-                    class="btn btn-primary btn-sm rounded-xl font-bold gap-1.5 shadow-xs">
+                    class="btn btn-primary btn-sm hidden xl:inline-flex rounded-xl font-bold gap-1.5 shadow-xs">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                     </svg>
@@ -61,7 +55,7 @@
         <!-- Light / Dark Mode Swap Toggle -->
         <label aria-label="Toggle dark mode" class="swap swap-rotate btn btn-ghost btn-circle btn-sm text-base-content/70"
             title="Toggle Light / Dark Mode">
-            <input type="checkbox" id="theme-toggle" class="theme-controller hidden" value="dark"
+            <input type="checkbox" id="theme-toggle" aria-label="Dark mode" class="theme-controller" value="dark"
                 x-data x-on:change="toggleAppTheme($el)" />
 
             <!-- Sun Icon (shown when light mode is active) -->
@@ -114,20 +108,23 @@
             <livewire:navbar-notification-bell />
 
             <!-- User Menu Dropdown -->
-            <div class="dropdown dropdown-end">
-                <div tabindex="0" role="button"
+            <div class="relative" x-data="{ open: false }" @click.outside="open = false"
+                @header-dropdown-opened.window="if ($event.detail !== 'account') open = false"
+                @keydown.escape.stop.prevent="open = false; $refs.trigger.focus()">
+                <button type="button" aria-label="Account menu" x-ref="trigger" :aria-expanded="open" aria-controls="account-dropdown"
+                    @click="open = !open; if (open) $dispatch('header-dropdown-opened', 'account')"
                     class="btn btn-ghost btn-circle avatar border border-base-300 overflow-hidden ring-2 ring-primary/20">
                     @if(auth()->user()->profile_picture)
-                        <img src="{{ auth()->user()->profile_picture }}" class="w-8 h-8 rounded-full object-cover" />
+                        <img src="{{ auth()->user()->avatar_url }}" class="w-8 h-8 rounded-full object-cover" alt="Profile photo" />
                     @else
                         <div
                             class="w-8 h-8 rounded-full bg-primary text-primary-content font-black flex items-center justify-center text-xs">
                             <span>{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</span>
                         </div>
                     @endif
-                </div>
-                <ul tabindex="0"
-                    class="mt-3 z-[1] p-2 shadow-lg menu menu-sm dropdown-content bg-base-100 text-base-content rounded-2xl w-56 border border-base-300">
+                </button>
+                <ul id="account-dropdown" x-show="open" x-cloak @click="if ($event.target.closest('a, button')) open = false"
+                    class="absolute right-0 top-full mt-3 z-40 p-2 shadow-lg menu menu-sm bg-base-100 text-base-content rounded-2xl w-56 border border-base-300">
                     <li class="px-3 py-2">
                         <span class="font-bold text-sm block truncate">{{ auth()->user()->name }}</span>
                         <span
@@ -138,7 +135,7 @@
                         <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('user.dashboard') }}" wire:navigate
                             class="rounded-xl w-full text-left font-medium">Dashboard</a>
                     </li>
-                    <li><button type="button" x-data x-on:click="Livewire.dispatch('open-profile-modal')" class="rounded-xl w-full text-left font-medium">Profile Settings</button></li>
+                    <li><button type="button" x-on:click="Livewire.dispatch('open-profile-modal')" class="rounded-xl w-full text-left font-medium">Profile Settings</button></li>
                     <div class="divider my-0 opacity-50"></div>
                     <li>
                         <form method="POST" action="{{ route('logout') }}" class="w-full">
@@ -150,13 +147,28 @@
             </div>
         @else
             <button x-data x-on:click="Livewire.dispatch('open-login-modal')"
-                class="btn btn-ghost btn-sm font-semibold text-base-content/80">
+                class="btn btn-ghost btn-sm hidden xl:inline-flex font-semibold text-base-content/80">
                 Sign In
             </button>
             <button x-data x-on:click="Livewire.dispatch('open-register-modal')"
-                class="btn btn-primary btn-sm rounded-xl font-bold shadow-xs">
+                class="btn btn-primary btn-sm hidden xl:inline-flex rounded-xl font-bold shadow-xs">
                 Register
             </button>
         @endauth
+        @if(!request()->routeIs('admin.*') && !request()->routeIs('user.*'))
+            <details class="dropdown dropdown-end xl:hidden" x-data
+                @keydown.escape.stop="$el.removeAttribute('open'); $el.querySelector('summary').focus()">
+                <summary class="btn btn-ghost btn-sm">Menu</summary>
+                <ul class="menu dropdown-content bg-base-100 border border-base-300 rounded-xl shadow-lg w-56 p-2 mt-2">
+                    <li><a href="{{ route('stalls.browse') }}" wire:navigate>Browse Stalls</a></li>
+                    @auth
+                        <li><a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('user.dashboard') }}" wire:navigate>Dashboard</a></li>
+                    @else
+                        <li><button type="button" @click="$el.closest('details').removeAttribute('open'); $el.closest('details').querySelector('summary').focus(); Livewire.dispatch('open-login-modal')">Sign In</button></li>
+                        <li><button type="button" @click="$el.closest('details').removeAttribute('open'); $el.closest('details').querySelector('summary').focus(); Livewire.dispatch('open-register-modal')">Register</button></li>
+                    @endauth
+                </ul>
+            </details>
+        @endif
     </div>
 </div>

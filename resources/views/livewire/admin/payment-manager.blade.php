@@ -1,4 +1,4 @@
-<div class="space-y-6">
+<div class="space-y-6" @if($hasPendingOnlinePayments) wire:poll.5s="refreshPayments" @endif>
     <!-- Header with Stats -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -36,7 +36,7 @@
                 </svg>
             </div>
             <select wire:model.live="statusFilter" class="select select-bordered rounded-2xl text-sm w-full md:w-auto">
-                <option value="">All Payment Statuses</option>
+                <option value="">All</option>
                 <option value="paid">Paid</option>
                 <option value="pending">Pending</option>
                 <option value="overdue">Overdue</option>
@@ -90,10 +90,9 @@
                                 @endif
                             </td>
                             <td class="text-right">
-                                <button wire:click="openDetailModal({{ $p->id }})"
-                                    class="btn btn-ghost btn-xs text-primary font-bold rounded-lg border border-primary/20 hover:bg-primary hover:text-white transition">
+                                <x-table-action wire:click="openDetailModal({{ $p->id }})">
                                     Manage
-                                </button>
+                                </x-table-action>
                             </td>
                         </tr>
                     @empty
@@ -185,11 +184,6 @@
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                 Download Receipt
                             </a>
-                        @elseif($selectedInvoice->status !== 'paid')
-                            <button wire:click="markAsPaid({{ $selectedInvoice->id }})" wire:loading.attr="disabled" class="btn btn-success text-white btn-sm rounded-xl font-bold gap-1 shadow-xs" wire:target="markAsPaid"><span wire:loading wire:target="markAsPaid" class="loading loading-spinner loading-xs"></span>
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                                Mark as Paid
-                            </button>
                         @endif
                     </div>
                     <button wire:click="closeDetailModal" class="btn btn-ghost btn-sm rounded-xl font-bold">Close</button>
@@ -225,7 +219,7 @@
                     <div class="form-control">
                         <label class="label"><span class="label-text font-bold text-xs uppercase">Select Tenant</span></label>
                         <select wire:model="user_id" required class="select select-bordered rounded-xl text-sm">
-                            <option value="">-- Select Tenant --</option>
+                            <option value="">Select Tenant</option>
                             @foreach($modalUsers as $u)
                                 <option value="{{ $u['id'] }}">{{ $u['name'] }} ({{ $u['email'] }})</option>
                             @endforeach
@@ -236,7 +230,7 @@
                     <div class="form-control">
                         <label class="label"><span class="label-text font-bold text-xs uppercase">Select Stall</span></label>
                         <select wire:model="stall_id" required class="select select-bordered rounded-xl text-sm">
-                            <option value="">-- Select Stall --</option>
+                            <option value="">Select Stall</option>
                             @foreach($modalStalls as $st)
                                 <option value="{{ $st['id'] }}">Stall #{{ $st['stall_number'] }}</option>
                             @endforeach

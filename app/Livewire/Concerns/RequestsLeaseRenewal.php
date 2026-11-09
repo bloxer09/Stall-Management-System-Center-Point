@@ -4,7 +4,6 @@ namespace App\Livewire\Concerns;
 
 use App\Models\StallMapping;
 use App\Services\LeaseService;
-use Illuminate\Support\Carbon;
 use InvalidArgumentException;
 
 /**
@@ -14,9 +13,8 @@ use InvalidArgumentException;
 trait RequestsLeaseRenewal
 {
     public ?int $renewalLeaseId = null;
-    public string $renewalOption = '6m';
-    public string $renewalCustomDate = '';
     public string $renewalNote = '';
+    public int $renewalMonths = 6;
 
     public function openRenewal(int $id, LeaseService $leases): void
     {
@@ -24,9 +22,8 @@ trait RequestsLeaseRenewal
         $lease = StallMapping::where('user_id', auth()->id())->find($id);
 
         $this->renewalLeaseId = $lease && $leases->isRenewalEligible($lease) ? $lease->id : null;
-        $this->renewalOption = '6m';
-        $this->renewalCustomDate = '';
         $this->renewalNote = '';
+        $this->renewalMonths = 6;
     }
 
     public function closeRenewal(): void
@@ -43,14 +40,8 @@ trait RequestsLeaseRenewal
             return;
         }
 
-        if ($this->renewalOption === 'custom') {
-            $this->validate(['renewalCustomDate' => ['required', 'date']], [], ['renewalCustomDate' => 'new end date']);
-            $requestedEnd = Carbon::parse($this->renewalCustomDate);
-        } else {
-            $requestedEnd = $this->renewalOption === '1y'
-                ? $lease->end_date->copy()->addYear()
-                : $lease->end_date->copy()->addMonths(6);
-        }
+        $this->validate(['renewalMonths' => ['required', 'integer', 'between:1,12']]);
+        $requestedEnd = $lease->end_date->copy()->addMonthsNoOverflow($this->renewalMonths);
 
         try {
             $leases->requestRenewal($lease, auth()->user(), $requestedEnd, mb_substr($this->renewalNote, 0, 500));

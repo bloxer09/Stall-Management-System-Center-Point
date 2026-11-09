@@ -17,6 +17,9 @@ Thumbs.db
 .phpunit.result.cache
 vite.config.js.timestamp-*
 /.superpowers/
+/tests/e2e/.runtime/
+/test-results/
+/playwright-report/
 
 # Database backups contain all data, including password hashes
 /storage/app/backups/

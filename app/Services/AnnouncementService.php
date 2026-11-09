@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Jobs\SendBulkEmail;
+use App\Jobs\SendBulkSms;
 use App\Models\Announcement;
 use App\Models\AuditLog;
 use App\Models\Notification;
@@ -12,7 +13,26 @@ use Illuminate\Support\Str;
 
 class AnnouncementService
 {
-    public function __construct(protected MailService $mailer) {}
+    public function __construct(protected MailService $mailer, protected SmsService $sms) {}
+
+    public function smsRecipients(?int $locationId): Collection
+    {
+        return $this->recipients($locationId)->filter(fn ($tenant) => filled($tenant->phone));
+    }
+
+    public function smsEnabled(): bool
+    {
+        return $this->sms->enabled();
+    }
+
+    public function smsMessage(Announcement $announcement): string
+    {
+        $link = route('user.dashboard');
+        $text = preg_replace('/\s+/u', ' ', trim($announcement->title . ': ' . $announcement->body));
+        $budget = max(0, 320 - mb_strlen($link) - 1);
+        $preview = mb_strlen($text) > $budget ? mb_substr($text, 0, max(0, $budget - 1)) . '…' : $text;
+        return $preview . ' ' . $link;
+    }
 
     /**
      * Tenants with an active lease, optionally only on one floor. Each tenant appears once.
@@ -35,7 +55,7 @@ class AnnouncementService
     /**
      * Save the announcement, then ring every recipient's bell (and email them when asked).
      *
-     * @param  array{title: string, body: string, stall_location_id: ?int, emailed: bool}  $data
+     * @param  array{title: string, body: string, stall_location_id: ?int, emailed: bool, sms_requested?: bool}  $data
      */
     public function post(array $data, User $admin): Announcement
     {
@@ -54,6 +74,16 @@ class AnnouncementService
                 '<p>Hello {name},</p><p>' . nl2br(e($announcement->body)) . '</p>',
                 $announcement->body,
             )->afterResponse();
+        }
+
+        if ($announcement->sms_requested && $this->sms->enabled()) {
+            $phones = $recipients->filter(fn ($tenant) => filled($tenant->phone));
+            if ($phones->isNotEmpty()) {
+                SendBulkSms::dispatch(
+                    $phones->map(fn ($tenant) => ['id' => $tenant->id, 'phone' => $tenant->phone])->values()->all(),
+                    $this->smsMessage($announcement),
+                )->afterResponse();
+            }
         }
 
         AuditLog::record("Posted announcement \"{$announcement->title}\" to {$recipients->count()} tenant(s)", 'Announcement', $announcement->id);

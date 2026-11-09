@@ -9,4 +9,5 @@ Schedule::command('billing:generate-invoices')->monthlyOn(1, '00:00');
 Schedule::command('stallm:send-reminders')->dailyAt('08:00');
 Schedule::command('stallm:notify-expiring-leases')->dailyAt('07:00');
 Schedule::command('stallm:flag-overdue')->dailyAt('08:30');
+Schedule::command('stallm:cancel-expired-reservations')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('stallm:backup')->dailyAt('02:00');

@@ -106,7 +106,7 @@ class HardeningReviewFixesTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
 
         $service = app(LeaseService::class);
-        $service->approveRenewal($lease, $admin, now()->addYear());
+        $service->approveRenewal($lease, $admin, $lease->end_date->copy()->addMonthsNoOverflow(12));
 
         $this->assertTrue($service->lastNotificationSent);
     }

@@ -52,7 +52,7 @@
                             </td>
                             <td><span class="badge badge-sm font-bold {{ $statusBadges[$application->status] ?? 'badge-ghost' }}">{{ ucfirst($application->status) }}</span></td>
                             <td class="text-right">
-                                <button type="button" wire:click="openDetail({{ $application->id }})" class="btn btn-ghost btn-xs rounded-lg font-bold">Review</button>
+                                <x-table-action wire:click="openDetail({{ $application->id }})">Review</x-table-action>
                             </td>
                         </tr>
                     @empty

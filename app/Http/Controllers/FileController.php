@@ -60,6 +60,6 @@ class FileController extends Controller
             abort(404, 'Attachment file not found.');
         }
 
-        return response()->download(storage_path('app/' . $filePath));
+        return response()->download(Storage::disk('local')->path($filePath));
     }
 }

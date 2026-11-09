@@ -47,7 +47,7 @@ class StallManager extends Component
 
     public function openDetailModal($id)
     {
-        $this->selectedStall = Stall::with(['location', 'currentLease.user'])->findOrFail($id);
+        $this->selectedStall = Stall::with(['location', 'currentLease.user', 'pendingLease.user'])->findOrFail($id);
         $this->showDetailModal = true;
     }
 
@@ -128,9 +128,16 @@ class StallManager extends Component
         $this->dispatch('notify', type: 'success', message: 'Stall deleted successfully!');
     }
 
+    public function updated($property): void
+    {
+        if (in_array($property, ['search', 'locationFilter', 'statusFilter'], true)) {
+            $this->resetPage();
+        }
+    }
+
     public function render()
     {
-        $query = Stall::with(['location', 'currentLease.user'])
+        $query = Stall::with(['location', 'currentLease.user', 'pendingLease.user'])
             ->withCount(['waitlist as waiting_count' => fn ($q) => $q->whereNull('notified_at')]);
 
         if ($this->search) {
@@ -139,7 +146,9 @@ class StallManager extends Component
         if ($this->locationFilter) {
             $query->where('location_id', $this->locationFilter);
         }
-        if ($this->statusFilter) {
+        if ($this->statusFilter === 'pending') {
+            $query->whereHas('pendingLease');
+        } elseif ($this->statusFilter) {
             $query->where('status', $this->statusFilter);
         }
 

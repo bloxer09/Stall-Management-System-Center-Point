@@ -76,8 +76,8 @@
                     <div class="text-xs font-bold text-slate-300 mt-0.5">Open for online applications</div>
                 </div>
                 <div class="p-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10">
-                    <div class="text-xl font-black text-white">PayMongo</div>
-                    <div class="text-xs font-bold text-slate-300 mt-0.5">GCash &amp; Card Payments</div>
+                    <div class="text-xl font-black text-white">Hassle Free Transactions</div>
+                    <div class="text-xs font-bold text-slate-300 mt-0.5">Walk-in, E-wallet &amp; Bank Payments</div>
                 </div>
                 <div class="p-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10">
                     <div class="text-xl font-black text-white">{{ $floors->sum('stalls_count') }} Total {{ \Illuminate\Support\Str::plural('Stall', $floors->sum('stalls_count')) }}</div>

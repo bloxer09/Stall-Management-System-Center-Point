@@ -29,7 +29,7 @@ class PdfReceiptService
 
         $html = View::make('pdf.receipt', [
             'payment' => $invoice,
-            'qrCode' => $qrCodeSvg,
+            'qrCode' => 'data:image/svg+xml;base64,' . base64_encode($qrCodeSvg),
             'verificationUrl' => $verificationUrl,
         ])->render();
 

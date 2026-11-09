@@ -4,6 +4,7 @@ namespace App\Livewire\Admin;
 
 use App\Models\Invoice;
 use App\Models\Stall;
+use App\Services\XlsxExportService;
 use Carbon\Carbon;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -11,43 +12,26 @@ use Livewire\Component;
 
 class AdvancedReports extends Component
 {
-    public function exportCsv()
+    public function exportXlsx(XlsxExportService $exporter)
     {
+        abort_unless(auth()->user()?->isAdmin(), 403);
         $invoices = Invoice::with(['user', 'stall', 'transactions'])->orderBy('created_at', 'desc')->get();
-        $csvFileName = 'financial-report-' . date('Y-m-d') . '.csv';
-
-        $headers = [
-            "Content-type"        => "text/csv",
-            "Content-Disposition" => "attachment; filename={$csvFileName}",
-            "Pragma"              => "no-cache",
-            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-            "Expires"             => "0"
-        ];
-
         $columns = ['Invoice Number', 'Tenant', 'Stall Number', 'Amount', 'Status', 'Payment Method', 'Paid At', 'Due Date'];
+        $rows = $invoices->map(function ($inv) {
+            $lastTxn = $inv->transactions->last();
+            return [
+                $inv->invoice_number,
+                $inv->user->name ?? 'N/A',
+                $inv->stall->stall_number ?? 'N/A',
+                (float) $inv->total_amount,
+                $inv->status,
+                $lastTxn->gateway ?? ($inv->status === 'paid' ? 'cash' : 'N/A'),
+                $inv->paid_at ? Carbon::parse($inv->paid_at)->format('Y-m-d H:i:s') : '',
+                $inv->due_date ? Carbon::parse($inv->due_date)->format('Y-m-d') : '',
+            ];
+        })->all();
 
-        $callback = function () use ($invoices, $columns) {
-            $file = fopen('php://output', 'w');
-            fputcsv($file, $columns);
-
-            foreach ($invoices as $inv) {
-                $lastTxn = $inv->transactions->last();
-                fputcsv($file, [
-                    $inv->invoice_number,
-                    $inv->user->name ?? 'N/A',
-                    $inv->stall->stall_number ?? 'N/A',
-                    $inv->total_amount,
-                    $inv->status,
-                    $lastTxn->gateway ?? ($inv->status === 'paid' ? 'cash' : 'N/A'),
-                    $inv->paid_at ? Carbon::parse($inv->paid_at)->format('Y-m-d H:i:s') : '',
-                    $inv->due_date ? Carbon::parse($inv->due_date)->format('Y-m-d') : '',
-                ]);
-            }
-
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+        return $exporter->downloadXlsx('financial-report-'.now('Asia/Manila')->format('Y-m-d').'.xlsx', $columns, $rows, [1, 2, 3, 5, 6, 7, 8]);
     }
 
     public function exportPdf()
@@ -70,7 +54,7 @@ class AdvancedReports extends Component
 
         $options = new Options();
         $options->set('isRemoteEnabled', false);
-        $options->set('defaultFont', 'Helvetica');
+        $options->set('defaultFont', 'DejaVu Sans');
 
         $dompdf = new Dompdf($options);
         $dompdf->loadHtml($html);

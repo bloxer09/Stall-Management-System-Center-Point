@@ -78,6 +78,14 @@ class MyLeases extends Component
         $this->existingStallImage = null;
     }
 
+    public function updatedNewStallImage()
+    {
+        $this->resetValidation('newStallImage');
+        $this->validateOnly('newStallImage', [
+            'newStallImage' => 'nullable|image|max:5120',
+        ]);
+    }
+
     public function uploadStallPhoto(FileUploadService $uploader)
     {
         if (!$this->selectedStallId) return;
@@ -110,7 +118,7 @@ class MyLeases extends Component
 
     public function render()
     {
-        $query = StallMapping::with(['stall.location', 'initialInvoice'])
+        $query = StallMapping::with(['stall.location', 'initialInvoice', 'renewalInvoice'])
             ->where('user_id', auth()->id());
 
         if ($this->search) {

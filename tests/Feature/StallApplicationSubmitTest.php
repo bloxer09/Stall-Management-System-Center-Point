@@ -28,6 +28,7 @@ class StallApplicationSubmitTest extends TestCase
 
         Mail::fake();
         Storage::fake('local');
+        $this->actingAs(User::factory()->create(['role' => 'user', 'name' => 'Juan Dela Cruz', 'email' => 'juan@mail.com']));
         $this->floor = StallLocation::create(['name' => 'Ground Floor', 'sort_order' => 1, 'grid_rows' => 3, 'grid_cols' => 3]);
     }
 

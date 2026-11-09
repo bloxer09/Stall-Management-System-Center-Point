@@ -1,0 +1,301 @@
+{
+    "leases": [
+        {
+            "id": 1,
+            "user_id": 2,
+            "stall_id": 1,
+            "start_date": "2026-10-07T16:00:00.000000Z",
+            "end_date": "2027-10-07T16:00:00.000000Z",
+            "is_active": false,
+            "payment_status": "pending_initial",
+            "initial_invoice_id": 1,
+            "contract_document": null,
+            "renewal_status": "none",
+            "requested_end_date": null,
+            "renewal_note": null,
+            "renewal_rejection_reason": null,
+            "created_at": "2026-10-08T11:36:39.000000Z",
+            "updated_at": "2026-10-08T11:36:40.000000Z",
+            "termination_reason": null,
+            "terminated_at": null,
+            "duration_months": null,
+            "agreed_monthly_rate": null,
+            "contract_rent": null,
+            "rent_billing_mode": "monthly",
+            "upfront_covered_until": null
+        },
+        {
+            "id": 2,
+            "user_id": 3,
+            "stall_id": 13,
+            "start_date": "2026-10-07T16:00:00.000000Z",
+            "end_date": "2026-11-08T16:00:00.000000Z",
+            "is_active": false,
+            "payment_status": "pending_initial",
+            "initial_invoice_id": 2,
+            "contract_document": null,
+            "renewal_status": "none",
+            "requested_end_date": null,
+            "renewal_note": null,
+            "renewal_rejection_reason": null,
+            "created_at": "2026-10-08T11:55:21.000000Z",
+            "updated_at": "2026-10-08T11:55:21.000000Z",
+            "termination_reason": null,
+            "terminated_at": null,
+            "duration_months": null,
+            "agreed_monthly_rate": null,
+            "contract_rent": null,
+            "rent_billing_mode": "monthly",
+            "upfront_covered_until": null
+        },
+        {
+            "id": 3,
+            "user_id": 4,
+            "stall_id": 23,
+            "start_date": "2026-10-07T16:00:00.000000Z",
+            "end_date": "2027-11-07T16:00:00.000000Z",
+            "is_active": false,
+            "payment_status": "settled",
+            "initial_invoice_id": 3,
+            "contract_document": null,
+            "renewal_status": "none",
+            "requested_end_date": null,
+            "renewal_note": null,
+            "renewal_rejection_reason": null,
+            "created_at": "2026-10-08T12:24:42.000000Z",
+            "updated_at": "2026-10-08T12:25:29.000000Z",
+            "termination_reason": "dfszdajehdfiugfdasdfcbsdcbsd,h",
+            "terminated_at": "2026-10-08T12:25:29.000000Z",
+            "duration_months": null,
+            "agreed_monthly_rate": null,
+            "contract_rent": null,
+            "rent_billing_mode": "monthly",
+            "upfront_covered_until": null
+        },
+        {
+            "id": 4,
+            "user_id": 4,
+            "stall_id": 2,
+            "start_date": "2026-10-07T16:00:00.000000Z",
+            "end_date": "2027-11-07T16:00:00.000000Z",
+            "is_active": true,
+            "payment_status": "good_standing",
+            "initial_invoice_id": 4,
+            "contract_document": null,
+            "renewal_status": "none",
+            "requested_end_date": null,
+            "renewal_note": null,
+            "renewal_rejection_reason": null,
+            "created_at": "2026-10-08T12:26:54.000000Z",
+            "updated_at": "2026-10-08T12:29:27.000000Z",
+            "termination_reason": null,
+            "terminated_at": null,
+            "duration_months": null,
+            "agreed_monthly_rate": null,
+            "contract_rent": null,
+            "rent_billing_mode": "monthly",
+            "upfront_covered_until": null
+        }
+    ],
+    "invoices": [
+        {
+            "id": 1,
+            "invoice_number": "INV-202610-0001",
+            "verification_token": "8dea32a8-ea20-491e-9223-a0f43b9217f5",
+            "user_id": 2,
+            "stall_id": 1,
+            "total_amount": "6500.00",
+            "status": "pending",
+            "due_date": "2026-10-14T16:00:00.000000Z",
+            "paid_at": null,
+            "overdue_notified_at": null,
+            "billing_period": "2026-10",
+            "notes": "Initial Stall Lease Deposit & 1st Month Rent - Stall #G-01",
+            "created_at": "2026-10-08T11:36:40.000000Z",
+            "updated_at": "2026-10-08T11:36:40.000000Z",
+            "stall_mapping_id": 1
+        },
+        {
+            "id": 2,
+            "invoice_number": "INV-202610-0013",
+            "verification_token": "ff820819-2f1d-41d5-a7bb-ec999d08fd6e",
+            "user_id": 3,
+            "stall_id": 13,
+            "total_amount": "6500.00",
+            "status": "pending",
+            "due_date": "2026-10-14T16:00:00.000000Z",
+            "paid_at": null,
+            "overdue_notified_at": null,
+            "billing_period": "2026-10",
+            "notes": "Initial Stall Lease Deposit & 1st Month Rent - Stall #G-13",
+            "created_at": "2026-10-08T11:55:21.000000Z",
+            "updated_at": "2026-10-08T11:55:21.000000Z",
+            "stall_mapping_id": 2
+        },
+        {
+            "id": 3,
+            "invoice_number": "INV-202610-0023",
+            "verification_token": "914f02c0-12e9-4560-95ea-a7a1a7b23cd7",
+            "user_id": 4,
+            "stall_id": 23,
+            "total_amount": "5000.00",
+            "status": "cancelled",
+            "due_date": "2026-10-14T16:00:00.000000Z",
+            "paid_at": null,
+            "overdue_notified_at": null,
+            "billing_period": "2026-10",
+            "notes": "Initial Stall Lease Deposit & 1st Month Rent - Stall #F-01 | Cancelled: reservation terminated",
+            "created_at": "2026-10-08T12:24:42.000000Z",
+            "updated_at": "2026-10-08T12:25:29.000000Z",
+            "stall_mapping_id": 3
+        },
+        {
+            "id": 4,
+            "invoice_number": "INV-202610-0002",
+            "verification_token": "b49320d7-8469-4d1e-a2dd-d64dc222c1b6",
+            "user_id": 4,
+            "stall_id": 2,
+            "total_amount": "1.00",
+            "status": "paid",
+            "due_date": "2026-10-14T16:00:00.000000Z",
+            "paid_at": "2026-10-08T12:29:27.000000Z",
+            "overdue_notified_at": null,
+            "billing_period": "2026-10",
+            "notes": "Initial Stall Lease Deposit & 1st Month Rent - Stall #G-02",
+            "created_at": "2026-10-08T12:26:54.000000Z",
+            "updated_at": "2026-10-08T12:29:27.000000Z",
+            "stall_mapping_id": 4
+        }
+    ],
+    "payments": [
+        {
+            "id": 1,
+            "invoice_id": 4,
+            "user_id": 4,
+            "gateway": "paymongo",
+            "gateway_transaction_id": "cs_c5e94dbc2da34c016725ff8c",
+            "amount": "1.00",
+            "status": "pending",
+            "payload": {
+                "id": "cs_c5e94dbc2da34c016725ff8c",
+                "type": "checkout_session",
+                "attributes": {
+                    "status": "active",
+                    "billing": {
+                        "name": null,
+                        "email": null,
+                        "phone": null,
+                        "address": {
+                            "city": null,
+                            "line1": null,
+                            "line2": null,
+                            "state": null,
+                            "country": null,
+                            "postal_code": null
+                        }
+                    },
+                    "livemode": false,
+                    "merchant": "MARK GUINANDAL SAGGA",
+                    "metadata": null,
+                    "payments": [],
+                    "cancel_url": "http:\/\/127.0.0.1:8000\/user\/payments?cancel=1",
+                    "client_key": "cs_c5e94dbc2da34c016725ff8c_client_41352a9a617ea036b26c5ed0",
+                    "collection": {
+                        "customer_info": {
+                            "name": {
+                                "state": "auto"
+                            },
+                            "email": {
+                                "state": "auto"
+                            },
+                            "address": {
+                                "state": "auto"
+                            },
+                            "mobile_phone": {
+                                "state": "auto"
+                            }
+                        }
+                    },
+                    "created_at": 1791462439,
+                    "line_items": [
+                        {
+                            "name": "Stall G-02 Invoice (#INV-202610-0002)",
+                            "amount": 100,
+                            "images": [],
+                            "currency": "PHP",
+                            "quantity": 1,
+                            "description": "Initial Stall Lease Deposit & 1st Month Rent - Stall #G-02"
+                        }
+                    ],
+                    "public_key": "pk_test_uSRQksFaXXgkunqJcgJFdqRv",
+                    "updated_at": 1791462439,
+                    "customer_id": null,
+                    "description": "STALLM Invoices Payment",
+                    "success_url": "http:\/\/127.0.0.1:8000\/user\/payments?success=1",
+                    "checkout_url": "https:\/\/checkout.paymongo.com\/c5e94dbc2da34c016725ff8c",
+                    "pass_on_fees": false,
+                    "customer_email": null,
+                    "payment_intent": {
+                        "id": "pi_9WZQ99vAK16XF5WA1NhUAV7G",
+                        "type": "payment_intent",
+                        "attributes": {
+                            "amount": 100,
+                            "status": "awaiting_payment_method",
+                            "currency": "PHP",
+                            "livemode": false,
+                            "metadata": null,
+                            "payments": [],
+                            "client_key": "pi_9WZQ99vAK16XF5WA1NhUAV7G_client_K4ZQd7SAsko6eccYN2qapoX7",
+                            "created_at": 1791462440,
+                            "updated_at": 1791462440,
+                            "description": "STALLM Invoices Payment",
+                            "next_action": null,
+                            "capture_type": "automatic",
+                            "original_amount": 100,
+                            "last_payment_error": null,
+                            "setup_future_usage": null,
+                            "statement_descriptor": "MARK GUINANDAL SAGGA",
+                            "payment_method_allowed": [
+                                "paymaya",
+                                "card",
+                                "gcash"
+                            ],
+                            "payment_method_options": {
+                                "card": {
+                                    "request_three_d_secure": "any"
+                                }
+                            }
+                        }
+                    },
+                    "organization_id": "org_pBT2NdFbLHuMbN9EVHs5Sg1M",
+                    "show_line_items": true,
+                    "reference_number": null,
+                    "show_description": true,
+                    "send_email_receipt": true,
+                    "payment_method_types": [
+                        "gcash",
+                        "paymaya",
+                        "card"
+                    ],
+                    "billing_information_fields_editable": "enabled"
+                }
+            },
+            "paid_at": null,
+            "created_at": "2026-10-08T12:27:20.000000Z",
+            "updated_at": "2026-10-08T12:27:20.000000Z"
+        },
+        {
+            "id": 2,
+            "invoice_id": 4,
+            "user_id": 4,
+            "gateway": "office_cash",
+            "gateway_transaction_id": "OFFICE-1791462567",
+            "amount": "1.00",
+            "status": "successful",
+            "payload": null,
+            "paid_at": "2026-10-08T12:29:27.000000Z",
+            "created_at": "2026-10-08T12:29:27.000000Z",
+            "updated_at": "2026-10-08T12:29:27.000000Z"
+        }
+    ]
+}

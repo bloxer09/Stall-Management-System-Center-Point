@@ -35,6 +35,7 @@ class LeaseMappingManager extends Component
 
     // Renewal review (detail modal)
     public string $renewalEndDate = '';
+    public int $renewalDurationMonths = 6;
     public string $renewalRejectReason = '';
 
     // Termination modal
@@ -63,9 +64,34 @@ class LeaseMappingManager extends Component
     public $stall_id = '';
     public $start_date = '';
     public $end_date = '';
+    public string $duration = '1';
+
+    public function updatedDuration(): void
+    {
+        $this->recalculateEndDate();
+    }
+
+    public function updatedStartDate(): void
+    {
+        $this->recalculateEndDate();
+    }
+
+    private function recalculateEndDate(): void
+    {
+        if (!ctype_digit($this->duration) || (int) $this->duration < 1 || (int) $this->duration > 12) {
+            return;
+        }
+        $validator = validator(['start_date' => $this->start_date], ['start_date' => 'required|date_format:Y-m-d']);
+        if ($validator->fails()) {
+            return;
+        }
+        $this->end_date = \Illuminate\Support\Carbon::parse($this->start_date, 'Asia/Manila')
+            ->addMonthsNoOverflow((int) $this->duration)->toDateString();
+    }
     public $contract_file = null;
 
     protected $rules = [
+        'duration' => 'required|integer|between:1,12',
         'user_id' => 'required|exists:users,id',
         'stall_id' => 'required|exists:stalls,id',
         'start_date' => 'required|date',
@@ -78,6 +104,7 @@ class LeaseMappingManager extends Component
         $this->resetValidation();
         $this->selectedLease = StallMapping::with(['user', 'stall.location', 'initialInvoice'])->findOrFail($id);
         $this->renewalEndDate = $this->selectedLease->requested_end_date?->toDateString() ?? '';
+        $this->renewalDurationMonths = $this->selectedLease->renewal_months ?? 6;
         $this->renewalRejectReason = '';
         $this->showDetailModal = true;
     }
@@ -85,7 +112,8 @@ class LeaseMappingManager extends Component
     public function approveRenewal(int $id, LeaseService $leaseService): void
     {
         $lease = StallMapping::findOrFail($id);
-        $this->validate(['renewalEndDate' => ['required', 'date']], [], ['renewalEndDate' => 'new end date']);
+        $this->validate(['renewalDurationMonths' => ['required', 'integer', 'between:1,12']]);
+        $this->renewalEndDate = $lease->end_date->copy()->addMonthsNoOverflow($this->renewalDurationMonths)->toDateString();
 
         try {
             $leaseService->approveRenewal($lease, auth()->user(), Carbon::parse($this->renewalEndDate));
@@ -94,7 +122,7 @@ class LeaseMappingManager extends Component
             return;
         }
 
-        $this->notifyRenewalOutcome($leaseService, 'Renewal approved.');
+        $this->notifyRenewalOutcome($leaseService, 'Renewal reviewed. The invoice must be paid before the lease is extended.');
         $this->closeDetailModal();
     }
 
@@ -121,6 +149,19 @@ class LeaseMappingManager extends Component
         } else {
             $this->dispatch('notify', type: 'warning', message: "{$done} The tenant email or SMS could not be sent.");
         }
+    }
+
+    public function recordRenewalCashPayment(int $id, InvoiceService $invoiceService): void
+    {
+        abort_unless(auth()->user()?->isAdmin(), 403);
+        $lease = StallMapping::with('renewalInvoice')->findOrFail($id);
+        if ($lease->renewal_status !== 'awaiting_payment' || !$lease->renewalInvoice) {
+            $this->addError('renewalPayment', 'There is no renewal invoice awaiting payment.');
+            return;
+        }
+        $invoiceService->markAsPaid($lease->renewalInvoice, 'office_cash', 'RENEW-CASH-' . \Illuminate\Support\Str::uuid());
+        $this->dispatch('notify', type: 'success', message: 'Full renewal payment recorded. The lease is extended.');
+        $this->closeDetailModal();
     }
 
     public function closeDetailModal()
@@ -154,8 +195,9 @@ class LeaseMappingManager extends Component
     {
         $this->resetValidation();
         $this->reset(['mappingId', 'user_id', 'stall_id', 'start_date', 'end_date', 'contract_file']);
-        $this->start_date = now()->format('Y-m-d');
-        $this->end_date = now()->addYear()->format('Y-m-d');
+        $this->duration = '1';
+        $this->start_date = now('Asia/Manila')->toDateString();
+        $this->recalculateEndDate();
         $this->showDetailModal = false;
         $this->showModal = true;
     }
@@ -167,6 +209,7 @@ class LeaseMappingManager extends Component
 
     public function saveMapping(\App\Services\LeaseService $leaseService)
     {
+        $this->recalculateEndDate();
         $this->validate();
 
         try {
@@ -175,10 +218,11 @@ class LeaseMappingManager extends Component
                 (int) $this->stall_id,
                 $this->start_date,
                 $this->end_date,
-                $this->contract_file
+                $this->contract_file,
+                (int) $this->duration
             );
 
-            $this->dispatch('notify', type: 'success', message: 'Stall assigned! Initial invoice generated. Stall is reserved awaiting tenant payment.');
+            $this->dispatch('notify', type: 'success', message: 'Stall assigned. Full-term rent invoice generated; the stall is reserved until payment.');
             $this->closeModal();
         } catch (\InvalidArgumentException $e) {
             $this->addError('stall_id', $e->getMessage());
@@ -191,7 +235,7 @@ class LeaseMappingManager extends Component
 
         if ($mapping->initialInvoice && $mapping->initialInvoice->status === 'pending') {
             $invoiceService->markAsPaid($mapping->initialInvoice, 'office_cash', 'OTC-' . time());
-            $this->dispatch('notify', type: 'success', message: 'Office cash payment recorded! Lease is now Active in Good Standing and Stall is Occupied.');
+            $this->dispatch('notify', type: 'success', message: 'Office cash payment recorded. Lease is Active and Paid; stall is Occupied.');
         }
 
         $this->closeDetailModal();
@@ -219,7 +263,7 @@ class LeaseMappingManager extends Component
         if (!$leaseService->canTerminate($lease)) {
             // e.g. terminated meanwhile from another tab.
             $this->terminateId = null;
-            $this->dispatch('notify', type: 'error', message: 'This lease has already ended.');
+            $this->dispatch('notify', type: 'error', message: 'This lease has ended or its renewal is awaiting payment.');
             return;
         }
 
@@ -273,11 +317,17 @@ class LeaseMappingManager extends Component
             } elseif ($this->statusFilter === 'inactive') {
                 $query->where('is_active', false)->where('payment_status', '!=', 'pending_initial');
             } elseif ($this->statusFilter === 'renewal_requested') {
-                $query->where('is_active', true)->where('renewal_status', 'requested');
+                $query->where('is_active', true)->whereIn('renewal_status', ['requested', 'awaiting_payment']);
             }
         }
 
+        $assignmentStall = $this->stall_id ? Stall::find($this->stall_id) : null;
+        $validDuration = ctype_digit($this->duration) && (int) $this->duration >= 1 && (int) $this->duration <= 12;
         return view('livewire.admin.lease-mapping-manager', [
+            'assignmentMonthlyRate' => $assignmentStall?->price,
+            'assignmentRentTotal' => $assignmentStall && $validDuration
+                ? \App\Services\LeaseService::calculateContractRent($assignmentStall->price, (int) $this->duration)
+                : null,
             'mappings' => $query->latest()->paginate(10),
             'locations' => StallLocation::orderBy('sort_order')->get(),
             'users' => User::where('role', 'user')->orderBy('name')->get(),

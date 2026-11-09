@@ -14,11 +14,17 @@ class StallMapping extends Model
         'stall_id',
         'start_date',
         'end_date',
+        'duration_months',
+        'agreed_monthly_rate',
+        'contract_rent',
+        'rent_billing_mode',
+        'upfront_covered_until',
         'is_active',
         'payment_status',
         'initial_invoice_id',
         'contract_document',
         'renewal_status',
+        'renewal_months', 'renewal_invoice_id',
         'requested_end_date',
         'renewal_note',
         'renewal_rejection_reason',
@@ -29,7 +35,12 @@ class StallMapping extends Model
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
+        'duration_months' => 'integer',
+        'agreed_monthly_rate' => 'decimal:2',
+        'contract_rent' => 'decimal:2',
+        'upfront_covered_until' => 'date',
         'requested_end_date' => 'date',
+        'renewal_months' => 'integer',
         'is_active' => 'boolean',
         'terminated_at' => 'datetime',
     ];
@@ -47,6 +58,11 @@ class StallMapping extends Model
     public function initialInvoice()
     {
         return $this->belongsTo(Invoice::class, 'initial_invoice_id');
+    }
+
+    public function renewalInvoice()
+    {
+        return $this->belongsTo(Invoice::class, 'renewal_invoice_id');
     }
 
     // Scopes
