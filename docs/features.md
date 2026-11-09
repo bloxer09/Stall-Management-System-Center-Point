@@ -7,7 +7,6 @@
 | Stalls, floors and grid | Admin managers and grid editor | Present; no unique grid-cell or lifecycle enforcement. |
 | Leasing | Mapping manager and tenant renewal | Present; lease creation is not transactional and active-lease exclusivity is not enforced. |
 | Billing and checkout | Payments, PayMongo service/webhook, PDF receipt | Present but payment idempotency, ownership, webhook fail-closed behavior, and reconciliation need correction. |
-| Utilities | Readings and automatic payment creation | Present; rate/version, duplicate-period, and correction controls are missing. |
 | Tickets | Tenant and staff Livewire chat | Present but tenant authorization and participant management are incomplete. |
 | Notifications | Database notifications and bell | Present; synchronous channels and no delivery/audit state. |
 | Analytics/reporting | Dashboard, advanced reports, CSV/PDF | Present; export/audit runtime defect and unbounded exports limit production use. |

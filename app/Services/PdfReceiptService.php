@@ -16,15 +16,20 @@ class PdfReceiptService
         $this->qrCodeService = $qrCodeService;
     }
 
+    public function verificationUrl(Invoice $invoice): string
+    {
+        return route('receipt.verify', ['token' => $invoice->verification_token]);
+    }
+
     public function generateReceiptPdf(Invoice $invoice): string
     {
         $invoice->load(['user', 'stall.location', 'transactions', 'items']);
-        $verificationUrl = route('receipt.verify', ['id' => $invoice->id]);
+        $verificationUrl = $this->verificationUrl($invoice);
         $qrCodeSvg = $this->qrCodeService->generateSvg($verificationUrl, 120);
 
         $html = View::make('pdf.receipt', [
             'payment' => $invoice,
-            'qrCode' => $qrCodeSvg,
+            'qrCode' => 'data:image/svg+xml;base64,' . base64_encode($qrCodeSvg),
             'verificationUrl' => $verificationUrl,
         ])->render();
 

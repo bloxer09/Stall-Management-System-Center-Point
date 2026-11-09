@@ -4,9 +4,11 @@ namespace App\Livewire\Profile;
 
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Services\TwoFactorService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Hash;
-use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -29,6 +31,11 @@ class ProfileModal extends Component
     public string $password = '';
     public string $password_confirmation = '';
 
+    // Two-Factor Authentication (admins only)
+    public string $twoFactorCode = '';
+    public string $twoFactorPassword = '';
+    public bool $twoFactorCodeSent = false;
+
     public function mount(): void
     {
         $this->loadUserData();
@@ -38,20 +45,27 @@ class ProfileModal extends Component
         }
     }
 
-    #[On('open-profile-modal')]
     public function openModal(?string $tab = 'profile'): void
     {
         $this->resetValidation();
         $this->loadUserData();
         $this->activeTab = in_array($tab, ['profile', 'password']) ? $tab : 'profile';
-        $this->reset(['current_password', 'password', 'password_confirmation', 'photo']);
+        $this->reset(['current_password', 'password', 'password_confirmation', 'photo', 'twoFactorPassword']);
         $this->isOpen = true;
     }
 
     public function closeModal(): void
     {
         $this->isOpen = false;
-        $this->reset(['current_password', 'password', 'password_confirmation', 'photo']);
+        $this->reset(['current_password', 'password', 'password_confirmation', 'photo', 'twoFactorPassword']);
+        $this->resetValidation();
+        $this->loadUserData();
+    }
+
+    public function updatedPhoto(): void
+    {
+        $this->resetValidation('photo');
+        $this->validateOnly('photo', ['photo' => ['nullable', 'image', 'max:2048']]);
     }
 
     protected function loadUserData(): void
@@ -68,17 +82,23 @@ class ProfileModal extends Component
     public function updateProfile(): void
     {
         $user = Auth::user();
-        if (!$user) return;
+        if (!$user || $this->blockedUntilVerified($user)) return;
+
+        $this->phone = trim($this->phone);
 
         $this->validate([
             'name' => ['required', 'string', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:20'],
+            // 2FA codes go to this number, so it cannot be cleared while 2FA is on.
+            'phone' => [$user->hasTwoFactorEnabled() ? 'required' : 'nullable', 'string', 'max:20', new \App\Rules\PhilippineMobileNumber, Rule::unique('users', 'phone')->ignore($user->id)],
             'photo' => ['nullable', 'image', 'max:2048'],
+        ], [
+            'phone.required' => 'Turn off two-factor authentication before removing your phone number.',
+            'phone.unique' => 'This phone number is already used by another account.',
         ]);
 
         $dataToUpdate = [
             'name' => $this->name,
-            'phone' => $this->phone,
+            'phone' => $this->phone === '' ? null : $this->phone,
         ];
 
         if ($this->photo) {
@@ -92,17 +112,18 @@ class ProfileModal extends Component
         AuditLog::record("Updated profile information", 'User', $user->id);
 
         $this->reset('photo');
+        $this->isOpen = false;
         $this->dispatch('notify', type: 'success', message: 'Profile details updated successfully.');
     }
 
     public function updatePassword(): void
     {
         $user = Auth::user();
-        if (!$user) return;
+        if (!$user || $this->blockedUntilVerified($user)) return;
 
         $this->validate([
             'current_password' => ['required', 'string', 'current_password'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => ['required', 'string', Password::defaults(), 'confirmed'],
         ]);
 
         $user->update([
@@ -115,8 +136,98 @@ class ProfileModal extends Component
         $this->dispatch('notify', type: 'success', message: 'Account password updated successfully.');
     }
 
+    public function sendTwoFactorEnableCode(TwoFactorService $twoFactor): void
+    {
+        $user = Auth::user();
+        if (!$user || !$user->isAdmin() || $user->hasTwoFactorEnabled() || blank($user->phone)) {
+            return;
+        }
+
+        $this->resetValidation('twoFactorCode');
+        if (!$twoFactor->sendCode($user)) {
+            $wait = $twoFactor->secondsUntilResend($user);
+            $this->addError('twoFactorCode', $wait > 0
+                ? "Please wait {$wait} seconds before requesting another code."
+                : "We couldn't send the code. Please try again.");
+            return;
+        }
+
+        $this->twoFactorCodeSent = true;
+        $this->dispatch('notify', type: 'success', message: 'Verification code sent to your phone.');
+    }
+
+    public function confirmTwoFactor(TwoFactorService $twoFactor): void
+    {
+        $user = Auth::user();
+        if (!$user || !$user->isAdmin() || $user->hasTwoFactorEnabled()) {
+            return;
+        }
+
+        $this->validate(['twoFactorCode' => ['required', 'digits:6']]);
+
+        if (!$twoFactor->verify($user, $this->twoFactorCode)) {
+            $this->addError('twoFactorCode', 'That code is incorrect or has expired.');
+            return;
+        }
+
+        $user->forceFill([
+            'two_factor_enabled' => true,
+            'two_factor_confirmed_at' => now(),
+        ])->save();
+
+        // This session just proved possession of the phone, so it does not need a second challenge.
+        session(['two_factor_verified' => true]);
+        AuditLog::record('Enabled two-factor authentication', 'User', $user->id);
+
+        $this->reset(['twoFactorCode', 'twoFactorCodeSent']);
+        $this->dispatch('notify', type: 'success', message: 'Two-factor authentication is now on.');
+    }
+
+    public function disableTwoFactor(): void
+    {
+        $user = Auth::user();
+        if (!$user || !$user->hasTwoFactorEnabled() || $this->blockedUntilVerified($user)) {
+            return;
+        }
+
+        $this->validate(['twoFactorPassword' => ['required', 'string']]);
+
+        if (!Hash::check($this->twoFactorPassword, $user->password)) {
+            $this->addError('twoFactorPassword', 'The password is incorrect.');
+            return;
+        }
+
+        $user->forceFill([
+            'two_factor_enabled' => false,
+            'two_factor_confirmed_at' => null,
+        ])->save();
+
+        AuditLog::record('Disabled two-factor authentication', 'User', $user->id);
+
+        $this->reset('twoFactorPassword');
+        $this->dispatch('notify', type: 'success', message: 'Two-factor authentication is now off.');
+    }
+
+    /**
+     * This modal is rendered on every page, including ones outside the 2FA-protected admin routes.
+     * A session that has only passed the password step must not change the account's security settings.
+     */
+    private function blockedUntilVerified(User $user): bool
+    {
+        if ($user->hasTwoFactorEnabled() && !session('two_factor_verified')) {
+            $this->dispatch('notify', type: 'error', message: 'Finish two-step verification before changing your account.');
+            return true;
+        }
+
+        return false;
+    }
+
     public function render()
     {
-        return view('livewire.profile.profile-modal');
+        return view('livewire.profile.profile-modal', [
+            'codeExpiresAt' => $this->twoFactorCodeSent && Auth::check()
+                ? app(TwoFactorService::class)->expiresAt(Auth::user())
+                : null,
+        ]);
     }
 }

@@ -2,7 +2,21 @@
     <!-- Header -->
     <div>
         <h1 class="text-2xl font-black tracking-tight text-base-content">My Documents</h1>
-        <p class="text-xs text-base-content/60 mt-1">Download your lease contracts and payment receipts.</p>
+        <p class="text-xs text-base-content/60 mt-1">Download your lease contracts, billing statements, and payment receipts.</p>
+    </div>
+
+    <!-- Account statement -->
+    <div class="card bg-base-100 border border-base-300 shadow-md rounded-3xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h2 class="text-sm font-black text-base-content uppercase tracking-wider">Account statement</h2>
+            <p class="text-[10px] text-base-content/50">All your charges and payments with a running balance</p>
+            <div class="flex flex-wrap gap-4 mt-3 text-sm">
+                <span>Charges: <strong>₱{{ number_format($accountStatement['charges'], 2) }}</strong></span>
+                <span>Payments: <strong class="text-success">₱{{ number_format($accountStatement['payments'], 2) }}</strong></span>
+                <span>Balance due: <strong class="{{ $accountStatement['balance'] > 0 ? 'text-error' : '' }}">₱{{ number_format($accountStatement['balance'], 2) }}</strong></span>
+            </div>
+        </div>
+        <a href="{{ route('statement.pdf', auth()->user()) }}" target="_blank" class="btn btn-sm btn-primary rounded-xl font-bold shrink-0">Download PDF</a>
     </div>
 
     <!-- Section 1: Lease Contracts -->
@@ -30,18 +44,17 @@
                     @forelse($leaseContracts as $contract)
                         <tr class="hover:bg-base-200/40 transition">
                             <td class="font-extrabold text-base-content">Stall {{ $contract->stall->stall_number }}</td>
-                            <td class="text-xs font-mono text-base-content/70">{{ $contract->start_date }} to {{ $contract->end_date }}</td>
+                            <td class="text-xs font-mono text-base-content/70">{{ $contract->start_date?->format('M d, Y') }} to {{ $contract->end_date?->format('M d, Y') }}</td>
                             <td>
                                 <span class="badge badge-sm font-extrabold uppercase {{ $contract->is_active ? 'badge-success text-white' : 'badge-neutral' }}">
                                     {{ $contract->is_active ? 'Active' : 'Expired' }}
                                 </span>
                             </td>
                             <td class="text-right">
-                                <a href="{{ route('file.contract', $contract->id) }}" target="_blank"
-                                   class="btn btn-xs btn-outline rounded-xl font-bold gap-1">
+                                <x-table-action :href="route('file.contract', $contract->id)" target="_blank">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                                     Download PDF
-                                </a>
+                                </x-table-action>
                             </td>
                         </tr>
                     @empty
@@ -69,44 +82,60 @@
                 <svg class="w-5 h-5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
             </div>
             <div>
-                <h2 class="text-sm font-black text-base-content uppercase tracking-wider">Payment Receipts</h2>
-                <p class="text-[10px] text-base-content/50">Official PDF receipts for all confirmed payments</p>
+                <h2 class="text-sm font-black text-base-content uppercase tracking-wider">Billing statements</h2>
+                <p class="text-[10px] text-base-content/50">Every bill for your stalls, with official receipts for paid ones</p>
             </div>
         </div>
         <div class="overflow-x-auto">
             <table class="table w-full text-sm">
                 <thead>
                     <tr class="bg-base-200/40 text-base-content/70 text-xs font-bold uppercase tracking-wider">
-                        <th>Receipt Ref</th>
+                        <th>Invoice</th>
                         <th>Stall</th>
-                        <th>Amount Paid</th>
-                        <th>Date Paid</th>
-                        <th class="text-right">Download</th>
+                        <th>Period</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th class="text-right">Action</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-base-200">
-                    @forelse($paidReceipts as $receipt)
+                    @forelse($statements as $invoice)
                         <tr class="hover:bg-base-200/40 transition">
-                            <td class="font-mono font-bold text-primary">#REC-{{ str_pad($receipt->id, 6, '0', STR_PAD_LEFT) }}</td>
-                            <td class="font-extrabold text-base-content">Stall {{ $receipt->stall->stall_number }}</td>
-                            <td class="font-black text-success">₱{{ number_format($receipt->amount, 2) }}</td>
-                            <td class="text-xs font-mono text-base-content/70">{{ $receipt->paid_at ? \Carbon\Carbon::parse($receipt->paid_at)->format('M d, Y') : '—' }}</td>
+                            <td class="font-mono font-bold text-primary">{{ $invoice->invoice_number }}</td>
+                            <td class="font-extrabold text-base-content">Stall {{ $invoice->stall->stall_number ?? '—' }}</td>
+                            <td class="text-xs text-base-content/70">{{ $invoice->billing_period ?? '—' }}</td>
+                            <td class="font-black text-base-content">₱{{ number_format($invoice->total_amount, 2) }}</td>
+                            <td>
+                                @if($invoice->status === 'paid')
+                                    <span class="badge badge-sm badge-success text-white font-bold uppercase">Paid</span>
+                                    <div class="text-[10px] text-base-content/50 mt-0.5">{{ $invoice->paid_at?->format('M d, Y') }}</div>
+                                @elseif($invoice->isOverdue())
+                                    <span data-overdue-badge class="badge badge-sm badge-error text-white font-bold uppercase">Overdue</span>
+                                    <div class="text-[10px] text-base-content/50 mt-0.5">Was due {{ $invoice->due_date?->format('M d, Y') }}</div>
+                                @else
+                                    <span class="badge badge-sm badge-warning font-bold uppercase">Pending</span>
+                                    <div class="text-[10px] text-base-content/50 mt-0.5">Due {{ $invoice->due_date?->format('M d, Y') }}</div>
+                                @endif
+                            </td>
                             <td class="text-right">
-                                <a href="{{ route('receipt.pdf', $receipt->id) }}" target="_blank"
-                                   class="btn btn-xs btn-outline btn-success rounded-xl font-bold gap-1">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                                    PDF Receipt
-                                </a>
+                                @if($invoice->status === 'paid')
+                                    <x-table-action :href="route('receipt.pdf', $invoice->id)" target="_blank">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                        PDF Receipt
+                                    </x-table-action>
+                                @else
+                                    <x-table-action :href="route('user.payments')" wire:navigate>Pay now</x-table-action>
+                                @endif
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="py-16 text-center">
+                            <td colspan="6" class="py-16 text-center">
                                 <div class="flex flex-col items-center gap-3 text-base-content/40">
                                     <svg class="w-12 h-12 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                     <div>
-                                        <p class="font-extrabold text-sm">No receipts yet</p>
-                                        <p class="text-xs mt-0.5">Your official payment receipts will appear here once payments are confirmed.</p>
+                                        <p class="font-extrabold text-sm">No bills yet</p>
+                                        <p class="text-xs mt-0.5">Your monthly bills and official receipts will appear here.</p>
                                     </div>
                                 </div>
                             </td>

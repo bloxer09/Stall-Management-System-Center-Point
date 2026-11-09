@@ -8,13 +8,15 @@ use Tests\TestCase;
 
 class ServicesTest extends TestCase
 {
-    public function test_qr_code_generator_returns_svg_or_image_tag()
+    public function test_qr_code_generator_returns_local_svg()
     {
         $service = new QrCodeService();
         $output = $service->generateSvg('https://stallm.com/receipt/123');
 
         $this->assertNotEmpty($output);
-        $this->assertTrue(str_contains($output, '<svg') || str_contains($output, '<img'));
+        $this->assertStringContainsString('<svg', $output);
+        $this->assertStringContainsString('<path', $output);
+        $this->assertStringNotContainsString('api.qrserver.com', $output);
     }
 
     public function test_sms_service_captures_sms_locally()
@@ -63,8 +65,8 @@ class ServicesTest extends TestCase
         \Illuminate\Support\Facades\Storage::fake('local');
 
         $uploader = new \App\Services\FileUploadService();
-        $file1 = \Illuminate\Http\UploadedFile::fake()->create('screenshot1.png', 100);
-        $file2 = \Illuminate\Http\UploadedFile::fake()->create('document.pdf', 100);
+        $file1 = \Illuminate\Http\UploadedFile::fake()->image('screenshot1.png');
+        $file2 = \Illuminate\Http\UploadedFile::fake()->image('screenshot2.jpg');
 
         $paths = $uploader->uploadTicketAttachments([$file1, $file2]);
 

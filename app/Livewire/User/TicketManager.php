@@ -7,12 +7,14 @@ use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\TicketParticipant;
 use App\Services\FileUploadService;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
 class TicketManager extends Component
 {
+    use \App\Livewire\Concerns\AcceptsTicketMedia;
     use WithFileUploads, WithPagination;
 
     public $search = '';
@@ -32,12 +34,12 @@ class TicketManager extends Component
     public $incomingAttachments = [];
     public $replyToMessageId = null;
 
-    public function updatedIncomingAttachments()
+    public function mount(): void
     {
-        foreach ($this->incomingAttachments as $file) {
-            $this->attachments[] = $file;
+        $ticketId = request()->query('ticket', '');
+        if ((is_string($ticketId) || is_int($ticketId)) && ctype_digit((string) $ticketId)) {
+            $this->openThreadModal((int) $ticketId);
         }
-        $this->incomingAttachments = [];
     }
 
     public function removeAttachment($index)
@@ -48,10 +50,25 @@ class TicketManager extends Component
         }
     }
 
-    protected $rules = [
-        'stall_id' => 'nullable|exists:stalls,id',
-        'issue' => 'required|string|min:5',
-    ];
+    protected function rules(): array
+    {
+        $ownActiveStallIds = StallMapping::where('user_id', auth()->id())
+            ->where('is_active', true)
+            ->pluck('stall_id')
+            ->all();
+
+        return [
+            'stall_id' => ['nullable', Rule::in($ownActiveStallIds)],
+            'issue' => 'required|string|min:5',
+        ];
+    }
+
+    protected function messages(): array
+    {
+        return [
+            'stall_id.in' => 'You can only report issues for stalls you currently lease.',
+        ];
+    }
 
     public function updatingSearch()
     {
@@ -116,14 +133,14 @@ class TicketManager extends Component
             'message' => $this->issue,
         ]);
 
-        $admins = \App\Models\User::whereIn('role', ['admin', 'staff'])->get();
+        $admins = \App\Models\User::where('role', 'admin')->get();
         foreach ($admins as $adm) {
             \App\Models\Notification::send(
                 $adm->id,
                 'ticket',
                 "New Ticket #TKT-" . str_pad($ticket->id, 5, '0', STR_PAD_LEFT),
                 auth()->user()->name . " submitted a new ticket: " . \Illuminate\Support\Str::limit($this->issue, 60),
-                route('admin.tickets')
+                route('admin.tickets', ['ticket' => $ticket->id])
             );
         }
 
@@ -176,6 +193,23 @@ class TicketManager extends Component
         );
     }
 
+    /**
+     * Throttled from the browser (once per 2 seconds while typing); the other side's
+     * 3-second poll shows "is typing…" while this timestamp is under 5 seconds old.
+     */
+    public function typing(): void
+    {
+        $ticket = $this->activeTicketId
+            ? Ticket::where('user_id', auth()->id())->find($this->activeTicketId)
+            : null;
+        if (!$ticket) return;
+
+        TicketParticipant::updateOrCreate(
+            ['ticket_id' => $ticket->id, 'user_id' => auth()->id()],
+            ['typing_at' => now()]
+        );
+    }
+
     public function sendMessage(FileUploadService $uploader)
     {
         if (!$this->activeTicketId) return;
@@ -183,9 +217,11 @@ class TicketManager extends Component
         $ticket = Ticket::where('user_id', auth()->id())->find($this->activeTicketId);
         if (!$ticket) return;
 
+        TicketParticipant::where('ticket_id', $ticket->id)->where('user_id', auth()->id())->update(['typing_at' => null]);
+
         $this->validate([
             'message' => !empty($this->attachments) ? 'nullable|string' : 'required|string',
-            'attachments.*' => 'nullable|file|max:10240',
+            'attachments.*' => \App\Rules\TicketMedia::rules(),
         ]);
 
         $savedPaths = [];
@@ -209,7 +245,7 @@ class TicketManager extends Component
             'user_id' => auth()->id(),
             'message' => $messageContent,
             'attachment_path' => $attachmentPathValue,
-            'reply_to_message_id' => $this->replyToMessageId,
+            'reply_to_message_id' => TicketMessage::replyTargetIn($this->replyToMessageId, (int) $ticket->id),
         ]);
 
         $ticket->touch();
@@ -220,17 +256,17 @@ class TicketManager extends Component
                 'ticket_message',
                 "New reply on Ticket #TKT-" . str_pad($ticket->id, 5, '0', STR_PAD_LEFT),
                 auth()->user()->name . ": " . \Illuminate\Support\Str::limit($messageContent, 60),
-                route('admin.tickets')
+                route('admin.tickets', ['ticket' => $ticket->id])
             );
         } else {
-            $admins = \App\Models\User::whereIn('role', ['admin', 'staff'])->get();
+            $admins = \App\Models\User::where('role', 'admin')->get();
             foreach ($admins as $adm) {
                 \App\Models\Notification::send(
                     $adm->id,
                     'ticket_message',
                     "New message on Ticket #TKT-" . str_pad($ticket->id, 5, '0', STR_PAD_LEFT),
                     auth()->user()->name . ": " . \Illuminate\Support\Str::limit($messageContent, 60),
-                    route('admin.tickets')
+                    route('admin.tickets', ['ticket' => $ticket->id])
                 );
             }
         }
@@ -275,6 +311,7 @@ class TicketManager extends Component
             'activeTicket' => $activeTicket,
             'otherParticipant' => $otherParticipant,
             'myStalls' => $myStalls,
+            'typingNames' => $activeTicket ? TicketParticipant::typingNamesFor($activeTicket->id, auth()->id()) : [],
         ]);
     }
 }

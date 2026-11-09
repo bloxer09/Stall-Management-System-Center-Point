@@ -32,4 +32,10 @@ return [
     ],
 
     'enable_2fa' => env('ENABLE_2FA', false),
+
+    // Cloudflare Turnstile CAPTCHA on public forms; off unless both keys are set.
+    'turnstile' => [
+        'site_key' => env('TURNSTILE_SITE_KEY'),
+        'secret_key' => env('TURNSTILE_SECRET_KEY'),
+    ],
 ];

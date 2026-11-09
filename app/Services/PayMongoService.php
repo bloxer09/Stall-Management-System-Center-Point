@@ -73,6 +73,23 @@ class PayMongoService
         }
     }
 
+    public function retrieveCheckoutSession(string $sessionId): array
+    {
+        try {
+            $response = $this->client->get('checkout_sessions/' . rawurlencode($sessionId), [
+                'connect_timeout' => 3,
+                'timeout' => 5,
+            ]);
+            $body = json_decode($response->getBody()->getContents(), true, 512, JSON_THROW_ON_ERROR);
+
+            return ['success' => true, 'data' => $body['data'] ?? []];
+        } catch (\Exception $e) {
+            Log::warning('PayMongo checkout verification failed.', ['session_id' => $sessionId]);
+
+            return ['success' => false];
+        }
+    }
+
     public function verifyWebhookSignature(string $payload, string $signatureHeader, string $secret): bool
     {
         if (empty($signatureHeader) || empty($secret)) {

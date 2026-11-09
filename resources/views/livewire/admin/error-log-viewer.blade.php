@@ -79,9 +79,9 @@
                             {{ $log['message'] }}
                         </td>
                         <td class="text-right">
-                            <button wire:click="openTraceModal({{ $log['id'] }})" class="btn btn-ghost btn-xs text-primary font-bold">
+                            <x-table-action wire:click="openTraceModal({{ $log['id'] }})">
                                 Inspect Trace
-                            </button>
+                            </x-table-action>
                         </td>
                     </tr>
                     @empty
@@ -116,7 +116,7 @@
                     <h3 class="text-base font-black text-base-content mt-1">{{ $selectedLog['exception_class'] }}</h3>
                     <p class="text-xs font-mono text-base-content/60">{{ $selectedLog['timestamp'] }} &bull; Env: {{ $selectedLog['environment'] }}</p>
                 </div>
-                <button wire:click="closeTraceModal" class="btn btn-ghost btn-circle btn-sm">&times;</button>
+                <button wire:click="closeTraceModal" class="btn btn-ghost btn-circle btn-sm" aria-label="Close" x-data x-on:keydown.escape.window="isTopModal($el) && $wire.closeTraceModal()">&times;</button>
             </div>
 
             <div class="space-y-3">

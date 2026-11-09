@@ -1,17 +1,16 @@
 <?php
 
-use App\Http\Controllers\Auth\VerifyEmailController;
-use App\Livewire\Auth\Login;
-use App\Livewire\Auth\Register;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
     Route::get('register', function () {
+        \App\Services\StallApplicationAccess::rememberStall(request()->query('stall'));
         return redirect()->route('home', ['register' => 1]);
     })->name('register');
 
     Route::get('login', function () {
+        \App\Services\StallApplicationAccess::rememberStall(request()->query('stall'));
         return redirect()->route('home', ['login' => 1]);
     })->name('login');
 });

@@ -4,11 +4,13 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
+        <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+        <link rel="alternate icon" href="{{ asset('favicon.ico') }}" sizes="any">
 
         <title>@stack('page-title'){{ \App\Models\Setting::get('platform_name', config('app.name', 'STALLM')) }} — Commercial Stall Management</title>
 
         <!-- Inline Theme Script to prevent FOUC -->
-        <script>
+        <script nonce="{{ Vite::cspNonce() }}">
             (function() {
                 const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
                 document.documentElement.setAttribute('data-theme', savedTheme);
@@ -23,7 +25,7 @@
         <!-- Local Bundled Assets (Vite) -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-        @livewireStyles
+        @livewireStyles(['nonce' => Vite::cspNonce()])
     </head>
     <body class="font-sans antialiased bg-base-200 text-base-content min-h-screen">
 
@@ -36,8 +38,9 @@
             $isPortalPage = auth()->check() && (request()->routeIs('admin.*') || request()->routeIs('user.*'));
         @endphp
 
-        <div class="drawer {{ $isPortalPage ? 'lg:drawer-open' : '' }} min-h-screen">
-            <input id="app-drawer" type="checkbox" class="drawer-toggle" />
+        <div class="drawer {{ $isPortalPage ? 'lg:drawer-open' : '' }} min-h-screen" x-data="{ sidebarOpen: false, wideScreen: window.innerWidth >= 1024 }" @resize.window="wideScreen = window.innerWidth >= 1024"
+            @keydown.escape.window="if (sidebarOpen) { sidebarOpen = false; $refs.sidebarTrigger?.focus() }">
+            <input id="app-drawer" type="checkbox" class="drawer-toggle" x-model="sidebarOpen" tabindex="-1" aria-hidden="true" />
             
             <div class="drawer-content flex flex-col min-w-0 flex-1 bg-base-200">
                 <!-- Top Navbar Header -->
@@ -70,7 +73,7 @@
                         </div>
                         <span><strong>{{ \App\Models\Setting::get('platform_name', 'Center Point Commercial Complex') }}</strong> &bull; Stall Management System &copy; {{ date('Y') }}. All rights reserved.</span>
                     </div>
-                    <div class="flex items-center gap-3 font-semibold text-xs text-base-content/60">
+                    <div class="flex flex-wrap justify-center items-center gap-3 font-semibold text-xs text-base-content/60">
                         <span>{{ \App\Models\Setting::get('platform_address', 'Pagadian City, Zamboanga del Sur') }}</span>
                         <span>&bull;</span>
                         <a href="{{ route('privacy') }}" wire:navigate class="hover:text-primary transition">Privacy Policy</a>
@@ -83,17 +86,20 @@
             @if($isPortalPage)
             <!-- Sidebar Drawer for Mobile & Desktop -->
             <div class="drawer-side z-40">
-                <label for="app-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
-                <aside class="bg-base-100 text-base-content w-64 min-h-full flex flex-col justify-between border-r border-base-300 shadow-sm">
+                <button type="button" aria-label="Close sidebar" class="drawer-overlay lg:hidden" @click="sidebarOpen = false; $refs.sidebarTrigger?.focus()" tabindex="-1"></button>
+                <aside id="app-sidebar" :inert="!sidebarOpen && !wideScreen" class="relative bg-base-100 text-base-content w-64 min-h-full flex flex-col justify-between border-r border-base-300 shadow-sm">
                     <div>
                         <!-- Logo & Brand Header -->
-                        <div class="h-16 flex items-center px-6 border-b border-base-300 gap-3">
-                            <div class="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-primary-content font-black text-base shadow-sm">
+                        <div class="relative h-[4.5rem] flex items-center px-3 pr-14 lg:px-4 border-b border-base-300 gap-2">
+                            <button type="button" aria-label="Close menu" class="btn btn-ghost btn-circle btn-sm absolute right-1 top-3.5 lg:hidden" @click="sidebarOpen = false; $refs.sidebarTrigger?.focus()">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                            <div class="w-8 h-8 shrink-0 rounded-xl bg-primary flex items-center justify-center text-primary-content font-black text-base shadow-sm">
                                 {{ strtoupper(substr(\App\Models\Setting::get('platform_name', 'S'), 0, 1)) }}
                             </div>
-                            <div>
-                                <span class="font-extrabold text-base tracking-tight block">{{ \App\Models\Setting::get('platform_name', 'STALLM') }}</span>
-                                <span class="text-[10px] text-base-content/60 uppercase tracking-widest block font-bold">Commercial Platform</span>
+                            <div class="min-w-0">
+                                <span class="font-extrabold text-xs lg:text-sm leading-tight tracking-tight block">{{ \App\Models\Setting::get('platform_name', 'STALLM') }}</span>
+                                <span class="text-[8px] lg:text-[9px] text-base-content/60 uppercase tracking-wide block font-bold">Commercial Platform</span>
                             </div>
                         </div>
 
@@ -128,16 +134,43 @@
                                         <span>Leases & Tenants</span>
                                     </a>
 
+                                    <a href="{{ route('admin.tenants') }}" wire:navigate class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition {{ request()->routeIs('admin.tenants') ? 'bg-primary text-primary-content font-bold shadow-xs' : 'text-base-content/70 hover:text-base-content hover:bg-base-200' }}">
+                                        <svg class="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                        <span>Tenant Accounts</span>
+                                    </a>
+
+                                    @php $pendingApplications = \App\Models\StallApplication::where('status', 'pending')->count(); @endphp
+                                    <a href="{{ route('admin.applications') }}" wire:navigate class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition {{ request()->routeIs('admin.applications') ? 'bg-primary text-primary-content font-bold shadow-xs' : 'text-base-content/70 hover:text-base-content hover:bg-base-200' }}">
+                                        <svg class="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                                        <span class="flex-1">Applications</span>
+                                        @if($pendingApplications > 0)
+                                            <span class="badge badge-warning badge-sm font-bold">{{ $pendingApplications }}</span>
+                                        @endif
+                                    </a>
+
                                     <div class="pt-4 pb-1.5 px-3 text-[10px] font-bold text-base-content/50 uppercase tracking-wider">Finance & Operations</div>
 
                                     <a href="{{ route('admin.payments') }}" wire:navigate class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition {{ request()->routeIs('admin.payments') ? 'bg-primary text-primary-content font-bold shadow-xs' : 'text-base-content/70 hover:text-base-content hover:bg-base-200' }}">
                                         <svg class="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                                         <span>Payments</span>
                                     </a>
+                                    <a href="{{ route('admin.calendar') }}" wire:navigate class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition {{ request()->routeIs('admin.calendar') ? 'bg-primary text-primary-content font-bold shadow-xs' : 'text-base-content/70 hover:text-base-content hover:bg-base-200' }}">
+                                        <svg class="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                        <span>Calendar</span>
+                                    </a>
+                                    <a href="{{ route('admin.reports') }}" wire:navigate class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition {{ request()->routeIs('admin.reports') ? 'bg-primary text-primary-content font-bold shadow-xs' : 'text-base-content/70 hover:text-base-content hover:bg-base-200' }}">
+                                        <svg class="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                                        <span>Reports</span>
+                                    </a>
 
                                     <a href="{{ route('admin.tickets') }}" wire:navigate class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition {{ request()->routeIs('admin.tickets') ? 'bg-primary text-primary-content font-bold shadow-xs' : 'text-base-content/70 hover:text-base-content hover:bg-base-200' }}">
                                         <svg class="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                                         <span>Support Tickets</span>
+                                    </a>
+
+                                    <a href="{{ route('admin.announcements') }}" wire:navigate class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition {{ request()->routeIs('admin.announcements') ? 'bg-primary text-primary-content font-bold shadow-xs' : 'text-base-content/70 hover:text-base-content hover:bg-base-200' }}">
+                                        <svg class="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>
+                                        <span>Announcements</span>
                                     </a>
 
                                     <div class="pt-4 pb-1.5 px-3 text-[10px] font-bold text-base-content/50 uppercase tracking-wider">System</div>
@@ -173,6 +206,10 @@
                                         <svg class="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V8a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
                                         <span>Invoices &amp; Payments</span>
                                     </a>
+                                    <a href="{{ route('user.documents') }}" wire:navigate class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition {{ request()->routeIs('user.documents') ? 'bg-primary text-primary-content font-bold shadow-xs' : 'text-base-content/70 hover:text-base-content hover:bg-base-200' }}">
+                                        <svg class="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"/></svg>
+                                        <span>Documents</span>
+                                    </a>
 
                                     <a href="{{ route('user.tickets') }}" wire:navigate class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition {{ request()->routeIs('user.tickets') ? 'bg-primary text-primary-content font-bold shadow-xs' : 'text-base-content/70 hover:text-base-content hover:bg-base-200' }}">
                                         <svg class="w-5 h-5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
@@ -188,7 +225,7 @@
                     <div class="p-4 border-t border-base-300 flex items-center justify-between text-xs gap-3">
                         <div class="flex items-center gap-2.5 truncate">
                             @if(auth()->user()->profile_picture)
-                                <img src="{{ auth()->user()->profile_picture }}" class="w-8 h-8 rounded-full object-cover border border-base-300 flex-shrink-0" />
+                                <img src="{{ auth()->user()->avatar_url }}" class="w-8 h-8 rounded-full object-cover border border-base-300 flex-shrink-0" alt="Profile photo" />
                             @else
                                 <div class="w-8 h-8 rounded-full bg-primary text-primary-content font-bold flex items-center justify-center text-xs flex-shrink-0">
                                     {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
@@ -231,7 +268,7 @@
                 remove(id) { this.toasts = this.toasts.filter(t => t.id !== id); }
             }"
             x-on:notify.window="add($event.detail.type || 'success', $event.detail.message)"
-            class="fixed bottom-5 right-5 z-[9998] flex flex-col gap-2 items-end pointer-events-none"
+            role="status" class="fixed bottom-5 right-5 z-[9998] flex flex-col gap-2 items-end pointer-events-none"
             aria-live="polite">
             <template x-for="toast in toasts" :key="toast.id">
                 <div x-show="true"
@@ -278,30 +315,11 @@
             </div>
         </div>
 
-        <script>
+        <script nonce="{{ Vite::cspNonce() }}">
             function openImageLightbox(src) {
                 if (!src) return;
                 window.dispatchEvent(new CustomEvent('open-lightbox', { detail: { src: src } }));
             }
-
-            // Page Load Progress Bar
-            (function () {
-                const bar = document.getElementById('page-progress-bar');
-                if (!bar) return;
-
-                function startProgress() {
-                    bar.style.opacity = '1';
-                    bar.style.width = '30%';
-                    setTimeout(() => { bar.style.width = '70%'; }, 200);
-                }
-                function finishProgress() {
-                    bar.style.width = '100%';
-                    setTimeout(() => { bar.style.opacity = '0'; bar.style.width = '0%'; }, 350);
-                }
-
-                document.addEventListener('livewire:navigate', startProgress);
-                document.addEventListener('livewire:navigated', finishProgress);
-            })();
 
             // Dispatch toast from Livewire / session flash messages
             @php
@@ -324,6 +342,6 @@
             document.addEventListener('livewire:initialized', triggerFlashToasts);
         </script>
 
-        @livewireScripts
+        @livewireScripts(['nonce' => Vite::cspNonce()])
     </body>
 </html>

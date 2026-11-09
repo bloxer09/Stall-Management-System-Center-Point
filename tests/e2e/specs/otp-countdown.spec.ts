@@ -1,0 +1,70 @@
+import { test, expect } from '../fixtures';
+
+test('password reset countdown survives validation, expires without requests, and offers recovery', async ({ auth, page }, info) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.clock.install();
+    await auth.open();
+    await auth.action('openForgotPassword', () => auth.loginForm.getByRole('button', { name: /Forgot password\?/i }).click());
+    await page.locator('#field-forgotEmail').fill('tenant@example.test');
+    await auth.action('processForgotPasswordRequest', () => page.getByRole('button', { name: 'Send Reset Code', exact: true }).click());
+    const form = page.locator('form[wire\\:submit="verifyForgotPasswordOtp"]');
+    const timer = form.getByRole('timer');
+    await expect(form.locator('[data-otp-countdown]')).toHaveAttribute('data-countdown-ready', 'true');
+    await expect(timer).toHaveText(/^(10:00|09:5\d)$/);
+    await page.clock.fastForward(120_000);
+    await expect(timer).toHaveText(/^0[78]:\d\d$/);
+    const expiry = await form.locator('[data-otp-countdown]').getAttribute('data-expires-at');
+    await auth.serverSubmit(form, 'verifyForgotPasswordOtp');
+    await expect(form.locator('[data-otp-countdown]')).toHaveAttribute('data-expires-at', expiry!);
+    await expect(timer).toHaveText(/^0[78]:\d\d$/);
+    let requests = 0;
+    page.on('request', request => { if (request.method() === 'POST') requests++; });
+    await page.clock.fastForward(600_000);
+    await expect(form.getByRole('status')).toHaveText('Code expired. Request a new code to continue.');
+    expect(requests).toBe(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await info.attach('otp-mobile-expired', { body: await page.screenshot(), contentType: 'image/png' });
+    await auth.action('openForgotPassword', () => form.getByRole('button', { name: 'Request a new reset code' }).click());
+    await expect(page.getByRole('button', { name: 'Send Reset Code', exact: true })).toBeVisible();
+});
+
+test('sign-in countdown preserves the server deadline on refresh and rejected resend', async ({ auth, page }) => {
+    await auth.login('secure');
+    const timer = page.getByRole('timer', { name: 'Time until code expires' }).filter({ visible: true });
+    await expect(timer).toHaveText(/^(10:00|09:5\d)$/);
+    const expiry = await page.locator('[data-otp-countdown]').filter({ visible: true }).getAttribute('data-expires-at');
+    expect((await page.reload())?.status()).toBe(200);
+    await expect(page.locator('[data-otp-countdown]').filter({ visible: true })).toHaveAttribute('data-expires-at', expiry!);
+    await auth.action('resend', () => page.getByRole('button', { name: 'Resend code', exact: true }).click());
+    await expect(page.getByText(/Please wait \d+ seconds/)).toBeVisible();
+    await expect(page.locator('[data-otp-countdown]').filter({ visible: true })).toHaveAttribute('data-expires-at', expiry!);
+    await expect(page).toHaveURL(/\/two-factor$/);
+});
+
+test('enrollment countdown survives modal reopening and supports expiry in dark mode', async ({ auth, page }, info) => {
+    await page.clock.install();
+    await auth.login('admin');
+    const themeToggle = page.getByRole('checkbox', { name: 'Dark mode' });
+    await themeToggle.focus();
+    await themeToggle.press('Space');
+    await expect(themeToggle).toBeChecked();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await page.getByRole('button', { name: 'Account menu' }).click();
+    await page.getByRole('button', { name: 'Profile Settings' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Account Profile' });
+    await dialog.getByRole('button', { name: 'Password & Security' }).click();
+    await auth.action('sendTwoFactorEnableCode', () => dialog.getByRole('switch', { name: 'Two-factor authentication' }).click());
+    const timer = dialog.getByRole('timer');
+    await expect(dialog.locator('[data-otp-countdown]')).toHaveAttribute('data-countdown-ready', 'true');
+    await expect(timer).toHaveText(/^(10:00|09:5\d)$/);
+    await page.clock.fastForward(120_000);
+    await expect(timer).toHaveText(/^0[78]:\d\d$/);
+    await auth.action('closeModal', () => dialog.getByRole('button', { name: 'Close', exact: true }).click());
+    await page.getByRole('button', { name: 'Account menu' }).click();
+    await page.getByRole('button', { name: 'Profile Settings' }).click();
+    await dialog.getByRole('button', { name: 'Password & Security' }).click();
+    await expect(timer).toHaveText(/^0[78]:\d\d$/);
+    await page.clock.fastForward(600_000);
+    await expect(dialog.getByText('Code expired. Request a new code to continue.', { exact: true })).toBeVisible();
+    await info.attach('otp-enrollment-dark-expired', { body: await page.screenshot(), contentType: 'image/png' });
+});

@@ -17,7 +17,26 @@ Route::get('/', function () {
     return view('pages.home');
 })->name('home');
 
-Route::get('/verify-receipt/{id}', [ReceiptVerificationController::class, 'verify'])->name('receipt.verify');
+Route::get('/verify-receipt/{token}', [ReceiptVerificationController::class, 'verify'])
+    ->whereUuid('token')
+    ->name('receipt.verify');
+
+Route::get('/stalls', function () {
+    return view('pages.stalls');
+})->name('stalls.browse');
+
+Route::get('/application-status', function () {
+    return view('pages.application-status');
+})->middleware(['auth', 'role:user'])->name('application.status');
+
+// Signature is validated inside the component so an expired link shows a friendly page instead of a 403.
+Route::get('/account/set-password/{user}', function (\Illuminate\Http\Request $request, \App\Models\User $user) {
+    return view('pages.auth.set-password', [
+        'user' => $user,
+        'signatureValid' => $request->hasValidSignature(),
+        'fingerprint' => (string) $request->query('v', ''),
+    ]);
+})->name('account.set-password');
 
 Route::get('/privacy-policy', function () {
     return view('pages.privacy');
@@ -45,9 +64,17 @@ Route::post('/payment/paymongo-webhook', [PayMongoWebhookController::class, 'han
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth')->group(function () {
+    Route::get('/two-factor', function () {
+        return view('pages.auth.two-factor');
+    })->name('two-factor.challenge');
+});
+
+Route::middleware(['auth', '2fa'])->group(function () {
     Route::get('/receipt/{id}/pdf', [ReceiptVerificationController::class, 'downloadPdf'])->name('receipt.pdf');
+    Route::get('/statement/{user}/pdf', [\App\Http\Controllers\StatementController::class, 'pdf'])->name('statement.pdf');
     Route::get('/files/contract/{id}', [FileController::class, 'downloadContract'])->name('file.contract');
     Route::get('/files/ticket-attachment/{id}', [FileController::class, 'downloadTicketAttachment'])->name('file.ticket-attachment');
+    Route::get('/files/application-document/{id}', [FileController::class, 'downloadApplicationDocument'])->name('file.application-document');
 });
 
 /*
@@ -82,7 +109,7 @@ Route::middleware(['auth', 'role:user'])->prefix('user')->name('user.')->group(f
 | Admin Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'role:admin', '2fa'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', function () {
         return view('pages.admin.dashboard');
     })->name('dashboard');
@@ -99,6 +126,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         return view('pages.admin.grid-editor');
     })->name('grid-editor');
 
+    Route::get('/applications', function () {
+        return view('pages.admin.applications');
+    })->name('applications');
+
     Route::get('/mappings', function () {
         return view('pages.admin.mappings');
     })->name('mappings');
@@ -110,6 +141,22 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/tickets', function () {
         return view('pages.admin.tickets');
     })->name('tickets');
+
+    Route::get('/backups/{name}', [\App\Http\Controllers\BackupController::class, 'download'])
+        ->where('name', '[^/]+')
+        ->name('backups.download');
+
+    Route::get('/calendar', function () {
+        return view('pages.admin.calendar');
+    })->name('calendar');
+
+    Route::get('/tenants', function () {
+        return view('pages.admin.tenants');
+    })->name('tenants');
+
+    Route::get('/announcements', function () {
+        return view('pages.admin.announcements');
+    })->name('announcements');
 
     Route::get('/analytics', function () {
         return redirect()->route('admin.dashboard');

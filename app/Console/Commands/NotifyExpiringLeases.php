@@ -24,6 +24,8 @@ class NotifyExpiringLeases extends Command
 
         $expiringMappings = StallMapping::with(['user', 'stall'])
             ->where('is_active', true)
+            // A pending renewal is already in the admin's hands; warning the tenant again would only confuse.
+            ->where('renewal_status', '!=', 'requested')
             ->where(function ($q) use ($target60, $target30) {
                 $q->whereDate('end_date', $target60)
                   ->orWhereDate('end_date', $target30);

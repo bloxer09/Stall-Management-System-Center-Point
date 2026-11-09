@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Middleware\EnsureAccountActive;
 use App\Models\User;
+use App\Services\SecurityLog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -50,7 +52,7 @@ class OAuthController extends Controller
                 $user = User::create([
                     'name' => $googleUser->getName() ?? 'Google User',
                     'email' => $googleUser->getEmail(),
-                    'phone' => '09' . rand(100000001, 999999999),
+                    'phone' => null, // added later in Profile; a random number could collide with a real one
                     'google_id' => $googleUser->getId(),
                     'profile_picture' => $googleUser->getAvatar(),
                     'password' => Hash::make(Str::random(16)),
@@ -65,13 +67,15 @@ class OAuthController extends Controller
                 ]);
             }
 
-            Auth::login($user);
-
-            if ($user->isAdmin()) {
-                return redirect()->route('admin.dashboard');
+            if ($user->isDeactivated()) {
+                SecurityLog::record('sign-in refused (deactivated)', $user->id, 'method: google');
+                return redirect()->route('home')->with('error', EnsureAccountActive::MESSAGE);
             }
 
-            return redirect()->route('user.dashboard');
+            Auth::login($user);
+            SecurityLog::record('login succeeded', $user->id, 'method: google');
+
+            return redirect(\App\Services\StallApplicationAccess::destination($user));
         } catch (\Exception $e) {
             return redirect()->route('home', ['login' => 1])->with('error', 'Google authentication failed: ' . $e->getMessage());
         }
@@ -116,7 +120,7 @@ class OAuthController extends Controller
                 $user = User::create([
                     'name' => $facebookUser->getName() ?? 'Facebook User',
                     'email' => $facebookUser->getEmail() ?? 'fb_' . $facebookUser->getId() . '@stallm.local',
-                    'phone' => '09' . rand(100000001, 999999999),
+                    'phone' => null, // added later in Profile; a random number could collide with a real one
                     'facebook_id' => $facebookUser->getId(),
                     'profile_picture' => $facebookUser->getAvatar(),
                     'password' => Hash::make(Str::random(16)),
@@ -131,13 +135,15 @@ class OAuthController extends Controller
                 ]);
             }
 
-            Auth::login($user);
-
-            if ($user->isAdmin()) {
-                return redirect()->route('admin.dashboard');
+            if ($user->isDeactivated()) {
+                SecurityLog::record('sign-in refused (deactivated)', $user->id, 'method: facebook');
+                return redirect()->route('home')->with('error', EnsureAccountActive::MESSAGE);
             }
 
-            return redirect()->route('user.dashboard');
+            Auth::login($user);
+            SecurityLog::record('login succeeded', $user->id, 'method: facebook');
+
+            return redirect(\App\Services\StallApplicationAccess::destination($user));
         } catch (\Exception $e) {
             return redirect()->route('home', ['login' => 1])->with('error', 'Facebook authentication failed: ' . $e->getMessage());
         }

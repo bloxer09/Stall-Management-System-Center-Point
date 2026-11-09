@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\StallApplication;
 use App\Models\StallMapping;
 use App\Models\TicketMessage;
 use Illuminate\Http\Request;
@@ -26,6 +27,22 @@ class FileController extends Controller
         return response()->download(storage_path('app/' . $mapping->contract_document));
     }
 
+    public function downloadApplicationDocument(int $applicationId): BinaryFileResponse
+    {
+        // Applicant documents may contain IDs and permits: admins only.
+        if (!auth()->user()->isAdmin()) {
+            abort(403, 'Unauthorized access to application document.');
+        }
+
+        $application = StallApplication::findOrFail($applicationId);
+
+        if (!$application->document || !Storage::disk('local')->exists($application->document)) {
+            abort(404, 'Application document not found.');
+        }
+
+        return response()->download(Storage::disk('local')->path($application->document));
+    }
+
     public function downloadTicketAttachment(Request $request, int $messageId): BinaryFileResponse
     {
         $message = TicketMessage::with('ticket')->findOrFail($messageId);
@@ -43,6 +60,6 @@ class FileController extends Controller
             abort(404, 'Attachment file not found.');
         }
 
-        return response()->download(storage_path('app/' . $filePath));
+        return response()->download(Storage::disk('local')->path($filePath));
     }
 }

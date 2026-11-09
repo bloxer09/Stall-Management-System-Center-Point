@@ -34,14 +34,33 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'deactivated_at' => 'datetime',
             'phone_verified_at' => 'datetime',
             'password' => 'hashed',
+            'two_factor_enabled' => 'boolean',
+            'two_factor_confirmed_at' => 'datetime',
         ];
     }
 
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+
+    /**
+     * Deactivated by an admin: cannot sign in by any method. Set with forceFill, never mass-assigned.
+     */
+    public function isDeactivated(): bool
+    {
+        return $this->deactivated_at !== null;
+    }
+
+    /**
+     * Two-factor authentication applies to admin accounts only.
+     */
+    public function hasTwoFactorEnabled(): bool
+    {
+        return $this->isAdmin() && (bool) $this->two_factor_enabled;
     }
 
     public function isUser(): bool

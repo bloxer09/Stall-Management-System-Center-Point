@@ -8,6 +8,7 @@ use App\Models\PaymentTransaction;
 use App\Models\Stall;
 use App\Models\User;
 use App\Services\XlsxExportService;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -15,8 +16,18 @@ class PaymentManager extends Component
 {
     use WithPagination;
 
+    #[Url(except: '')]
     public $search = '';
     public $statusFilter = '';
+
+    public function mount(): void
+    {
+        // The admin dashboard links here with ?status=overdue.
+        $status = request()->query('status');
+        if (in_array($status, ['paid', 'pending', 'overdue'], true)) {
+            $this->statusFilter = $status;
+        }
+    }
 
     // Manual Payment Form
     public $showManualModal = false;
@@ -104,14 +115,13 @@ class PaymentManager extends Component
         $this->closeModal();
     }
 
-    public function markAsPaid($invoiceId, \App\Services\InvoiceService $invoiceService)
+    public function refreshPayments(): void
     {
-        $invoice = Invoice::findOrFail($invoiceId);
-        $invoiceService->markAsPaid($invoice);
-
-        $this->dispatch('notify', type: 'success', message: 'Invoice marked as paid.');
-        if ($this->selectedInvoice && $this->selectedInvoice->id === $invoice->id) {
-            $this->selectedInvoice = Invoice::with(['user', 'stall.location', 'items', 'transactions'])->find($invoiceId);
+        if ($this->selectedInvoice) {
+            $this->selectedInvoice = Invoice::with(['user', 'stall.location', 'items', 'transactions'])->find($this->selectedInvoice->id);
+            if (!$this->selectedInvoice) {
+                $this->showDetailModal = false;
+            }
         }
     }
 
@@ -147,7 +157,7 @@ class PaymentManager extends Component
             'Issued At',
         ];
 
-        return $exporter->exportCsv('Payments_Report_' . date('Ymd_His') . '.csv', $headers, $rows);
+        return $exporter->downloadXlsx('Payments_Report_' . date('Ymd_His') . '.xlsx', $headers, $rows);
     }
 
     public function render()
@@ -162,11 +172,15 @@ class PaymentManager extends Component
             });
         }
 
-        if ($this->statusFilter) {
+        if ($this->statusFilter === 'overdue') {
+            // Overdue is computed (pending and past due), never a stored status.
+            $query->overdue();
+        } elseif ($this->statusFilter) {
             $query->where('status', $this->statusFilter);
         }
 
         return view('livewire.admin.payment-manager', [
+            'hasPendingOnlinePayments' => PaymentTransaction::where('gateway', 'paymongo')->where('status', 'pending')->whereHas('invoice', fn ($q) => $q->where('status', 'pending'))->exists(),
             'payments' => $query->latest()->paginate(10),
             'totalPaid' => Invoice::where('status', 'paid')->sum('total_amount'),
             'totalPending' => Invoice::where('status', 'pending')->sum('total_amount'),

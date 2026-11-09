@@ -12,3 +12,17 @@
 *.log
 .DS_Store
 Thumbs.db
+
+/storage/framework/testing/
+.phpunit.result.cache
+vite.config.js.timestamp-*
+/.superpowers/
+/tests/e2e/.runtime/
+/test-results/
+/playwright-report/
+
+# Database backups contain all data, including password hashes
+/storage/app/backups/
+
+# Same file as storage/app/public/.htaccess, seen through the public/storage link
+/public/storage/.htaccess

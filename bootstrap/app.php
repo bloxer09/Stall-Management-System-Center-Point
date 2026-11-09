@@ -14,7 +14,12 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
+            '2fa' => \App\Http\Middleware\RequiresTwoFactor::class,
         ]);
+
+        $middleware->appendToGroup('web', \App\Http\Middleware\SecurityHeaders::class);
+        $middleware->appendToGroup('api', \App\Http\Middleware\SecurityHeaders::class);
+        $middleware->appendToGroup('web', \App\Http\Middleware\EnsureAccountActive::class);
 
         $middleware->validateCsrfTokens(except: [
             '/payment/paymongo-webhook',

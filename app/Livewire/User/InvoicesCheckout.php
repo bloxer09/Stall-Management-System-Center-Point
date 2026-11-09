@@ -4,7 +4,7 @@ namespace App\Livewire\User;
 
 use App\Models\Invoice;
 use App\Models\PaymentTransaction;
-use App\Services\PayMongoService;
+use App\Services\TransactionService;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -22,8 +22,12 @@ class InvoicesCheckout extends Component
 
     public function mount()
     {
+        app(TransactionService::class)->reconcilePendingCheckouts((int) auth()->id());
+
         if (request()->has('success')) {
-            $this->dispatch('notify', type: 'success', message: 'Payment submitted successfully! Your invoice status will update shortly once confirmed by PayMongo.');
+            $this->dispatch('notify', type: 'info', message: $this->hasPendingOnlinePayments()
+                ? 'Awaiting payment confirmation. Paid invoices update automatically after PayMongo confirms payment.'
+                : 'Your invoice statuses are up to date.');
         }
 
         if (request()->has('cancel')) {
@@ -34,6 +38,28 @@ class InvoicesCheckout extends Component
     public function updatingSearch()
     {
         $this->resetPage();
+    }
+
+    public function refreshPayments(): void
+    {
+        app(TransactionService::class)->reconcilePendingCheckouts((int) auth()->id());
+
+        $this->selectedInvoiceIds = Invoice::where('user_id', auth()->id())
+            ->where('status', 'pending')->whereIn('id', $this->selectedInvoiceIds)->pluck('id')->all();
+        if ($this->selectedInvoice) {
+            $this->selectedInvoice = Invoice::with(['stall.location', 'items', 'transactions'])
+                ->where('user_id', auth()->id())->find($this->selectedInvoice->id);
+            if (!$this->selectedInvoice) {
+                $this->showDetailModal = false;
+            }
+        }
+    }
+
+    private function hasPendingOnlinePayments(): bool
+    {
+        return PaymentTransaction::where('user_id', auth()->id())
+            ->where('gateway', 'paymongo')->where('status', 'pending')
+            ->whereHas('invoice', fn ($q) => $q->where('status', 'pending'))->exists();
     }
 
     public function updatingStatusFilter()
@@ -73,10 +99,22 @@ class InvoicesCheckout extends Component
 
     public function selectAllPending()
     {
-        $this->selectedInvoiceIds = Invoice::where('user_id', auth()->id())
+        $pendingIds = Invoice::where('user_id', auth()->id())
             ->where('status', 'pending')
             ->pluck('id')
             ->toArray();
+
+        $this->selectedInvoiceIds = count($pendingIds) > 0
+            && empty(array_diff($pendingIds, $this->selectedInvoiceIds))
+            ? [] : $pendingIds;
+    }
+
+    public function updatedSelectedInvoiceIds(): void
+    {
+        $this->selectedInvoiceIds = Invoice::where('user_id', auth()->id())
+            ->where('status', 'pending')
+            ->whereIn('id', $this->selectedInvoiceIds)
+            ->pluck('id')->all();
     }
 
     public function paySingleInvoice($invoiceId, \App\Services\TransactionService $transactionService)
@@ -127,7 +165,10 @@ class InvoicesCheckout extends Component
             });
         }
 
-        if ($this->statusFilter) {
+        if ($this->statusFilter === 'overdue') {
+            // Overdue is computed (pending and past due), never a stored status.
+            $query->overdue();
+        } elseif ($this->statusFilter) {
             $query->where('status', $this->statusFilter);
         }
 
@@ -146,11 +187,15 @@ class InvoicesCheckout extends Component
                 ->sum('total_amount');
 
         return view('livewire.user.invoices-checkout', [
+            'hasPendingOnlinePayments' => $this->hasPendingOnlinePayments(),
             'invoices' => $query->latest('due_date')->paginate(10),
             'pendingCount' => $summary->pending_count ?? 0,
             'pendingAmount' => $summary->pending_amount ?? 0,
             'paidCount' => $summary->paid_count ?? 0,
             'totalSelected' => $totalSelected,
+            'allPendingSelected' => ($summary->pending_count ?? 0) > 0
+                && Invoice::where('user_id', auth()->id())->where('status', 'pending')
+                    ->whereIn('id', $this->selectedInvoiceIds)->count() === (int) $summary->pending_count,
         ]);
     }
 }

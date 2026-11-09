@@ -16,10 +16,36 @@ use Livewire\WithPagination;
 
 class TicketCenter extends Component
 {
+    use \App\Livewire\Concerns\AcceptsTicketMedia;
     use WithFileUploads, WithPagination;
 
     public $search = '';
     public $statusFilter = '';
+    public ?int $actionTicketId = null;
+
+    public function openActions(int $id): void
+    {
+        $this->actionTicketId = Ticket::whereKey($id)->exists() ? $id : null;
+    }
+
+    public function closeActions(): void
+    {
+        $this->actionTicketId = null;
+    }
+
+    public function mount(): void
+    {
+        // The dashboard's "Unassigned tickets" card links here with ?filter=unassigned.
+        if (request()->query('filter') === 'unassigned') {
+            $this->statusFilter = 'unassigned';
+        }
+
+        // Global search links here with ?ticket={id} to open that conversation.
+        $ticketId = request()->query('ticket', '');
+        if ((is_string($ticketId) || is_int($ticketId)) && ctype_digit((string) $ticketId) && Ticket::whereKey((int) $ticketId)->exists()) {
+            $this->openThreadModal((int) $ticketId);
+        }
+    }
 
     // Selected Ticket Chat Widget State
     public $selectedTicketId = null;
@@ -31,14 +57,6 @@ class TicketCenter extends Component
     public $attachments = [];
     public $incomingAttachments = [];
     public $replyToMessageId = null;
-
-    public function updatedIncomingAttachments()
-    {
-        foreach ($this->incomingAttachments as $file) {
-            $this->attachments[] = $file;
-        }
-        $this->incomingAttachments = [];
-    }
 
     public function removeAttachment($index)
     {
@@ -60,6 +78,7 @@ class TicketCenter extends Component
 
     public function openThreadModal($id)
     {
+        $this->closeActions();
         $this->resetValidation();
         $this->selectedTicketId = $id;
         $this->showThreadModal = true;
@@ -94,7 +113,7 @@ class TicketCenter extends Component
                 'ticket_update',
                 "Ticket #TKT-" . str_pad($ticket->id, 5, '0', STR_PAD_LEFT) . " Assigned",
                 Auth::user()->name . " has claimed and is now handling your support ticket.",
-                route('user.tickets')
+            route('user.tickets', ['ticket' => $ticket->id])
             );
 
             AuditLog::log(
@@ -141,12 +160,29 @@ class TicketCenter extends Component
         );
     }
 
+    /**
+     * Throttled from the browser (once per 2 seconds while typing); the tenant's
+     * 3-second poll shows "is typing…" while this timestamp is under 5 seconds old.
+     */
+    public function typing(): void
+    {
+        $ticket = $this->selectedTicketId ? Ticket::find($this->selectedTicketId) : null;
+        if (!$ticket) return;
+
+        TicketParticipant::updateOrCreate(
+            ['ticket_id' => $ticket->id, 'user_id' => Auth::id()],
+            ['typing_at' => now()]
+        );
+    }
+
     public function sendMessage(FileUploadService $uploader)
     {
         if (!$this->selectedTicketId) return;
 
         $ticket = Ticket::find($this->selectedTicketId);
         if (!$ticket) return;
+
+        TicketParticipant::where('ticket_id', $ticket->id)->where('user_id', Auth::id())->update(['typing_at' => null]);
 
         // Handler Lock Enforcement: Only assigned admin (or auto-claim if unassigned) can reply
         if ($ticket->assigned_to === null) {
@@ -159,7 +195,7 @@ class TicketCenter extends Component
 
         $this->validate([
             'newMessage' => !empty($this->attachments) ? 'nullable|string' : 'required|string',
-            'attachments.*' => 'nullable|file|max:10240',
+            'attachments.*' => \App\Rules\TicketMedia::rules(),
         ]);
 
         $savedPaths = [];
@@ -183,7 +219,7 @@ class TicketCenter extends Component
             'user_id' => Auth::id(),
             'message' => $messageContent,
             'attachment_path' => $attachmentPathValue,
-            'reply_to_message_id' => $this->replyToMessageId,
+            'reply_to_message_id' => TicketMessage::replyTargetIn($this->replyToMessageId, (int) $ticket->id),
         ]);
 
         $ticket->touch();
@@ -193,7 +229,7 @@ class TicketCenter extends Component
             'ticket_message',
             "Support Ticket Reply (#TKT-" . str_pad($ticket->id, 5, '0', STR_PAD_LEFT) . ")",
             Auth::user()->name . ": " . \Illuminate\Support\Str::limit($messageContent, 60),
-            route('user.tickets')
+            route('user.tickets', ['ticket' => $ticket->id])
         );
 
         $this->reset(['newMessage', 'attachments', 'incomingAttachments', 'replyToMessageId']);
@@ -216,7 +252,7 @@ class TicketCenter extends Component
                     'ticket_update',
                     "Ticket #TKT-" . str_pad($ticket->id, 5, '0', STR_PAD_LEFT) . " Status Updated",
                     "Your support ticket status has been updated to " . strtoupper($status) . ".",
-                    route('user.tickets')
+                    route('user.tickets', ['ticket' => $ticket->id])
                 );
 
                 AuditLog::log(
@@ -245,7 +281,9 @@ class TicketCenter extends Component
             });
         }
 
-        if ($this->statusFilter) {
+        if ($this->statusFilter === 'unassigned') {
+            $ticketsQuery->where('status', '!=', 'closed')->whereNull('assigned_to');
+        } elseif ($this->statusFilter) {
             $ticketsQuery->where('status', $this->statusFilter);
         }
 
@@ -261,13 +299,15 @@ class TicketCenter extends Component
             }
         }
 
-        $staffUsers = User::whereIn('role', ['admin', 'staff'])->get();
+        $staffUsers = User::where('role', 'admin')->get();
 
         return view('livewire.admin.ticket-center', [
             'tickets' => $ticketsQuery->latest()->paginate(10),
+            'actionTicket' => $this->actionTicketId ? Ticket::with(['user', 'handler', 'stall'])->find($this->actionTicketId) : null,
             'selectedTicket' => $selectedTicket,
             'otherParticipant' => $otherParticipant,
             'staffUsers' => $staffUsers,
+            'typingNames' => $selectedTicket ? TicketParticipant::typingNamesFor($selectedTicket->id, Auth::id()) : [],
         ]);
     }
 }

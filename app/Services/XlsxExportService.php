@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
@@ -17,7 +18,7 @@ class XlsxExportService
      * @param array $headers Headers list e.g. ['ID', 'Date', 'Amount']
      * @param array $rows Array of data rows e.g. [['1', '2026-07-26', '₱1,000.00']]
      */
-    public function downloadXlsx(string $filename, array $headers, array $rows)
+    public function downloadXlsx(string $filename, array $headers, array $rows, array $textColumns = [])
     {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
@@ -52,7 +53,11 @@ class XlsxExportService
             $colIndex = 1;
             foreach ($row as $value) {
                 $cellCoordinate = $this->getColumnLetter($colIndex) . $rowIndex;
-                $sheet->setCellValue($cellCoordinate, $value);
+                if (in_array($colIndex, $textColumns, true)) {
+                    $sheet->setCellValueExplicit($cellCoordinate, $value, DataType::TYPE_STRING);
+                } else {
+                    $sheet->setCellValue($cellCoordinate, $value);
+                }
                 $colIndex++;
             }
             $rowIndex++;

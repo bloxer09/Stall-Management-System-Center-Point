@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <title>Financial Report Summary</title>
     <style>
-        body { font-family: sans-serif; font-size: 12px; color: #333; }
+        body { font-family: 'DejaVu Sans', sans-serif; font-size: 12px; color: #333; }
         .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #4F46E5; padding-bottom: 10px; }
         .header h1 { margin: 0; color: #1F2937; font-size: 20px; }
         .header p { margin: 2px 0 0 0; color: #6B7280; font-size: 11px; }
@@ -63,7 +63,7 @@
                     <td>#{{ $p->id }}</td>
                     <td>{{ $p->user->name ?? 'N/A' }}</td>
                     <td>Stall {{ $p->stall->stall_number ?? 'N/A' }}</td>
-                    <td class="text-right">₱{{ number_format($p->amount, 2) }}</td>
+                    <td class="text-right">₱{{ number_format($p->total_amount, 2) }}</td>
                     <td>
                         <span class="{{ $p->status === 'paid' ? 'status-paid' : 'status-pending' }}">
                             {{ strtoupper($p->status) }}

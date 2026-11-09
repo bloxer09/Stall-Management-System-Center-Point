@@ -46,7 +46,7 @@
 
 ### R6. Establish lease and billing invariants — 4–7 days
 
-- **Why:** Active lease, grid cell, utility period, invoice period, and provider-session uniqueness are not database-enforced; scheduled invoices have an N+1/race.
+- **Why:** Active lease, grid cell, invoice period, and provider-session uniqueness are not database-enforced; scheduled invoices have an N+1/race.
 - **Impact:** High data correctness and finance impact.
 - **Difficulty / risk:** High / high due to historical data cleanup.
 - **Expected improvement:** Atomic allocations and idempotent invoices with traceable line items.

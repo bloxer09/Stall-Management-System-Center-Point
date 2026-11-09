@@ -2,20 +2,40 @@
 
 namespace App\Livewire\User;
 
+use App\Livewire\Concerns\RequestsLeaseRenewal;
+use App\Models\Announcement;
 use App\Models\Invoice;
+use App\Models\StallApplication;
 use App\Models\StallMapping;
 use App\Models\Ticket;
+use App\Services\LeaseService;
 use Carbon\Carbon;
 use Livewire\Component;
 
 class UserDashboard extends Component
 {
+    use RequestsLeaseRenewal;
+
+    /**
+     * Applications linked to this account: submitted while signed in, or approved for it.
+     * Not matched by email alone — emails are not verified, so that would expose someone
+     * else's applications to whoever registers with their address.
+     */
+    private function myApplications()
+    {
+        return StallApplication::with('preferredStall')
+            ->where('user_id', auth()->id())
+            ->latest()
+            ->limit(5)
+            ->get();
+    }
+
     public function render()
     {
         $userId = auth()->id();
 
         // 1. Assigned & Active Leases
-        $assignedLeases = StallMapping::with(['stall.location', 'initialInvoice'])
+        $assignedLeases = StallMapping::with(['stall.location', 'initialInvoice', 'renewalInvoice'])
             ->where('user_id', $userId)
             ->where(function ($q) {
                 $q->where('is_active', true)
@@ -59,7 +79,11 @@ class UserDashboard extends Component
         $openTicketsCount = Ticket::where('user_id', $userId)->where('status', '!=', 'closed')->count();
         $totalTicketsCount = Ticket::where('user_id', $userId)->count();
 
+        $announcements = Announcement::visibleTo(auth()->user())->latest()->limit(3)->get();
+
         return view('livewire.user.user-dashboard', [
+            'announcements' => $announcements,
+            'upcomingDates' => app(\App\Services\CalendarService::class)->upcomingFor(auth()->user()),
             'assignedLeases' => $assignedLeases,
             'activeLeasesCount' => $activeLeasesCount,
             'pendingLeasesCount' => $pendingLeasesCount,
@@ -73,6 +97,12 @@ class UserDashboard extends Component
             'openTickets' => $openTickets,
             'openTicketsCount' => $openTicketsCount,
             'totalTicketsCount' => $totalTicketsCount,
+            'renewableIds' => $assignedLeases
+                ->filter(fn (StallMapping $lease) => app(LeaseService::class)->isRenewalEligible($lease))
+                ->pluck('id')
+                ->all(),
+            'renewalLease' => $this->renewalLease(),
+            'myApplications' => $this->myApplications(),
         ]);
     }
 }

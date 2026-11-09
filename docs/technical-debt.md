@@ -11,7 +11,7 @@
 ## Medium-term improvements
 
 - Replace duplicated authentication (route login, modal login, unused `LoginForm`) and duplicated navigation with one supported flow.
-- Move lease/payment/utility transitions into transaction-backed actions and add policies.
+- Move lease/payment transitions into transaction-backed actions and add policies.
 - Queue external notifications/PDF/report work and add retry/delivery state.
 - Establish a private document service, image pipeline, retention policy, and safe log viewer.
 - Consolidate Vite/DaisyUI/local legacy assets and standardize UI primitives.
@@ -21,3 +21,7 @@
 The uncommitted framework migration is the largest maintenance risk: legacy removal and replacement are interleaved, so a partial commit could produce an application with neither architecture complete. The data model treats billing as mutable payment records rather than immutable invoices/transactions, which will become costly as reconciliation, adjustments, refunds, and audit needs grow. Scaling will be limited until session/cache/queue/storage are externalized and operated with observability.
 
 Each item should be delivered behind focused tests and a rollback plan. The ordered work, impact, difficulty, risk, and expected gain are in [roadmap.md](roadmap.md).
+
+## Post-defense: dependency advisories
+
+- `laravel/framework` v12.64.0 has one low-severity advisory (GHSA-jh5r-qr3c-85q8, CVE-2026-102279). The fix requires a framework minor upgrade (12.69.x), deliberately deferred until after the 2026-10-10 defense. Upgrade with `composer update laravel/framework -W`, then run the full suite.

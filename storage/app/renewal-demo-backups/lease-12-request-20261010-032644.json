@@ -1,0 +1,29 @@
+{
+    "purpose": "Backup before creating pending renewal test fixture",
+    "lease": {
+        "id": 12,
+        "user_id": 6,
+        "stall_id": 27,
+        "start_date": "2026-10-09",
+        "end_date": "2027-10-09",
+        "is_active": 1,
+        "payment_status": "good_standing",
+        "initial_invoice_id": 12,
+        "contract_document": null,
+        "renewal_status": "none",
+        "requested_end_date": null,
+        "renewal_note": null,
+        "renewal_rejection_reason": null,
+        "created_at": "2026-10-09 22:10:42",
+        "updated_at": "2026-10-09 22:11:45",
+        "termination_reason": null,
+        "terminated_at": null,
+        "duration_months": 12,
+        "agreed_monthly_rate": "5000.00",
+        "contract_rent": "60000.00",
+        "rent_billing_mode": "upfront",
+        "upfront_covered_until": "2027-10-09",
+        "renewal_months": null,
+        "renewal_invoice_id": null
+    }
+}

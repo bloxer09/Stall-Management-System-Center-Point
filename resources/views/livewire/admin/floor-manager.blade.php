@@ -52,9 +52,9 @@
                                 </span>
                             </td>
                             <td class="text-right">
-                                <button wire:click="openDetailModal({{ $floor->id }})" class="btn btn-ghost btn-xs text-primary font-bold rounded-lg border border-primary/20 hover:bg-primary hover:text-white transition">
+                                <x-table-action wire:click="openDetailModal({{ $floor->id }})">
                                     Manage
-                                </button>
+                                </x-table-action>
                             </td>
                         </tr>
                     @empty
@@ -77,7 +77,7 @@
     @if($showDetailModal && $selectedFloor)
         <dialog class="modal modal-open">
             <div class="modal-box max-w-md p-6 bg-base-100 rounded-3xl border border-base-300 relative space-y-4 shadow-2xl">
-                <button wire:click="closeDetailModal" class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4">
+                <button wire:click="closeDetailModal" class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4" aria-label="Close" x-data x-on:keydown.escape.window="isTopModal($el) && $wire.closeDetailModal()">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -112,7 +112,7 @@
                 @endif
 
                 <div class="flex items-center justify-between pt-3 border-t border-base-200">
-                    <button wire:click="deleteFloor({{ $selectedFloor->id }})" wire:confirm="Are you sure you want to delete '{{ $selectedFloor->name }}'?" class="btn btn-error btn-outline btn-sm rounded-xl font-bold gap-1">
+                    <button wire:click="deleteFloor({{ $selectedFloor->id }})" wire:confirm="Are you sure you want to delete '{{ $selectedFloor->name }}'?" class="btn btn-error btn-outline btn-sm rounded-xl font-bold gap-1" wire:loading.attr="disabled" wire:target="deleteFloor"><span wire:loading wire:target="deleteFloor" class="loading loading-spinner loading-xs"></span>
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                         Delete
                     </button>
@@ -135,7 +135,7 @@
             <div class="modal-box max-w-md p-6 bg-base-100 rounded-3xl border border-base-300 space-y-4 shadow-2xl">
                 <div class="flex justify-between items-center pb-2 border-b border-base-200">
                     <h3 class="text-lg font-bold text-base-content">{{ $floorId ? 'Edit Floor Level' : 'Add New Floor Level' }}</h3>
-                    <button wire:click="closeModal" class="btn btn-sm btn-circle btn-ghost">&times;</button>
+                    <button wire:click="closeModal" class="btn btn-sm btn-circle btn-ghost" aria-label="Close" x-data x-on:keydown.escape.window="isTopModal($el) && $wire.closeModal()">&times;</button>
                 </div>
 
                 <form wire:submit.prevent="saveFloor" class="space-y-4">
@@ -171,7 +171,7 @@
 
                     <div class="flex justify-end gap-2 pt-3 border-t border-base-200">
                         <button type="button" wire:click="closeModal" class="btn btn-ghost rounded-xl font-bold">Cancel</button>
-                        <button type="submit" class="btn btn-primary rounded-xl font-bold">Save Floor Level</button>
+                        <button type="submit" class="btn btn-primary rounded-xl font-bold" wire:loading.attr="disabled" wire:target="saveFloor"><span wire:loading wire:target="saveFloor" class="loading loading-spinner loading-xs"></span>Save Floor Level</button>
                     </div>
                 </form>
             </div>

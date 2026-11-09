@@ -6,7 +6,7 @@
 [![Payment Gateway](https://img.shields.io/badge/Payments-PayMongo-00D2FF?style=flat-square)](https://paymongo.com)
 [![Tests](https://img.shields.io/badge/PHPUnit-100%25%20Passing-brightgreen?style=flat-square&logo=phpunit&logoColor=white)](https://phpunit.de)
 
-**STALLM** is a modern commercial stall management web application built exclusively on **Laravel 13.x** and **Livewire 3**. It streamlines floor plan layout design, tenant lease allocations, automated monthly invoicing, multi-channel online payment checkout via PayMongo, real-time support chat, and metered utility billing.
+**STALLM** is a modern commercial stall management web application built exclusively on **Laravel 13.x** and **Livewire 3**. It streamlines floor plan layout design, tenant lease allocations, automated monthly invoicing, multi-channel online payment checkout via PayMongo, and real-time support chat.
 
 ---
 
@@ -19,7 +19,7 @@
 - **Private Document Protection**: IDOR-guarded file endpoints for lease contracts and ticket attachments (`FileController`).
 
 ### 🗺️ Visual Stall & Floor Plan Management
-- **Interactive Floor Plan Grid Editor**: Reactive Livewire component (`Admin\StallGridEditor`) supporting drag-and-drop & click-to-position stall grid layouts per floor.
+- **Interactive Floor Plan Grid Editor**: Reactive Livewire component (`Admin\StallGridEditor`) supporting drag-and-drop or click-to-place stall layouts per floor, with server-side bounds and floor-ownership checks.
 - **Stall Lifecycle**: State tracking (`available`, `occupied`, `maintenance`) with custom monthly pricing and floor assignments.
 
 ### 📜 Tenant Lease & Allocation Management
@@ -27,7 +27,7 @@
 - **Lease Extensions**: Tenants can submit one-click extension requests with admin approval or rejection workflows.
 
 ### 💳 Billing, Online Payments & PDF Receipts
-- **Automated Monthly Invoices**: Artisan console command (`stallm:generate-invoices`) generating monthly invoices for active leases with zero N+1 queries.
+- **Automated Monthly Invoices**: Artisan console command (`billing:generate-invoices`) generating monthly invoices for active leases with zero N+1 queries.
 - **PayMongo Payment Gateway**: Multi-stall cart checkout supporting GCash, Maya, and Credit/Debit cards with webhook verification.
 - **Manual Office Payments**: Capability for admins to record cash/office payments with custom reference IDs.
 - **Scannable QR Code PDF Receipts**: Official PDF receipts generated via `Dompdf` featuring embedded SVG QR codes pointing to online authenticity verification endpoints (`/verify-receipt/{id}`).
@@ -101,6 +101,24 @@ php artisan serve
 Visit `http://127.0.0.1:8000` in your web browser.
 
 ---
+
+## 🎭 Demo Data & Accounts
+
+Load a realistic demo dataset (3 floors, 30 stalls, 4 tenants with leases, 6 months of payments, an overdue bill, tickets, and stall applications). It is safe to run more than once and refuses to run when `APP_ENV=production`.
+
+```bash
+php artisan db:seed --class=DemoSeeder
+```
+
+| Account | Email | Password | What to show |
+| :--- | :--- | :--- | :--- |
+| Admin | `admin@stallm.com` | `password` | Needs-attention panel, applications, renewals |
+| Tenant 1 | `tenant1@demo.test` | `password` | Lease ends in 45 days → Request renewal |
+| Tenant 2 | `tenant2@demo.test` | `password` | Renewal already requested |
+| Tenant 3 | `tenant3@demo.test` | `password` | Bill due next week |
+| Tenant 4 | `tenant4@demo.test` | `password` | Overdue bill |
+
+Before a live demo, run `php artisan cache:clear` so login and application rate limits from rehearsals are reset.
 
 ## ⏰ Cron Scheduler Setup (Production)
 

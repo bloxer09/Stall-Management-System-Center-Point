@@ -1,4 +1,4 @@
-<div class="space-y-8">
+<div class="space-y-8" x-data="{ destroy() { this.$el._chartCleanup?.(); } }">
     <!-- Header with Export Actions -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -8,14 +8,33 @@
         <div class="flex items-center gap-2">
             <button wire:click="exportXlsx" class="btn btn-outline btn-sm rounded-xl font-bold gap-1.5 shadow-xs">
                 <svg class="w-4 h-4 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                Export Excel (.xlsx)
+                Export Excel
             </button>
             <button wire:click="exportPdf" class="btn btn-primary btn-sm rounded-xl font-bold gap-1.5 shadow-xs">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                Summary PDF
+                Export Summary PDF
             </button>
         </div>
     </div>
+
+    <!-- Needs Attention -->
+    @php $needsAttention = collect($attention)->sum('count'); @endphp
+    @if($needsAttention === 0)
+        <!-- <div class="alert bg-success/10 border border-success/30 rounded-2xl text-sm font-bold text-success">All caught up ✓ &mdash; nothing is waiting for review.</div> -->
+    @else
+        <div class="space-y-2">
+            <h2 class="text-xs font-extrabold uppercase tracking-wider text-base-content/60">Needs attention</h2>
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                @foreach($attention as $item)
+                    <a href="{{ $item['url'] }}" wire:navigate
+                       class="card bg-base-100 border rounded-2xl p-4 transition hover:shadow-md {{ $item['count'] > 0 ? 'border-warning/50' : 'border-base-300 opacity-70' }}">
+                        <span class="text-2xl font-black {{ $item['count'] > 0 ? 'text-warning' : 'text-base-content/50' }}" data-attention-count="{{ $item['count'] }}">{{ $item['count'] }}</span>
+                        <span class="text-xs font-bold text-base-content/70 mt-1">{{ $item['label'] }} &rarr;</span>
+                    </a>
+                @endforeach
+            </div>
+        </div>
+    @endif
 
     <!-- Summary KPI Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -93,7 +112,7 @@
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
                 <div>
                     <h3 class="font-extrabold text-base text-base-content">Revenue &amp; Collection Trend</h3>
-                    <p class="text-xs text-base-content/60">Rental income growth over the selected timeframe</p>
+                    <p class="text-xs text-base-content/60">{{ array_sum($revenueData) > 0 ? 'Rental income over the selected timeframe' : 'No collected revenue in this period.' }}</p>
                 </div>
                 <!-- Timeframe Pills -->
                 <div class="join bg-base-200 p-1 rounded-2xl">
@@ -104,7 +123,7 @@
                 </div>
             </div>
             <div class="h-64 relative">
-                <canvas id="revenueTrendChart"></canvas>
+                <canvas id="revenueTrendChart" wire:ignore role="img" aria-label="Collected revenue over the selected timeframe"></canvas>
             </div>
         </div>
 
@@ -112,18 +131,21 @@
         <div class="card bg-base-100 p-6 rounded-3xl shadow-sm border border-base-300 flex flex-col justify-between">
             <div class="mb-3">
                 <h3 class="font-extrabold text-base text-base-content">Payment Channels</h3>
-                <p class="text-xs text-base-content/60">Online Gateways vs Cash settlements</p>
+                <p class="text-xs text-base-content/60">Online Payments vs Walk-in Payments</p>
             </div>
             <div class="h-52 relative flex items-center justify-center">
-                <canvas id="paymentChannelChart"></canvas>
+                <canvas id="paymentChannelChart" wire:ignore role="img" aria-label="Online and cash payment totals"></canvas>
+                @if(array_sum($paymentMethodsData) == 0)
+                    <p class="absolute inset-0 flex items-center justify-center text-xs text-base-content/70">No successful payments recorded yet.</p>
+                @endif
             </div>
             <div class="grid grid-cols-2 gap-2 pt-3 border-t border-base-200 text-center text-xs">
                 <div class="p-2 bg-base-200/40 rounded-xl">
-                    <span class="text-[10px] font-extrabold uppercase text-primary block">Online / PayMongo</span>
+                    <span class="text-[10px] font-extrabold uppercase text-primary block">Online Payments</span>
                     <span class="font-extrabold text-sm text-base-content mt-0.5 block">₱{{ number_format($paymentMethodsData[0], 2) }}</span>
                 </div>
                 <div class="p-2 bg-base-200/40 rounded-xl">
-                    <span class="text-[10px] font-extrabold uppercase text-emerald-500 block">Cash / OTC</span>
+                    <span class="text-[10px] font-extrabold uppercase text-emerald-500 block">Walk-in Payments</span>
                     <span class="font-extrabold text-sm text-base-content mt-0.5 block">₱{{ number_format($paymentMethodsData[1], 2) }}</span>
                 </div>
             </div>
@@ -217,7 +239,7 @@
                         </div>
                     @empty
                         <div class="p-4 bg-success/5 border border-success/20 rounded-2xl text-center text-xs text-success font-bold">
-                            All tenant commercial leases are in good standing with no immediate expirations.
+                            All active leases are Paid with no immediate expirations.
                         </div>
                     @endforelse
                 </div>
@@ -260,22 +282,23 @@
     </div>
 
     <!-- Chart.js Engine Script -->
-    <script src="{{ asset('assets/js/chart.min.js') }}"></script>
-    <script>
-        document.addEventListener('livewire:navigated', initAnalyticsCharts);
-        document.addEventListener('DOMContentLoaded', initAnalyticsCharts);
-
-        function initAnalyticsCharts() {
-            const revCanvas = document.getElementById('revenueTrendChart');
-            const chanCanvas = document.getElementById('paymentChannelChart');
+    @assets
+    <script src="{{ asset('assets/js/chart.min.js') }}" nonce="{{ Vite::cspNonce() }}"></script>
+    @endassets
+    @script
+    <script nonce="{{ Vite::cspNonce() }}">
+        (() => {
+            const revCanvas = $wire.$el.querySelector('#revenueTrendChart');
+            const chanCanvas = $wire.$el.querySelector('#paymentChannelChart');
 
             if (!revCanvas || !chanCanvas) return;
 
-            if (window.revenueChartInstance) window.revenueChartInstance.destroy();
-            if (window.channelChartInstance) window.channelChartInstance.destroy();
+            Chart.getChart(revCanvas)?.destroy();
+            Chart.getChart(chanCanvas)?.destroy();
+            const textColor = getComputedStyle($wire.$el).color;
 
             // 1. Revenue Area Chart
-            window.revenueChartInstance = new Chart(revCanvas, {
+            const revenueChart = new Chart(revCanvas, {
                 type: 'line',
                 data: {
                     labels: @js($monthsLabels),
@@ -293,6 +316,8 @@
                     }]
                 },
                 options: {
+                    color: textColor,
+                    animation: false,
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
@@ -310,21 +335,22 @@
                             beginAtZero: true,
                             grid: { color: 'rgba(150, 150, 150, 0.08)' },
                             ticks: {
+                                color: textColor,
                                 callback: function(value) {
                                     return '₱' + (value >= 1000 ? (value/1000) + 'k' : value);
                                 }
                             }
                         },
-                        x: { grid: { display: false } }
+                        x: { grid: { display: false }, ticks: { color: textColor } }
                     }
                 }
             });
 
             // 2. Payment Channel Doughnut Chart
-            window.channelChartInstance = new Chart(chanCanvas, {
+            const channelChart = new Chart(chanCanvas, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Online / PayMongo', 'Cash / OTC'],
+                    labels: ['Online Payments', 'Walk-in Payments'],
                     datasets: [{
                         data: @js($paymentMethodsData),
                         backgroundColor: ['#6366f1', '#10b981'],
@@ -333,6 +359,8 @@
                     }]
                 },
                 options: {
+                    color: textColor,
+                    animation: false,
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
@@ -347,6 +375,31 @@
                     cutout: '70%'
                 }
             });
-        }
+
+            $wire.on('analytics-charts-updated', ({ labels, revenue, methods }) => {
+                revenueChart.data.labels = labels;
+                revenueChart.data.datasets[0].data = revenue;
+                revenueChart.update('none');
+                channelChart.data.datasets[0].data = methods;
+                channelChart.update('none');
+            });
+
+            const themeObserver = new MutationObserver(() => {
+                const color = getComputedStyle($wire.$el).color;
+                revenueChart.options.color = color;
+                revenueChart.options.scales.x.ticks.color = color;
+                revenueChart.options.scales.y.ticks.color = color;
+                channelChart.options.color = color;
+                revenueChart.update('none');
+                channelChart.update('none');
+            });
+            themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+            $wire.$el._chartCleanup = () => {
+                themeObserver.disconnect();
+                revenueChart.destroy();
+                channelChart.destroy();
+            };
+        })();
     </script>
+    @endscript
 </div>

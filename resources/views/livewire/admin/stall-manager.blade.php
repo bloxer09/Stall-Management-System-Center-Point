@@ -41,12 +41,13 @@
                     <option value="">All Statuses</option>
                     <option value="available">Available</option>
                     <option value="occupied">Occupied</option>
+                    <option value="pending">Pending payment</option>
                     <option value="maintenance">Maintenance</option>
                 </select>
             </div>
         </div>
 
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto" wire:loading.class="opacity-60" wire:target="search,locationFilter,statusFilter">
             <table class="table w-full text-sm">
                 <thead>
                     <tr class="bg-base-200/40 text-base-content/70">
@@ -61,13 +62,14 @@
                 </thead>
                 <tbody class="divide-y divide-base-200">
                     @forelse($stalls as $stall)
+                        @php($tenantLease = $stall->currentLease ?? $stall->pendingLease)
                         <tr class="hover:bg-base-200/40 transition">
                             <td>
-                                <img src="{{ $stall->image_url }}" onclick="openImageLightbox(this.src)"
+                                <img src="{{ $stall->image_url }}" x-data x-on:click="openImageLightbox($el.src)"
                                     class="w-12 h-12 rounded-2xl object-cover border border-base-300 shadow-xs cursor-pointer hover:scale-110 transition"
                                     alt="Stall Photo" title="Click to view full image">
                             </td>
-                            <td class="font-extrabold text-base-content">{{ $stall->stall_number }}</td>
+                            <td class="font-extrabold text-base-content">{{ $stall->stall_number }}@if($stall->waiting_count > 0)<span class="badge badge-sm badge-accent font-bold ml-2" title="People waiting to be emailed when this stall opens">Waitlist {{ $stall->waiting_count }}</span>@endif</td>
                             <td>
                                 @if($stall->location)
                                     <span class="badge badge-primary font-bold text-xs">{{ $stall->location->name }}</span>
@@ -77,13 +79,13 @@
                             </td>
                             <td class="font-bold text-base-content">₱{{ number_format($stall->price, 2) }}</td>
                             <td>
-                                @if($stall->currentLease && $stall->currentLease->user)
+                                @if($tenantLease && $tenantLease->user)
                                     <div class="flex items-center gap-2">
                                         <div class="w-6 h-6 rounded-full overflow-hidden border border-primary/20 shrink-0">
-                                            <img src="{{ $stall->currentLease->user->avatar_url }}" class="w-full h-full object-cover" alt="Tenant Avatar">
+                                            <img src="{{ $tenantLease->user->avatar_url }}" class="w-full h-full object-cover" alt="Tenant Avatar">
                                         </div>
-                                        <span class="font-bold text-xs text-base-content truncate max-w-[130px]" title="{{ $stall->currentLease->user->name }}">
-                                            {{ $stall->currentLease->user->name }}
+                                        <span class="font-bold text-xs text-base-content truncate max-w-[130px]" title="{{ $tenantLease->user->name }}">
+                                            {{ $tenantLease->user->name }}
                                         </span>
                                     </div>
                                 @else
@@ -93,14 +95,13 @@
                             <td>
                                 <span
                                     class="badge badge-sm font-bold uppercase {{ $stall->status === 'available' ? 'badge-success text-white' : ($stall->status === 'occupied' ? 'badge-info text-white' : ($stall->status === 'reserved' ? 'badge-warning text-slate-900' : 'badge-error text-white')) }}">
-                                    {{ $stall->status }}
+                                    {{ $stall->pendingLease ? 'Pending payment' : $stall->status }}
                                 </span>
                             </td>
                             <td class="text-right">
-                                <button wire:click="openDetailModal({{ $stall->id }})"
-                                    class="btn btn-ghost btn-xs text-primary font-bold rounded-lg border border-primary/20 hover:bg-primary hover:text-white transition">
+                                <x-table-action wire:click="openDetailModal({{ $stall->id }})">
                                     Manage
-                                </button>
+                                </x-table-action>
                             </td>
                         </tr>
                     @empty
@@ -115,8 +116,7 @@
                                         <p class="font-extrabold text-sm">No stalls found</p>
                                         <p class="text-xs mt-0.5">Try adjusting your filters or add a new stall unit.</p>
                                     </div>
-                                    <button wire:click="openModal"
-                                        class="btn btn-primary btn-xs rounded-xl font-bold mt-1">+ Add First Stall</button>
+                                    <x-table-action wire:click="openModal" class="mt-1">+ Add First Stall</x-table-action>
                                 </div>
                             </td>
                         </tr>
@@ -133,25 +133,25 @@
     @if($showDetailModal && $selectedStall)
         <dialog class="modal modal-open">
             <div class="modal-box max-w-lg p-6 bg-base-100 rounded-3xl border border-base-300 relative space-y-5 shadow-2xl">
-                <button wire:click="closeDetailModal" class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4">
+                <button wire:click="closeDetailModal" class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4" aria-label="Close" x-data x-on:keydown.escape.window="isTopModal($el) && $wire.closeDetailModal()">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
 
                 <div class="flex items-start gap-4">
-                    <img src="{{ $selectedStall->image_url }}" onclick="openImageLightbox(this.src)"
+                    <img src="{{ $selectedStall->image_url }}" x-data x-on:click="openImageLightbox($el.src)"
                         class="w-20 h-20 rounded-2xl object-cover border border-base-300 shadow-xs cursor-pointer hover:scale-105 transition"
                         alt="Stall Photo" title="Click to view full image">
                     <div class="space-y-1">
                         <div class="flex items-center gap-2">
                             <h3 class="text-xl font-extrabold text-base-content">Stall {{ $selectedStall->stall_number }}</h3>
                             <span class="badge badge-sm font-bold uppercase {{ $selectedStall->status === 'available' ? 'badge-success text-white' : ($selectedStall->status === 'occupied' ? 'badge-info text-white' : 'badge-warning') }}">
-                                {{ $selectedStall->status }}
+                                {{ $selectedStall->pendingLease ? 'Pending payment' : $selectedStall->status }}
                             </span>
                         </div>
                         <p class="text-xs font-bold text-primary">
-                            {{ $selectedStall->location->name ?? 'No Floor Assigned' }} &bull; ₱{{ number_format($selectedStall->price, 2) }} / month
+                            {{ $selectedStall->location->name ?? 'Unassigned' }} &bull; ₱{{ number_format($selectedStall->price, 2) }} / month
                         </p>
                         @if($selectedStall->description)
                             <p class="text-xs text-base-content/70 line-clamp-2">{{ $selectedStall->description }}</p>
@@ -162,19 +162,20 @@
                 <!-- Current Tenant Info Card -->
                 <div class="p-4 bg-base-200/60 rounded-2xl border border-base-300 space-y-2">
                     <div class="text-[11px] font-extrabold uppercase tracking-wider text-base-content/60">Current Tenant</div>
-                    @if($selectedStall->currentLease && $selectedStall->currentLease->user)
+                    @php($tenantLease = $selectedStall->currentLease ?? $selectedStall->pendingLease)
+                    @if($tenantLease && $tenantLease->user)
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
-                                <img src="{{ $selectedStall->currentLease->user->avatar_url }}" class="w-9 h-9 rounded-full object-cover border border-primary/20" alt="Avatar">
+                                <img src="{{ $tenantLease->user->avatar_url }}" class="w-9 h-9 rounded-full object-cover border border-primary/20" alt="Avatar">
                                 <div>
-                                    <div class="font-extrabold text-sm text-base-content">{{ $selectedStall->currentLease->user->name }}</div>
-                                    <div class="text-xs text-base-content/60">{{ $selectedStall->currentLease->user->email }}</div>
+                                    <div class="font-extrabold text-sm text-base-content">{{ $tenantLease->user->name }}</div>
+                                    <div class="text-xs text-base-content/60">{{ $tenantLease->user->email }}</div>
                                 </div>
                             </div>
                             <div class="text-right">
-                                <span class="badge badge-xs badge-success text-white font-bold uppercase">Active Lease</span>
+                                <span class="badge badge-xs {{ $selectedStall->pendingLease ? 'badge-warning' : 'badge-success text-white' }} font-bold uppercase">{{ $selectedStall->pendingLease ? 'Pending payment' : 'Active Lease' }}</span>
                                 <div class="text-[10px] text-base-content/60 font-mono mt-0.5">
-                                    Until {{ $selectedStall->currentLease->end_date->format('M d, Y') }}
+                                    Until {{ $tenantLease->end_date->format('M d, Y') }}
                                 </div>
                             </div>
                         </div>
@@ -190,7 +191,7 @@
 
                 <!-- Modal Actions Footer -->
                 <div class="flex items-center justify-between pt-3 border-t border-base-200">
-                    <button wire:click="deleteStall({{ $selectedStall->id }})" wire:confirm="Are you sure you want to delete stall {{ $selectedStall->stall_number }}?" class="btn btn-error btn-outline btn-sm rounded-xl font-bold gap-1">
+                    <button wire:click="deleteStall({{ $selectedStall->id }})" wire:confirm="Are you sure you want to delete stall {{ $selectedStall->stall_number }}?" class="btn btn-error btn-outline btn-sm rounded-xl font-bold gap-1" wire:loading.attr="disabled" wire:target="deleteStall"><span wire:loading wire:target="deleteStall" class="loading loading-spinner loading-xs"></span>
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                         Delete Stall
                     </button>
@@ -211,7 +212,7 @@
     @if($showModal)
         <dialog class="modal modal-open">
             <div class="modal-box max-w-lg p-6 bg-base-100 rounded-3xl border border-base-300 relative space-y-4 shadow-2xl">
-                <button wire:click="closeModal" class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4">
+                <button wire:click="closeModal" class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4" aria-label="Close" x-data x-on:keydown.escape.window="isTopModal($el) && $wire.closeModal()">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -251,7 +252,7 @@
                         <div class="form-control">
                             <label class="label py-1"><span class="label-text font-bold text-xs uppercase">Floor Location</span></label>
                             <select wire:model="location_id" class="select select-bordered select-sm rounded-xl text-sm">
-                                <option value="">-- No Floor Assigned --</option>
+                                <option value="">Unassigned</option>
                                 @foreach($locations as $loc)
                                     <option value="{{ $loc->id }}">{{ $loc->name }}</option>
                                 @endforeach
@@ -287,7 +288,7 @@
 
                     <div class="flex justify-end gap-2 pt-2 border-t border-base-200">
                         <button type="button" wire:click="closeModal" class="btn btn-ghost btn-sm rounded-xl font-bold">Cancel</button>
-                        <button type="submit" class="btn btn-primary btn-sm rounded-xl font-bold">Save Stall</button>
+                        <button type="submit" class="btn btn-primary btn-sm rounded-xl font-bold" wire:loading.attr="disabled" wire:target="saveStall"><span wire:loading wire:target="saveStall" class="loading loading-spinner loading-xs"></span>Save Stall</button>
                     </div>
                 </form>
             </div>

@@ -1,0 +1,158 @@
+[
+  {
+    "name": "01-home",
+    "url": "/"
+  },
+  {
+    "name": "02-browse-stalls",
+    "url": "/stalls"
+  },
+  {
+    "name": "03-stall-apply",
+    "url": "/stalls",
+    "js": "const avail = [...document.querySelectorAll('[wire\\\\:click^=\"selectStall\"]')].find(b => /success/.test(b.className)); avail.click(); await new Promise(r => setTimeout(r, 900)); await lw('portal.stall-browser').call('openApply');"
+  },
+  {
+    "name": "04-application-status",
+    "url": "/application-status",
+    "js": "const w = lw('portal.application-status'); await w.set('reference', 'APP-2026-000003'); await w.set('email', 'liza.mercado@example.com'); await w.call('lookup');"
+  },
+  {
+    "name": "05-sign-in",
+    "url": "/",
+    "js": "Livewire.dispatch('open-login-modal');"
+  },
+  {
+    "name": "06-register",
+    "url": "/",
+    "js": "Livewire.dispatch('open-register-modal');"
+  },
+  {
+    "name": "07-forgot-password",
+    "url": "/",
+    "js": "Livewire.dispatch('open-login-modal'); await new Promise(r => setTimeout(r, 600)); await lw('auth.auth-modals').call('openForgotPassword');"
+  },
+  {
+    "name": "10-admin-dashboard",
+    "url": "/admin/dashboard",
+    "as": "admin",
+    "wait": 1800
+  },
+  {
+    "name": "11-applications",
+    "url": "/admin/applications",
+    "as": "admin"
+  },
+  {
+    "name": "12-stalls",
+    "url": "/admin/stalls",
+    "as": "admin"
+  },
+  {
+    "name": "13-floors",
+    "url": "/admin/floors",
+    "as": "admin"
+  },
+  {
+    "name": "14-floor-map",
+    "url": "/admin/grid-editor",
+    "as": "admin"
+  },
+  {
+    "name": "15-leases",
+    "url": "/admin/mappings",
+    "as": "admin"
+  },
+  {
+    "name": "16-terminate-lease",
+    "url": "/admin/mappings",
+    "as": "admin",
+    "js": "await lw('admin.lease-mapping-manager').call('openTerminate', 1);"
+  },
+  {
+    "name": "17-tenant-accounts",
+    "url": "/admin/tenants",
+    "as": "admin"
+  },
+  {
+    "name": "18-statement",
+    "url": "/admin/tenants",
+    "as": "admin",
+    "js": "await lw('admin.tenant-manager').call('openStatement', 2);"
+  },
+  {
+    "name": "19-payments",
+    "url": "/admin/payments",
+    "as": "admin"
+  },
+  {
+    "name": "20-calendar",
+    "url": "/admin/calendar",
+    "as": "admin"
+  },
+  {
+    "name": "21-announcements",
+    "url": "/admin/announcements",
+    "as": "admin"
+  },
+  {
+    "name": "22-admin-tickets",
+    "url": "/admin/tickets",
+    "as": "admin",
+    "js": "await lw('admin.ticket-center').call('openThreadModal', 1);"
+  },
+  {
+    "name": "23-reports",
+    "url": "/admin/reports",
+    "as": "admin",
+    "wait": 1800
+  },
+  {
+    "name": "24-audit-logs",
+    "url": "/admin/audit-logs",
+    "as": "admin"
+  },
+  {
+    "name": "25-settings-backups",
+    "url": "/admin/settings",
+    "as": "admin",
+    "js": "document.querySelector('h2') && [...document.querySelectorAll('h2')].find(h => /Backups/.test(h.textContent))?.scrollIntoView({block: 'start'});"
+  },
+  {
+    "name": "26-global-search",
+    "url": "/admin/dashboard",
+    "as": "admin",
+    "type": {
+      "selector": "input[aria-label=\"Search the system\"]",
+      "text": "G-0"
+    },
+    "wait": 1800
+  },
+  {
+    "name": "30-tenant-dashboard",
+    "url": "/user/dashboard",
+    "as": "tenant",
+    "wait": 1500
+  },
+  {
+    "name": "31-my-leases",
+    "url": "/user/leases",
+    "as": "tenant"
+  },
+  {
+    "name": "32-invoices",
+    "url": "/user/payments",
+    "as": "tenant"
+  },
+  {
+    "name": "33-tenant-tickets",
+    "url": "/user/tickets",
+    "as": "tenant",
+    "js": "await lw('user.ticket-manager').call('openThreadModal', 1);"
+  },
+  {
+    "name": "34-documents",
+    "url": "/user/documents",
+    "as": "tenant"
+  }
+]

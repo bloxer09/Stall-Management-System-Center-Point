@@ -2,12 +2,21 @@
 
 namespace App\Models;
 
+use App\Observers\StallObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
+#[ObservedBy(StallObserver::class)]
 class Stall extends Model
 {
     use HasFactory;
+
+    public function waitlist(): HasMany
+    {
+        return $this->hasMany(StallWaitlist::class);
+    }
 
     protected $fillable = [
         'stall_number',
@@ -61,6 +70,11 @@ class Stall extends Model
     public function currentLease()
     {
         return $this->hasOne(StallMapping::class)->where('is_active', true);
+    }
+
+    public function pendingLease()
+    {
+        return $this->hasOne(StallMapping::class)->where('payment_status', 'pending_initial');
     }
 
     public function invoices()

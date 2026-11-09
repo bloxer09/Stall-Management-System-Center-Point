@@ -1,0 +1,541 @@
+
+   PASS  Tests\Unit\ErrorLogServiceTest
+  ✓ error log service reads and clears logs                                                                      1.18s  
+
+   PASS  Tests\Unit\InvoiceOverdueTest
+  ✓ pending past due is overdue                                                                                  0.37s  
+  ✓ due today is not overdue                                                                                     0.03s  
+  ✓ paid past due is not overdue                                                                                 0.03s  
+
+   PASS  Tests\Unit\InvoiceServiceTest
+  ✓ can generate monthly rental invoice                                                                          0.08s  
+  ✓ will not generate duplicate invoice for same period                                                          0.06s  
+  ✓ can generate all monthly invoices                                                                            0.05s  
+  ✓ can record manual cash payment                                                                               0.15s  
+  ✓ can mark existing invoice as paid                                                                            0.07s  
+  ✓ can cancel invoice                                                                                           0.06s  
+
+   PASS  Tests\Unit\LeaseRenewalTest
+  ✓ tenant can request renewal on own eligible lease                                                             0.10s  
+  ✓ cannot request on another tenants lease                                                                      0.08s  
+  ✓ cannot request on inactive lease                                                                             0.06s  
+  ✓ cannot request when lease ends in more than 60 days                                                          0.11s  
+  ✓ cannot request twice while pending                                                                           0.06s  
+  ✓ requested date must be after current end                                                                     0.06s  
+  ✓ can request again after rejection or previous approval                                                       0.07s  
+  ✓ approve moves end date and notifies tenant                                                                   0.08s  
+  ✓ approve respects override date                                                                               0.08s  
+  ✓ approve requires pending request                                                                             0.06s  
+  ✓ reject requires reason and notifies                                                                          0.07s  
+
+   PASS  Tests\Unit\LeaseServiceTest
+  ✓ can create lease in pending initial status and reserve stall                                                 0.08s  
+  ✓ paying initial invoice activates lease and occupies stall                                                    0.06s  
+  ✓ paying monthly invoice marks good standing without changing end date                                         0.07s  
+  ✓ cannot create lease on already assigned stall                                                                0.06s  
+  ✓ can terminate lease and free stall                                                                           0.16s  
+
+   PASS  Tests\Unit\ServicesTest
+  ✓ qr code generator returns local svg                                                                          0.11s  
+  ✓ sms service captures sms locally                                                                             0.16s  
+  ✓ sms service handles missing api key in production gracefully                                                 0.05s  
+  ✓ mail service detects local and production mailers                                                            0.05s  
+  ✓ upload multiple ticket attachments and accessor                                                              0.16s  
+
+   PASS  Tests\Unit\TransactionServiceTest
+  ✓ can prepare multi invoice checkout session                                                                   0.08s  
+  ✓ can handle successful checkout fulfillment                                                                   0.07s  
+
+   PASS  Tests\Unit\TwoFactorServiceTest
+  ✓ send stores hash not plain code                                                                              0.07s  
+  ✓ verify accepts correct code once                                                                             0.05s  
+  ✓ expired code fails                                                                                           0.06s  
+  ✓ new code invalidates old                                                                                     0.06s  
+  ✓ resend throttled for 60 seconds                                                                              0.06s  
+  ✓ five wrong attempts block even correct code                                                                  0.05s  
+  ✓ never logs the code                                                                                          0.07s  
+
+   PASS  Tests\Feature\AccessibilityMarkupTest
+  ✓ every modal close button is labelled and closes on escape                                                    0.07s  
+  ✓ icon only controls have labels                                                                               0.05s  
+  ✓ revenue chart has table alternative                                                                          0.14s  
+
+   PASS  Tests\Feature\AdminAttentionPanelTest
+  ✓ panel shows counts and filtered links                                                                        0.09s  
+  ✓ all caught up when nothing needs attention                                                                   0.06s  
+  ✓ lease list reads status query param                                                                          0.08s  
+  ✓ ticket center unassigned filter                                                                              0.08s  
+
+   PASS  Tests\Feature\AnalyticsRevenueTest
+  ✓ thirty days includes previous month and excludes outside dates                                               0.13s  
+  ✓ monthly ranges do not skip february at month end                                                             0.11s  
+
+   PASS  Tests\Feature\AnnouncementTest
+  ✓ post notifies all active tenants                                                                             0.12s  
+  ✓ floor audience limits recipients                                                                             0.12s  
+  ✓ email only when checked                                                                                      0.19s  
+  ✓ tenant with two stalls notified once                                                                         0.10s  
+  ✓ validation                                                                                                   0.13s  
+  ✓ dashboard shows latest three visible                                                                         0.10s  
+  ✓ delete removes announcement                                                                                  0.07s  
+  ✓ non admin forbidden                                                                                          0.18s  
+
+   PASS  Tests\Feature\ApplicationApprovalTest
+  ✓ approve new email creates tenant and sends set password link                                                 0.13s  
+  ✓ approve existing email links account without creating                                                        0.11s  
+  ✓ double approve is noop                                                                                       0.05s  
+  ✓ set password with valid link sets password and logs in                                                       0.21s  
+  ✓ expired or tampered link rejected                                                                            0.22s  
+  ✓ link cannot be reused after password set                                                                     0.20s  
+  ✓ assign stall prefills lease modal                                                                            0.07s  
+
+   PASS  Tests\Feature\ApplicationReviewTest
+  ✓ admin sees pending applications by default                                                                   0.08s  
+  ✓ search matches business name and stall number                                                                0.08s  
+  ✓ tenant gets 403 on applications page and document                                                            0.07s  
+  ✓ admin can download application document                                                                      0.07s  
+  ✓ reject requires reason                                                                                       0.11s  
+  ✓ reject sets fields emails applicant and audits                                                               0.13s  
+  ✓ cannot reject already reviewed                                                                               0.11s  
+
+   PASS  Tests\Feature\ApplicationStatusTest
+  ✓ reference format                                                                                             0.06s  
+  ✓ lookup shows status and reason                                                                               0.07s  
+  ✓ wrong email wrong reference wrong year same message                                                          0.14s  
+  ✓ lookup ignores case and whitespace                                                                           0.07s  
+  ✓ rate limited after ten                                                                                       0.16s  
+  ✓ confirmation email contains reference                                                                        0.05s  
+  ✓ page is public                                                                                               0.09s  
+
+   PASS  Tests\Feature\AuthHardeningTest
+  ✓ forgot password response identical                                                                           0.37s  
+  ✓ forgot password rate limited                                                                                 0.33s  
+  ✓ password rule on all forms                                                                                   0.80s  
+  ✓ oauth created user has no phone                                                                              0.16s  
+
+   PASS  Tests\Feature\AuthTest
+  ✓ login screen redirects to homepage with login modal                                                          0.05s  
+  ✓ register screen redirects to homepage with register modal                                                    0.03s  
+  ✓ authenticated user redirected from login                                                                     0.03s  
+  ✓ authenticated admin redirected from login                                                                    0.05s  
+  ✓ user redirected to home on logout                                                                            0.05s  
+
+   PASS  Tests\Feature\BackupTest
+  ✓ create writes sql with tables and rows                                                                       0.19s  
+  ✓ backup encrypted at rest                                                                                     0.11s  
+  ✓ encrypted backup downloads original sql                                                                      0.13s  
+  ✓ legacy plain backup still downloads                                                                          0.07s  
+  ✓ settings note mentions app key                                                                               0.08s  
+  ✓ prune keeps fourteen                                                                                         0.09s  
+  ✓ path rejects bad names                                                                                       0.05s  
+  ✓ download rejects traversal name                                                                              0.08s  
+  ✓ admin downloads backup                                                                                       0.06s  
+  ✓ non admin forbidden                                                                                          0.08s  
+  ✓ command creates and prunes                                                                                   0.21s  
+  ✓ settings create and delete are audited                                                                       0.14s  
+
+   PASS  Tests\Feature\CalendarTest
+  ✓ events land on correct days                                                                                  0.09s  
+  ✓ paid and cancelled invoices excluded                                                                         0.06s  
+  ✓ invalid month falls back                                                                                     0.06s  
+  ✓ prev next                                                                                                    0.09s  
+  ✓ tenant upcoming dates limited to own                                                                         0.08s  
+  ✓ target pages accept search query                                                                             0.08s  
+  ✓ lease search respects status filter                                                                          0.07s  
+  ✓ non admin forbidden                                                                                          0.15s  
+
+   PASS  Tests\Feature\ContentSecurityPolicyTest
+  ✓ csp enforced with nonce                                                                                      0.08s  
+  ✓ rendered scripts carry csp nonce                                                                             0.25s  
+  ✓ nonce is stable within a session for wire navigate                                                           0.11s  
+  ✓ report only mode                                                                                             0.09s  
+  ✓ off mode                                                                                                     0.09s  
+  ✓ no inline event handlers                                                                                     0.12s  
+
+   PASS  Tests\Feature\DemoSeederSafetyTest
+  ✓ seeder skips stalls used by real accounts                                                                    0.33s  
+
+   PASS  Tests\Feature\DemoSeederTest
+  ✓ seeds demo dataset                                                                                           0.35s  
+  ✓ seeding twice creates no duplicates                                                                          0.54s  
+  ✓ refuses in production                                                                                        0.06s  
+
+   PASS  Tests\Feature\DocumentRepositoryTest
+  ✓ contract dates are formatted                                                                                 0.10s  
+  ✓ billing statements list every own invoice with the right action                                              0.21s  
+
+   PASS  Tests\Feature\DocumentationReviewFixesTest
+  ✓ payments export downloads an excel file                                                                      0.35s  
+  ✓ fresh install seeds current terms                                                                            0.06s  
+
+   PASS  Tests\Feature\FinalReviewFixesTest
+  ✓ backup lists only current schema tables                                                                      0.13s  
+  ✓ failed backup leaves no partial file                                                                         0.08s  
+  ✓ mysql backup declares utf8mb4                                                                                0.08s  
+  ✓ tenant cannot replay admin component action                                                                  0.17s  
+  ✓ notified visitor can rejoin waitlist                                                                         0.19s  
+  ✓ terminating unpaid reservation voids initial invoice                                                         0.15s  
+  ✓ failed waitlist email is retried later                                                                       0.07s  
+  ✓ already terminated lease cannot be terminated again                                                          0.12s  
+  ✓ deactivated tenants excluded from announcements                                                              0.06s  
+
+   PASS  Tests\Feature\FlagOverdueInvoicesTest
+  ✓ flags overdue invoice once                                                                                   0.09s  
+  ✓ running twice sends one notice                                                                               0.08s  
+  ✓ no admin notice when nothing overdue                                                                         0.07s  
+  ✓ paying overdue invoice restores good standing                                                                0.08s  
+  ✓ notice is not sent when the database write fails                                                             0.07s  
+
+   PASS  Tests\Feature\FrontendReviewFixesTest
+  ✓ backslash and control character links are not followed                                                       0.13s  
+  ✓ absolute app link redirects to path only                                                                     0.07s  
+  ✓ my applications require a linked account                                                                     0.21s  
+  ✓ dropping non stall data on grid is harmless                                                                  0.08s  
+  ✓ reseeding resets demo bills                                                                                  0.46s  
+
+   PASS  Tests\Feature\FullTermRentTest
+  ✓ each duration creates full term invoice and ignores submitted end date with data set #0                      0.17s  
+  ✓ each duration creates full term invoice and ignores submitted end date with data set #1                      0.18s  
+  ✓ each duration creates full term invoice and ignores submitted end date with data set #2                      0.17s  
+  ✓ each duration creates full term invoice and ignores submitted end date with data set #3                      0.14s  
+  ✓ each duration creates full term invoice and ignores submitted end date with data set #4                      0.16s  
+  ✓ each duration creates full term invoice and ignores submitted end date with data set #5                      0.14s  
+  ✓ each duration creates full term invoice and ignores submitted end date with data set #6                      0.15s  
+  ✓ each duration creates full term invoice and ignores submitted end date with data set #7                      0.17s  
+  ✓ each duration creates full term invoice and ignores submitted end date with data set #8                      0.18s  
+  ✓ each duration creates full term invoice and ignores submitted end date with data set #9                      0.17s  
+  ✓ each duration creates full term invoice and ignores submitted end date with data set #10                     0.14s  
+  ✓ each duration creates full term invoice and ignores submitted end date with data set #11                     0.13s  
+  ✓ decimal rate snapshot and no repeat billing for covered term                                                 0.14s  
+  ✓ form changes and new assignment never change another contract                                                0.22s  
+  ✓ invalid durations are rejected                                                                               0.25s  
+
+   PASS  Tests\Feature\GlobalSearchTest
+  ✓ short query returns nothing                                                                                  0.08s  
+  ✓ groups results                                                                                               0.13s  
+  ✓ admins are not listed as tenants                                                                             0.08s  
+  ✓ max five per group                                                                                           0.09s  
+  ✓ like wildcards are literal                                                                                   0.07s  
+  ✓ non admin forbidden                                                                                          0.07s  
+  ✓ target pages accept query                                                                                    0.11s  
+  ✓ search box rendered for admins only                                                                          0.18s  
+
+   PASS  Tests\Feature\HardeningMinorsTest
+  ✓ redeactivate is noop                                                                                         0.08s  
+  ✓ tenant search treats wildcards literally                                                                     0.08s  
+  ✓ exact stall filter                                                                                           0.07s  
+  ✓ calendar lease link uses exact stall                                                                         0.06s  
+  ✓ announcement email dispatched after response                                                                 0.11s  
+  ✓ bulk email stamps only delivered waitlist rows                                                               0.06s  
+  ✓ backup rows ordered by primary key                                                                           0.16s  
+  ✓ seven digit reference resolves                                                                               0.07s  
+
+   PASS  Tests\Feature\HardeningReviewFixesTest
+  ✓ forgot password state identical for known and unknown                                                        0.19s  
+  ✓ reset code limiter is per email                                                                              0.77s  
+  ✓ failed registrations do not lock out                                                                         1.40s  
+  ✓ successful registrations still limited                                                                       0.90s  
+  ✓ renewal approval with sms off reports success                                                                0.08s  
+  ✓ undecryptable backup download fails loudly                                                                   1.11s  
+
+   PASS  Tests\Feature\HomePageTest
+  ✓ guest hero leads with browse stalls and live stats                                                           0.10s  
+
+   PASS  Tests\Feature\LeaseExpiryNotificationTest
+  ✓ lease expiry command dispatches notifications at 60 and 30 days                                              0.15s  
+
+   PASS  Tests\Feature\LeaseReassignmentBillingTest
+  ✓ reassignment after cancelled reservation keeps history and creates a fresh bill with data set #0             0.16s  
+  ✓ reassignment after cancelled reservation keeps history and creates a fresh bill with data set #1             0.17s  
+  ✓ paid history does not block new initial or monthly invoices                                                  0.10s  
+  ✓ database still rejects two bills for one lease and month                                                     0.07s  
+  ✓ migration links existing initial and monthly bills                                                           0.08s  
+
+   PASS  Tests\Feature\LeaseRenewalUiTest
+  ✓ selected photo clears previous required error                                                                0.22s  
+  ✓ invalid photo is not marked ready                                                                            0.12s  
+  ✓ request renewal button only on eligible lease                                                                0.07s  
+  ✓ tenant submits one year renewal                                                                              0.13s  
+  ✓ rejected lease shows reason                                                                                  0.08s  
+  ✓ tenant cannot open renewal for foreign lease                                                                 0.09s  
+  ✓ admin filter lists only requested leases                                                                     0.09s  
+  ✓ admin approves with edited date                                                                              0.12s  
+  ✓ admin reject requires reason                                                                                 0.13s  
+  ✓ expiry command skips lease with pending renewal                                                              0.06s  
+
+   PASS  Tests\Feature\LeaseTerminationTest
+  ✓ reason is required                                                                                           0.15s  
+  ✓ unpaid balance requires acknowledgement                                                                      0.15s  
+  ✓ termination with balance leaves past due                                                                     0.13s  
+  ✓ termination without balance is settled                                                                       0.15s  
+  ✓ tenant notified with reason                                                                                  0.15s  
+  ✓ balance counts only this stall                                                                               0.06s  
+
+   PASS  Tests\Feature\LegacyOverdueStatusMigrationTest
+  ✓ stored overdue status becomes pending and counts as overdue                                                  0.07s  
+
+   PASS  Tests\Feature\LoadingStatesTest
+  ✓ action button shows busy state with data set #0                                                              0.05s  
+  ✓ action button shows busy state with data set #1                                                              0.04s  
+  ✓ action button shows busy state with data set #2                                                              0.05s  
+  ✓ action button shows busy state with data set #3                                                              0.04s  
+  ✓ action button shows busy state with data set #4                                                              0.05s  
+  ✓ action button shows busy state with data set #5                                                              0.04s  
+  ✓ action button shows busy state with data set #6                                                              0.04s  
+  ✓ action button shows busy state with data set #7                                                              0.04s  
+  ✓ action button shows busy state with data set #8                                                              0.05s  
+  ✓ action button shows busy state with data set #9                                                              0.04s  
+  ✓ action button shows busy state with data set #10                                                             0.04s  
+  ✓ list dims while filtering with data set #0                                                                   0.05s  
+  ✓ list dims while filtering with data set #1                                                                   0.04s  
+  ✓ list dims while filtering with data set #2                                                                   0.05s  
+  ✓ list dims while filtering with data set #3                                                                   0.03s  
+
+   PASS  Tests\Feature\LoginThrottleTest
+  ✓ sixth attempt is locked even with correct password                                                           0.39s  
+  ✓ lockout is shared across email casing                                                                        0.40s  
+  ✓ successful login clears counter                                                                              0.31s  
+
+   PASS  Tests\Feature\MailServiceTest
+  ✓ mail service dispatches html email successfully                                                              0.03s  
+  ✓ mail service dispatches otp code                                                                             0.04s  
+  ✓ send payment reminders command uses mail service                                                             0.08s  
+  ✓ notify expiring leases command uses mail service                                                             0.08s  
+  ✓ generic notification mail renders html and configures symfony message                                        0.06s  
+
+   PASS  Tests\Feature\MarkupCleanupTest
+  ✓ no tag repeats an accessibility or title attribute                                                           0.10s  
+  ✓ renewal modal has labelled close button with escape                                                          0.04s  
+  ✓ escape only closes the topmost modal                                                                         0.05s  
+
+   PASS  Tests\Feature\NavigationLinksTest
+  ✓ admin sidebar links reports                                                                                  0.13s  
+  ✓ tenant sidebar links documents                                                                               0.09s  
+
+   PASS  Tests\Feature\NotificationLinkTest
+  ✓ internal link marks read and redirects                                                                       0.08s  
+  ✓ relative path link redirects                                                                                 0.08s  
+  ✓ other users notification is ignored                                                                          0.06s  
+  ✓ off site and script links are never followed                                                                 0.12s  
+
+   PASS  Tests\Feature\OriginalContractCorrectionTest
+  ✓ correction is scoped backed up and preserves invoices                                                        0.18s  
+  ✓ missing or mismatched records abort without changes                                                          0.07s  
+
+   PASS  Tests\Feature\OverdueDisplayTest
+  ✓ admin overdue filter from query string                                                                       0.06s  
+  ✓ tenant sees overdue badge only on past due invoice                                                           0.06s  
+
+   PASS  Tests\Feature\PaymentChannelsCardTest
+  ✓ card splits successful payments into online and cash                                                         0.11s  
+
+   PASS  Tests\Feature\ProfileModalTest
+  ✓ signed in recovery uses account email                                                                        0.09s  
+  ✓ signed in reset request cannot target another email                                                          0.12s  
+  ✓ closing profile discards unsaved fields and passwords                                                        0.11s  
+  ✓ profile modal can open and close                                                                             0.10s  
+  ✓ profile modal can update name and phone without changing email                                               0.14s  
+  ✓ profile modal can update password                                                                            0.12s  
+
+   PASS  Tests\Feature\ReceiptVerificationTest
+  ✓ new invoice gets uuid token                                                                                  0.07s  
+  ✓ verify by token shows receipt                                                                                0.08s  
+  ✓ verify by numeric id returns 404                                                                             0.05s  
+  ✓ receipt pdf qr points to token url                                                                           0.05s  
+
+   PASS  Tests\Feature\RegisteredStallApplicationTest
+  ✓ guests can browse but cannot open or submit                                                                  0.14s  
+  ✓ admin deactivated and expired sessions are denied                                                            0.17s  
+  ✓ service forces account identity and approval keeps owner                                                     0.07s  
+  ✓ service rejects guest before upload                                                                          0.06s  
+  ✓ login returns to selected stall and consumes destination                                                     0.13s  
+  ✓ registration returns to selected stall                                                                       0.19s  
+  ✓ return target cannot be external or missing                                                                  0.03s  
+  ✓ component prefills identity and ignores tampering                                                            0.21s  
+  ✓ both social callbacks return to stall                                                                        0.07s  
+
+   PASS  Tests\Feature\ResetTwoFactorCommandTest
+  ✓ reset disables 2fa and clears codes                                                                          0.08s  
+  ✓ unknown or non admin email fails                                                                             0.05s  
+
+   PASS  Tests\Feature\ReviewFixesTest
+  ✓ unverified 2fa session cannot disable 2fa or change phone                                                    0.18s  
+  ✓ approve with phone already taken creates account without phone                                               0.10s  
+  ✓ approve refuses to link admin account                                                                        0.06s  
+  ✓ login clears two factor verified flag                                                                        0.06s  
+  ✓ admin warned when rejection email fails                                                                      0.11s  
+  ✓ admin warned when renewal notification fails                                                                 0.12s  
+
+   PASS  Tests\Feature\SecurityHeadersTest
+  ✓ security headers present                                                                                     0.09s  
+  ✓ headers on api and webhook routes                                                                            0.04s  
+  ✓ hsts only on https                                                                                           0.11s  
+  ✓ production forces https urls                                                                                 0.04s  
+  ✓ session encryption configurable                                                                              0.05s  
+
+   PASS  Tests\Feature\SecurityLogTest
+  ✓ login succeeded recorded                                                                                     0.13s  
+  ✓ failed login records email not password                                                                      0.13s  
+  ✓ failed login for unknown email has no user                                                                   0.12s  
+  ✓ lockout recorded                                                                                             0.45s  
+  ✓ deactivated sign in refusal recorded                                                                         0.15s  
+  ✓ password reset recorded                                                                                      0.18s  
+  ✓ two factor failures and lockout recorded                                                                     0.12s  
+
+   PASS  Tests\Feature\SettingAndUserTest
+  ✓ setting get and set                                                                                          0.05s  
+  ✓ user role helpers                                                                                            0.06s  
+
+   PASS  Tests\Feature\SmsSwitchTest
+  ✓ non essential sms skipped when disabled                                                                      0.05s  
+  ✓ non essential sms sent when enabled                                                                          0.04s  
+  ✓ two factor sms sent when sms disabled                                                                        0.05s  
+  ✓ toggle saved and audited                                                                                     0.13s  
+
+   PASS  Tests\Feature\StallApplicationSubmitTest
+  ✓ valid submission creates pending application and notifies                                                    0.24s  
+  ✓ email is normalised                                                                                          0.21s  
+  ✓ honeypot discards silently                                                                                   0.20s  
+  ✓ fourth submission in an hour from same ip is rejected                                                        0.60s  
+  ✓ duplicate pending for same email and stall rejected                                                          0.33s  
+  ✓ cannot apply for non available stall                                                                         0.18s  
+  ✓ document type and size validated                                                                             0.46s  
+
+   PASS  Tests\Feature\StallBrowserTest
+  ✓ guest can view stall browser                                                                                 0.12s  
+  ✓ only available stall offers apply                                                                            0.12s  
+  ✓ stalls without or outside grid position are listed not crashing                                              0.09s  
+  ✓ home shows real floor counts                                                                                 0.08s  
+
+   PASS  Tests\Feature\StallGridEditorTest
+  ✓ moves placed stall to empty cell                                                                             0.09s  
+  ✓ drops unplaced stall onto grid                                                                               0.08s  
+  ✓ occupied cell is rejected                                                                                    0.08s  
+  ✓ cell outside grid is rejected                                                                                0.10s  
+  ✓ stall from another floor is rejected                                                                         0.07s  
+  ✓ click to place also checks bounds                                                                            0.08s  
+  ✓ grid cells are drag targets                                                                                  0.07s  
+
+   PASS  Tests\Feature\StallSystemTest
+  ✓ homepage loads successfully                                                                                  0.10s  
+  ✓ admin can access dashboard                                                                                   0.13s  
+  ✓ admin accessing analytics redirects to dashboard                                                             0.05s  
+  ✓ analytics dashboard component renders and switches timeframe                                                 0.10s  
+  ✓ regular user cannot access admin dashboard                                                                   0.05s  
+  ✓ stall location and stalls creation                                                                           0.04s  
+  ✓ user can view tenant dashboard                                                                               0.11s  
+
+   PASS  Tests\Feature\StallWaitlistTest
+  ✓ join waitlist for occupied stall                                                                             0.13s  
+  ✓ cannot join for available stall                                                                              0.12s  
+  ✓ duplicate rejected                                                                                           0.22s  
+  ✓ rate limited                                                                                                 0.49s  
+  ✓ emails once when stall becomes available                                                                     0.21s  
+  ✓ no email when status unchanged                                                                               0.11s  
+  ✓ termination triggers waitlist email                                                                          0.16s  
+  ✓ admin sees waitlist badge                                                                                    0.24s  
+
+   PASS  Tests\Feature\StallWorkflowUpdatesTest
+  ✓ pending stalls show tenant and combine filters and reset pagination                                          0.19s  
+  ✓ assignment presets and default dates with data set #0                                                        0.17s  
+  ✓ assignment presets and default dates with data set #1                                                        0.15s  
+  ✓ assignment presets and default dates with data set #2                                                        0.18s  
+  ✓ assignment presets and default dates with data set #3                                                        0.16s  
+  ✓ sms opt in audience deduplication and preview                                                                0.19s  
+  ✓ disabled sms does not dispatch                                                                               0.11s  
+  ✓ sms failure does not stop remaining recipients                                                               0.05s  
+  ✓ ticket notifications open owned chat and mark it read                                                        0.18s  
+  ✓ message notifications include ticket id for both roles                                                       0.20s  
+  ✓ verified payment refreshes invoice selection details and initial lease once                                  0.18s  
+  ✓ success and cancel return parameters do not pay invoices                                                     0.12s  
+  ✓ webhook rejects invalid signature and fulfills multiple invoices once                                        0.10s  
+
+   PASS  Tests\Feature\StatementTest
+  ✓ running balance                                                                                              0.09s  
+  ✓ same day charge before credit                                                                                0.06s  
+  ✓ failed transactions ignored                                                                                  0.06s  
+  ✓ tenant downloads own pdf                                                                                     0.27s  
+  ✓ tenant cannot download other                                                                                 0.06s  
+  ✓ admin can download any                                                                                       0.12s  
+  ✓ documents page shows balance                                                                                 0.05s  
+  ✓ admin statement modal shows lines                                                                            0.08s  
+
+   PASS  Tests\Feature\SystemSettingsTest
+  ✓ privacy policy page can be rendered                                                                          0.07s  
+  ✓ terms and conditions page can be rendered                                                                    0.17s  
+  ✓ admin can access system settings and update policies and address                                             1.48s  
+  ✓ admin can remove custom landing background                                                                   0.39s  
+
+   PASS  Tests\Feature\TenantAccountsTest
+  ✓ list shows tenants with balance                                                                              0.10s  
+  ✓ search filters                                                                                               0.09s  
+  ✓ deactivate and reactivate                                                                                    0.09s  
+  ✓ cannot deactivate admin                                                                                      0.07s  
+  ✓ password login refused                                                                                       0.13s  
+  ✓ google login refused                                                                                         0.06s  
+  ✓ facebook login refused                                                                                       0.05s  
+  ✓ deactivated user page request is logged out                                                                  0.06s  
+  ✓ deactivated user livewire request is logged out                                                              0.10s  
+  ✓ resend set password sends mail                                                                               0.09s  
+
+   PASS  Tests\Feature\TenantDashboardTest
+  ✓ tenant without lease sees browse cta                                                                         0.08s  
+  ✓ my applications lists only applications linked to the account                                                0.09s  
+  ✓ lease countdown and renew button                                                                             0.15s  
+  ✓ next bill due with overdue badge                                                                             0.10s  
+
+   PASS  Tests\Feature\TermsWordingTest
+  ✓ default terms have no utility clause                                                                         0.05s  
+  ✓ migration replaces untouched default                                                                         0.04s  
+  ✓ migration keeps edited terms                                                                                 0.04s  
+  ✓ public terms page falls back to default                                                                      0.05s  
+
+   PASS  Tests\Feature\TicketStallScopeTest
+  ✓ tenant cannot open ticket on stall they do not lease                                                         0.12s  
+  ✓ tenant can open ticket on own leased stall                                                                   0.12s  
+
+   PASS  Tests\Feature\TurnstileTest
+  ✓ disabled by default no check                                                                                 0.66s  
+  ✓ enabled rejects missing or failed token                                                                      1.20s  
+  ✓ enabled accepts valid token                                                                                  0.55s  
+  ✓ network failure rejects                                                                                      0.05s  
+  ✓ csp allows turnstile when enabled                                                                            0.11s  
+
+   PASS  Tests\Feature\TwoFactorChallengeTest
+  ✓ admin with 2fa is redirected from admin routes                                                               0.06s  
+  ✓ oauth style login is also challenged                                                                         0.06s  
+  ✓ admin without 2fa and tenants pass through                                                                   0.19s  
+  ✓ challenge mount sends code and masks phone                                                                   0.07s  
+  ✓ correct code grants access                                                                                   0.15s  
+  ✓ fifth wrong code logs out                                                                                    0.11s  
+  ✓ cancel logs out                                                                                              0.07s  
+  ✓ session flag not carried to next login                                                                       0.12s  
+  ✓ livewire requests keep the 2fa middleware                                                                    0.04s  
+
+   PASS  Tests\Feature\TwoFactorEnrollmentTest
+  ✓ tenant does not see 2fa section                                                                              0.09s  
+  ✓ admin without phone is told to add one                                                                       0.10s  
+  ✓ wrong code does not enable                                                                                   0.14s  
+  ✓ correct code enables and audits                                                                              0.12s  
+  ✓ resending code clears previous error without enabling two factor                                             0.16s  
+  ✓ disable requires correct password                                                                            0.16s  
+  ✓ cannot clear phone while 2fa enabled                                                                         0.10s  
+
+   PASS  Tests\Feature\TypingIndicatorTest
+  ✓ typing sets only callers participant row                                                                     0.13s  
+  ✓ tenant cannot signal on foreign ticket                                                                       0.11s  
+  ✓ other party sees indicator within 5 seconds                                                                  0.15s  
+  ✓ tenant sees admin typing                                                                                     0.13s  
+  ✓ typer does not see own indicator                                                                             0.09s  
+  ✓ sending message clears typing                                                                                0.13s  
+
+   PASS  Tests\Feature\UploadAndReplySecurityTest
+  ✓ uploads use detected extension                                                                               0.09s  
+  ✓ public storage blocks scripts                                                                                0.11s  
+  ✓ tenant reply to foreign message dropped                                                                      0.14s  
+  ✓ admin reply to foreign message dropped                                                                       0.16s  
+  ✓ reply within same ticket kept                                                                                0.15s  
+
+  Tests:    393 passed (1663 assertions)
+  Duration: 57.00s
+

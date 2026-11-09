@@ -113,4 +113,26 @@ class MailServiceTest extends TestCase
             return $mail->hasTo($tenant->email);
         });
     }
+
+    public function test_generic_notification_mail_renders_html_and_configures_symfony_message()
+    {
+        $mail = new GenericNotificationMail(
+            'Security Alert',
+            '<h1>Security Verification</h1><p>Your code is <strong>123456</strong>.</p>',
+            'Security Verification: Your code is 123456.'
+        );
+
+        // Verify Content() method does not throw parameter errors
+        $content = $mail->content();
+        $this->assertNotNull($content);
+
+        // Verify Envelope method
+        $envelope = $mail->envelope();
+        $this->assertEquals('Security Alert', $envelope->subject);
+
+        // Verify actual HTML rendering
+        $renderedHtml = $mail->render();
+        $this->assertStringContainsString('Security Verification', $renderedHtml);
+        $this->assertStringContainsString('123456', $renderedHtml);
+    }
 }

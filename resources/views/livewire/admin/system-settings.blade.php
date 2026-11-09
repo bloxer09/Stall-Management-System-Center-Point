@@ -27,9 +27,9 @@
                     @error('support_email') <span class="text-xs text-error mt-1">{{ $message }}</span> @enderror
                 </div>
                 <div class="form-control">
-                    <label class="label"><span class="label-text font-bold text-xs uppercase">Support Phone Number</span></label>
-                    <input type="text" wire:model="support_phone" class="input input-bordered rounded-xl text-sm" placeholder="09171112233" />
-                    @error('support_phone') <span class="text-xs text-error mt-1">{{ $message }}</span> @enderror
+                    <label for="support-phone" class="label"><span class="label-text font-bold text-xs uppercase">Support Phone Number</span></label>
+                    <x-phone-input id="support-phone" model="support_phone" />
+                    @error('support_phone') <span id="support-phone-error" role="alert" class="text-xs text-error mt-1">{{ $message }}</span> @enderror
                 </div>
             </div>
         </div>
@@ -107,11 +107,66 @@
             </div>
         </div>
 
+        <!-- Notifications -->
+        <div class="card bg-base-100 rounded-3xl border border-base-300 shadow-md p-6 space-y-3">
+            <h2 class="text-base font-black text-base-content uppercase tracking-wider">Notifications</h2>
+            <label class="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" wire:model="sms_enabled" class="toggle toggle-primary mt-0.5">
+                <span>
+                    <span class="font-bold text-sm text-base-content">Send SMS notifications</span>
+                    <span class="block text-xs text-base-content/60">Reminders, overdue notices, renewals and reset codes by text. Admin two-factor codes are always sent.</span>
+                </span>
+            </label>
+        </div>
+
         <div class="flex justify-end pt-2">
-            <button type="submit" wire:loading.attr="disabled" class="btn btn-primary rounded-xl font-bold px-8 shadow-md">
+            <button type="submit" wire:loading.attr="disabled" class="btn btn-primary rounded-xl font-bold px-8 shadow-md" wire:target="saveSettings">
                 <span wire:loading wire:target="saveSettings" class="loading loading-spinner loading-xs mr-1"></span>
                 Save System Settings
             </button>
         </div>
     </form>
+
+    <!-- Database backups (outside the settings form: these act immediately) -->
+    <div class="card bg-base-100 rounded-3xl border border-base-300 shadow-md p-6 space-y-4">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div>
+                <h2 class="text-base font-black text-base-content uppercase tracking-wider">Database Backups</h2>
+                <p class="text-xs text-base-content/60 mt-1">A backup runs automatically every day at 2:00 AM; the latest 14 are kept. Backups contain all data, including password hashes — store downloads securely. Encrypted with the app key — keep a copy of APP_KEY to restore.</p>
+            </div>
+            <button type="button" wire:click="createBackup" class="btn btn-primary btn-sm rounded-xl font-bold shrink-0" wire:loading.attr="disabled" wire:target="createBackup"><span wire:loading wire:target="createBackup" class="loading loading-spinner loading-xs"></span>
+                Create backup now
+            </button>
+        </div>
+
+        <div class="overflow-x-auto border border-base-200 rounded-xl">
+            <table class="table table-sm w-full text-sm">
+                <thead>
+                    <tr class="text-base-content/70">
+                        <th>File</th>
+                        <th>Created</th>
+                        <th class="text-right">Size</th>
+                        <th class="text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($backups as $backup)
+                        <tr wire:key="backup-{{ $backup['name'] }}">
+                            <td class="font-mono text-xs">{{ $backup['name'] }}</td>
+                            <td class="text-xs">{{ $backup['created']->format('M d, Y g:i A') }}</td>
+                            <td class="text-right text-xs">{{ number_format($backup['size'] / 1024, 1) }} KB</td>
+                            <td class="text-right space-x-1">
+                                <x-table-action :href="route('admin.backups.download', $backup['name'])">Download</x-table-action>
+                                <x-table-action :danger="true" wire:click="deleteBackup('{{ $backup['name'] }}')" wire:confirm="Delete {{ $backup['name'] }}? This cannot be undone.">Delete</x-table-action>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="4" class="text-center py-6 text-base-content/50">No backups yet.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        <p class="text-xs text-base-content/60">To restore a <code>.sql</code> backup: <code class="font-mono">mysql -u USER -p DATABASE &lt; backup-file.sql</code></p>
+    </div>
 </div>

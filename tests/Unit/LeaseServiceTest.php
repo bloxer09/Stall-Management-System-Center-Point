@@ -84,7 +84,7 @@ class LeaseServiceTest extends TestCase
         $this->assertEquals('occupied', $this->stall->fresh()->status);
     }
 
-    public function test_paying_monthly_rental_invoice_renews_and_maintains_good_standing()
+    public function test_paying_monthly_invoice_marks_good_standing_without_changing_end_date()
     {
         $lease = $this->leaseService->createLease(
             $this->tenant->id,
@@ -107,7 +107,7 @@ class LeaseServiceTest extends TestCase
 
         $renewedLease = $lease->fresh();
         $this->assertEquals('good_standing', $renewedLease->payment_status);
-        $this->assertTrue($renewedLease->end_date->gt($oldEndDate));
+        $this->assertTrue($renewedLease->end_date->equalTo($oldEndDate));
     }
 
     public function test_cannot_create_lease_on_already_assigned_stall()
@@ -141,7 +141,7 @@ class LeaseServiceTest extends TestCase
 
         $this->assertEquals('reserved', $this->stall->fresh()->status);
 
-        $this->leaseService->terminateLease($lease);
+        $this->leaseService->terminateLease($lease, "Lease ended for testing.");
 
         $this->assertFalse($lease->fresh()->is_active);
         $this->assertEquals('available', $this->stall->fresh()->status);

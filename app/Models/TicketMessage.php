@@ -31,6 +31,19 @@ class TicketMessage extends Model
         return [$this->attachment_path];
     }
 
+    /**
+     * The reply target to store, only if it is a message in the same ticket. Anything else
+     * (another ticket's message, a made-up id) is dropped so its text can never be quoted here.
+     */
+    public static function replyTargetIn(mixed $messageId, int $ticketId): ?int
+    {
+        if (!is_numeric($messageId)) {
+            return null;
+        }
+
+        return static::whereKey((int) $messageId)->where('ticket_id', $ticketId)->value('id');
+    }
+
     public function ticket()
     {
         return $this->belongsTo(Ticket::class);

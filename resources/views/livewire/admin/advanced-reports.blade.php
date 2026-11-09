@@ -6,14 +6,14 @@
             <p class="text-xs text-base-content/60 mt-1">View revenue summaries, unpaid balances, and exports.</p>
         </div>
         <div class="flex items-center gap-2">
-            <button wire:click="exportCsv"
+            <button wire:click="exportXlsx"
                 wire:loading.attr="disabled"
                 wire:loading.class="opacity-60 cursor-wait"
-                wire:target="exportCsv"
+                wire:target="exportXlsx"
                 class="btn btn-outline btn-sm rounded-xl font-bold gap-1 shadow-xs">
-                <span wire:loading wire:target="exportCsv" class="loading loading-spinner loading-xs"></span>
-                <svg class="w-4 h-4" wire:loading.remove wire:target="exportCsv" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                Export CSV
+                <span wire:loading wire:target="exportXlsx" class="loading loading-spinner loading-xs"></span>
+                <svg class="w-4 h-4" wire:loading.remove wire:target="exportXlsx" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Export XLSX
             </button>
             <button wire:click="exportPdf"
                 wire:loading.attr="disabled"
@@ -79,13 +79,26 @@
     </div>
 
     <!-- Chart: 12-Month Revenue Trend -->
-    <div class="card bg-base-100 border border-base-300 shadow-md rounded-3xl p-6">
+    <div class="card bg-base-100 border border-base-300 shadow-md rounded-3xl p-6" x-data="{ asTable: false }">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-base font-black text-base-content uppercase tracking-wider">12-Month Revenue Trend</h2>
-            <span class="badge badge-primary badge-sm font-bold">Chart</span>
+            <button type="button" class="btn btn-ghost btn-xs rounded-lg font-bold" x-on:click="asTable = !asTable" :aria-pressed="asTable.toString()">
+                <span x-text="asTable ? 'View as chart' : 'View as table'">View as table</span>
+            </button>
         </div>
-        <div class="relative h-64">
-            <canvas id="revenueChart"></canvas>
+        <div class="relative h-64" x-show="!asTable">
+            <canvas id="revenueChart" role="img" aria-label="Bar chart of revenue for the last 12 months; use View as table for the numbers"></canvas>
+        </div>
+        <div x-show="asTable" x-cloak class="overflow-x-auto">
+            <table class="table table-sm w-full" data-revenue-table>
+                <caption class="sr-only">Revenue for the last 12 months</caption>
+                <thead><tr><th scope="col">Month</th><th scope="col" class="text-right">Revenue</th></tr></thead>
+                <tbody>
+                    @foreach($monthlyTrend as $point)
+                        <tr><th scope="row" class="font-semibold">{{ $point['month'] }}</th><td class="text-right font-mono">₱{{ number_format($point['revenue'], 2) }}</td></tr>
+                    @endforeach
+                </tbody>
+            </table>
         </div>
     </div>
 
@@ -114,11 +127,12 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ Vite::cspNonce() }}">
     (function () {
         function initRevenueChart() {
             const canvas = document.getElementById('revenueChart');
-            if (!canvas) return;
+            // livewire:navigated can fire before chart.min.js finishes loading; its onload draws the chart.
+            if (!canvas || typeof Chart === 'undefined') return;
             if (canvas._chartInstance) { canvas._chartInstance.destroy(); }
 
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -135,11 +149,11 @@
                     datasets: [{
                         label: 'Monthly Revenue (₱)',
                         data: trendData.map(d => d.revenue),
-                        borderColor: 'hsl(var(--p))',
-                        backgroundColor: 'hsla(var(--p), 0.12)',
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.12)',
                         fill: true,
                         tension: 0.4,
-                        pointBackgroundColor: 'hsl(var(--p))',
+                        pointBackgroundColor: '#6366f1',
                         pointRadius: 4,
                         pointHoverRadius: 6,
                         borderWidth: 2,

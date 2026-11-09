@@ -4,14 +4,16 @@ namespace App\Livewire\User;
 
 use App\Models\AuditLog;
 use App\Models\StallMapping;
+use App\Livewire\Concerns\RequestsLeaseRenewal;
 use App\Services\FileUploadService;
+use App\Services\LeaseService;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
 class MyLeases extends Component
 {
-    use WithFileUploads, WithPagination;
+    use RequestsLeaseRenewal, WithFileUploads, WithPagination;
 
     public $search = '';
     public $statusFilter = '';
@@ -76,6 +78,14 @@ class MyLeases extends Component
         $this->existingStallImage = null;
     }
 
+    public function updatedNewStallImage()
+    {
+        $this->resetValidation('newStallImage');
+        $this->validateOnly('newStallImage', [
+            'newStallImage' => 'nullable|image|max:5120',
+        ]);
+    }
+
     public function uploadStallPhoto(FileUploadService $uploader)
     {
         if (!$this->selectedStallId) return;
@@ -108,7 +118,7 @@ class MyLeases extends Component
 
     public function render()
     {
-        $query = StallMapping::with(['stall.location', 'initialInvoice'])
+        $query = StallMapping::with(['stall.location', 'initialInvoice', 'renewalInvoice'])
             ->where('user_id', auth()->id());
 
         if ($this->search) {
@@ -127,8 +137,16 @@ class MyLeases extends Component
             }
         }
 
+        $leases = $query->latest()->paginate(8);
+        $leaseService = app(LeaseService::class);
+
         return view('livewire.user.my-leases', [
-            'leases' => $query->latest()->paginate(8),
+            'leases' => $leases,
+            'renewableIds' => $leases->getCollection()
+                ->filter(fn (StallMapping $lease) => $leaseService->isRenewalEligible($lease))
+                ->pluck('id')
+                ->all(),
+            'renewalLease' => $this->renewalLease(),
         ]);
     }
 }

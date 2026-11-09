@@ -1,0 +1,8 @@
+# Uploaded files are data, never code: refuse to run anything served from public storage.
+Options -ExecCGI -Indexes
+<FilesMatch "\.(php|phtml|phar|cgi|pl|py|sh)$">
+    Require all denied
+</FilesMatch>
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
